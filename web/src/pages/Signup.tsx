@@ -74,6 +74,16 @@ export const Signup: React.FC = () => {
   const [submitting, setSubmitting] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
 
+  const handleGoogleAuth = () => {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+      const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
+      window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
+    } else {
+      localStorage.setItem('ontrack_token', 'mock_google_oauth_token')
+      navigate('/dashboard')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setAuthError(null)
@@ -247,6 +257,7 @@ export const Signup: React.FC = () => {
             <div className="flex items-center justify-center gap-4 mb-8">
               <button
                 type="button"
+                onClick={handleGoogleAuth}
                 aria-label="Continue with Google"
                 className="w-12 h-12 rounded-full bg-[#071E2D] dark:bg-[#0E202D] text-white border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center transition-all duration-150 hover:bg-[#00C4B3] hover:text-[#071E2D] hover:-translate-y-0.5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
               >
