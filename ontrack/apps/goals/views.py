@@ -1,0 +1,318 @@
+"""Goal endpoints. AI (David's ai_module) is best-effort everywhere:
+a raise or malformed return falls back and NEVER blocks the request."""
+import logging
+import re
+from datetime import datetime, timedelta
+from datetime import timezone as datetime_timezone
+
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps import ai_module
+from apps.accounts.profiles import get_profile_stats
+from apps.accounts.throttles import GoalsBurstThrottle
+from apps.goals.models import Goal, ProgressLog
+from apps.goals.serializers import GoalSerializer, ProgressLogSerializer
+from config.exceptions import ApiError
+
+logger = logging.getLogger(__name__)
+
+CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+GOAL_TYPES = {Goal.GOAL_TYPE_COUNTER, Goal.GOAL_TYPE_CHECKLIST, Goal.GOAL_TYPE_MANUAL}
+STATUSES = {Goal.STATUS_ACTIVE, Goal.STATUS_COMPLETED, Goal.STATUS_MISSED}
+GENERIC_VERDICT = (
+    "Goal finalized. No detailed verdict is available right now — "
+    "consistency beats intensity, keep going."
+)
+
+
+def clean_text(text, *, field="text", max_length=500):
+    """Strip control chars; require a non-empty string within max_length."""
+    if not isinstance(text, str):
+        raise ApiError(f"{field} must be a string", "VALIDATION_ERROR")
+    cleaned = CONTROL_CHARS.sub("", text).strip()
+    if not 1 <= len(cleaned) <= max_length:
+        raise ApiError(
+            f"{field} must be between 1 and {max_length} characters",
+            "VALIDATION_ERROR",
+        )
+    return cleaned
+
+
+def _is_int(value):
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _parse_deadline(raw):
+    """Lenient deadline parsing: valid ISO-8601 -> aware datetime, anything
+    else -> None (deadline never sinks an otherwise good parse)."""
+    if raw is None:
+        return None
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw.strip())
+    except ValueError:
+        logger.warning("ai_module.parse_goal returned unparseable deadline; ignoring")
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=datetime_timezone.utc)
+    return parsed
+
+
+def coerce_parse_result(raw):
+    """Validate ai_module.parse_goal output ({goal_type, target, domain,
+    deadline, summary}).
+
+    Core fields (goal_type/target/domain) are strict: anything off ->
+    ("manual", None, "", None, None, True). Extras (deadline/summary) are
+    lenient: malformed values are dropped, never fatal. Never raises.
+    """
+    fallback = (Goal.GOAL_TYPE_MANUAL, None, "", None, None, True)
+    if not isinstance(raw, dict):
+        return fallback
+    goal_type = raw.get("goal_type")
+    if goal_type not in GOAL_TYPES:
+        return fallback
+    target = raw.get("target")
+    if target is not None and (not _is_int(target) or target < 0):
+        return fallback
+    domain = raw.get("domain", "")
+    if not isinstance(domain, str):
+        return fallback
+    domain = domain[:100]
+    summary = raw.get("summary") or None
+    if summary is not None and not isinstance(summary, str):
+        summary = None
+    if summary is not None:
+        summary = CONTROL_CHARS.sub("", summary).strip()[:2000] or None
+    deadline = _parse_deadline(raw.get("deadline"))
+    return (goal_type, target, domain, deadline, summary, False)
+
+
+def parse_goal_safely(text):
+    """Call David's parser; on ANY failure return the manual fallback."""
+    try:
+        parsed = coerce_parse_result(ai_module.parse_goal(text))
+    except Exception:
+        logger.warning("ai_module.parse_goal failed; using manual fallback", exc_info=True)
+        return (Goal.GOAL_TYPE_MANUAL, None, "", None, [], True)
+    if parsed[-1]:
+        logger.warning("ai_module.parse_goal returned malformed data; using manual fallback")
+    return parsed
+
+
+class GoalListCreateView(APIView):
+    throttle_classes = [GoalsBurstThrottle]
+
+    def get(self, request):
+        status_filter = request.query_params.get("status")
+        if status_filter is not None and status_filter not in STATUSES:
+            raise ApiError(
+                f"status must be one of {sorted(STATUSES)}", "VALIDATION_ERROR"
+            )
+        goals = Goal.objects.filter(user_id=request.user_id).prefetch_related("items")
+        if status_filter:
+            goals = goals.filter(status=status_filter)
+        return Response(GoalSerializer(goals, many=True).data)
+
+    def post(self, request):
+        data = request.data if isinstance(request.data, dict) else {}
+        text = clean_text(data.get("text"), max_length=500)
+        goal_type, target, domain, deadline, summary, used_fallback = parse_goal_safely(text)
+        goal = Goal.objects.create(
+            user_id=request.user_id,
+            title=text[:255],
+            goal_type=goal_type,
+            target=target,
+            domain=domain,
+            deadline=deadline,
+            parse_result={} if used_fallback else {
+                "goal_type": goal_type,
+                "target": target,
+                "domain": domain,
+                "deadline": deadline.isoformat() if deadline else None,
+                "summary": summary or "",
+            },
+        )
+        payload = GoalSerializer(goal).data
+        payload["ai_fallback_used"] = used_fallback
+        return Response(payload, status=status.HTTP_201_CREATED)
+
+
+class GoalDetailView(APIView):
+    def get(self, request, goal_id):
+        goal = get_object_or_404(
+            Goal.objects.prefetch_related("items", "progress_logs"),
+            pk=goal_id,
+            user_id=request.user_id,
+        )
+        return Response(GoalSerializer(goal).data)
+
+
+class ProgressCreateView(APIView):
+    def post(self, request):
+        data = request.data if isinstance(request.data, dict) else {}
+        raw_value = data.get("value")
+        if not _is_int(raw_value):
+            raise ApiError("value must be an integer", "VALIDATION_ERROR")
+        if raw_value < 0:
+            raise ApiError("value must be >= 0", "VALIDATION_ERROR")
+        note = data.get("note", "")
+        if note is None:
+            note = ""
+        if not isinstance(note, str):
+            raise ApiError("note must be a string", "VALIDATION_ERROR")
+        note = CONTROL_CHARS.sub("", note).strip()
+        if len(note) > 500:
+            raise ApiError("note must be at most 500 characters", "VALIDATION_ERROR")
+        if not data.get("goal_id"):
+            raise ApiError("goal_id is required", "VALIDATION_ERROR")
+        goal = get_object_or_404(Goal, pk=data.get("goal_id"), user_id=request.user_id)
+        log = ProgressLog.objects.create(
+            goal=goal, user_id=request.user_id, value=raw_value, note=note
+        )
+        payload = ProgressLogSerializer(log).data
+        payload["exceeded"] = goal.target is not None and raw_value > goal.target
+        return Response(payload, status=status.HTTP_201_CREATED)
+
+
+def _progress_pct(goal):
+    if goal.goal_type == Goal.GOAL_TYPE_COUNTER:
+        if not goal.target:
+            return None
+        total = sum(log.value for log in goal.progress_logs.all())
+        return round(total / goal.target * 100)
+    if goal.goal_type == Goal.GOAL_TYPE_CHECKLIST:
+        items = list(goal.items.all())
+        if not items:
+            return 0
+        done = sum(1 for item in items if item.completed)
+        return round(done / len(items) * 100)
+    return None
+
+
+class DashboardView(APIView):
+    """7 queries by construction: goals + 2 prefetches + weekly count +
+    streak dates + history + external profiles read. The smoke test pins
+    this with assertNumQueries."""
+
+    def get(self, request):
+        user_id = request.user_id
+        now = timezone.now()
+        week_start = (now - timedelta(days=now.weekday())).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+        goals = (
+            Goal.objects.filter(user_id=user_id, status=Goal.STATUS_ACTIVE)
+            .prefetch_related("items", "progress_logs")
+            .order_by("-start_at")
+        )
+        active = [
+            {
+                "id": str(goal.id),
+                "title": goal.title,
+                "goal_type": goal.goal_type,
+                "target": goal.target,
+                "progress_pct": _progress_pct(goal),
+            }
+            for goal in goals
+        ]
+
+        week_completed = Goal.objects.filter(
+            user_id=user_id,
+            status=Goal.STATUS_COMPLETED,
+            finished_at__gte=week_start,
+        ).count()
+
+        day_values = list(
+            ProgressLog.objects.filter(user_id=user_id).dates(
+                "logged_at", "day", order="DESC"
+            )
+        )
+        day_set = set(day_values)
+        today = now.date()
+        cursor = today if today in day_set else today - timedelta(days=1)
+        streak = 0
+        while cursor in day_set:
+            streak += 1
+            cursor -= timedelta(days=1)
+
+        history_logs = (
+            ProgressLog.objects.filter(user_id=user_id)
+            .select_related("goal")
+            .order_by("-logged_at")[:10]
+        )
+        history = [
+            {
+                "id": str(log.id),
+                "goal_id": str(log.goal_id),
+                "goal_title": log.goal.title,
+                "value": log.value,
+                "note": log.note,
+                "logged_at": log.logged_at,
+            }
+            for log in history_logs
+        ]
+        return Response(
+            {
+                "active_goals": active,
+                "week_completed_count": week_completed,
+                "streak_days": streak,
+                "history": history,
+                # External Supabase table; nulls when unavailable (see
+                # apps/accounts/profiles.py). TODO: confirm real schema.
+                "profile": get_profile_stats(user_id),
+            }
+        )
+
+
+class GoalFinalizeView(APIView):
+    def post(self, request, goal_id):
+        goal = get_object_or_404(Goal, pk=goal_id, user_id=request.user_id)
+        logs = list(goal.progress_logs.all())
+        if goal.goal_type == Goal.GOAL_TYPE_COUNTER:
+            result_value = sum(log.value for log in logs)
+        elif goal.goal_type == Goal.GOAL_TYPE_CHECKLIST:
+            result_value = goal.items.filter(completed=True).count()
+        else:
+            result_value = logs[0].value if logs else None  # logs are newest-first
+
+        used_fallback = False
+        final_progress = result_value if _is_int(result_value) else 0
+        goal_data = {
+            "title": goal.title,
+            "goal_type": goal.goal_type,
+            "target": goal.target,
+            "domain": goal.domain,
+            "status": goal.status,
+        }
+        try:
+            verdict = ai_module.generate_verdict(
+                str(goal.id), goal_data, final_progress
+            )
+            if not isinstance(verdict, str) or not verdict.strip():
+                raise ValueError("empty verdict")
+            verdict = verdict.strip()[:5000]
+        except Exception:
+            logger.warning(
+                "ai_module.generate_verdict failed; using generic verdict",
+                exc_info=True,
+            )
+            verdict = GENERIC_VERDICT
+            used_fallback = True
+
+        goal.result_value = result_value
+        goal.verdict = verdict
+        goal.status = Goal.STATUS_COMPLETED
+        goal.finished_at = timezone.now()
+        goal.save(
+            update_fields=["result_value", "verdict", "status", "finished_at"]
+        )
+        payload = GoalSerializer(goal).data
+        payload["ai_fallback_used"] = used_fallback
+        return Response(payload)
