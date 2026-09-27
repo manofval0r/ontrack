@@ -1,7 +1,7 @@
 /** Goal card — tactile card + progress bar + status + TTS replay. */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
@@ -18,6 +18,14 @@ function pct(goal: any): number {
 
 export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
   const [speaking, setSpeaking] = useState(false);
+  const playerRef = useRef<AudioPlayer | null>(null);
+
+  useEffect(() => {
+    return () => {
+      playerRef.current?.remove();
+      playerRef.current = null;
+    };
+  }, []);
 
   const playSummary = async () => {
     try {
@@ -27,11 +35,13 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
       try {
         const { audio_url } = await api.tts(text);
         if (audio_url && !audio_url.includes('stub')) {
-          const { sound } = await Audio.Sound.createAsync({ uri: audio_url });
-          await sound.playAsync();
-          sound.setOnPlaybackStatusUpdate((s) => {
-            if (s.isLoaded && s.didJustFinish) setSpeaking(false);
+          playerRef.current?.remove();
+          const player = createAudioPlayer({ uri: audio_url });
+          playerRef.current = player;
+          player.addListener('playbackStatusUpdate', (status) => {
+            if (status.didJustFinish) setSpeaking(false);
           });
+          player.play();
           return;
         }
       } catch {
