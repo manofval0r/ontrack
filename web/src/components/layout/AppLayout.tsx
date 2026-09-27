@@ -81,14 +81,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   return (
     <div className="min-h-screen bg-[#F8FAFB] dark:bg-[#07141E] bg-dot-grid flex flex-col font-sans text-[#071E2D] dark:text-slate-100 transition-colors">
       {/* ── Top Header Bar ────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0E202D]/95 backdrop-blur-md border-b-2 border-[#071E2D] dark:border-white/10 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between shadow-[0_2px_0px_#071E2D] dark:shadow-[0_2px_0px_#000000]">
-        <div className="flex items-center gap-4 sm:gap-8">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0E202D]/95 backdrop-blur-md border-b-2 border-[#071E2D] dark:border-white/10 px-3 sm:px-5 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between shadow-[0_2px_0px_#071E2D] dark:shadow-[0_2px_0px_#000000]">
+        <div className="flex items-center gap-2 sm:gap-5">
           <button
             onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            className="lg:hidden p-2 rounded-xl border-2 border-[#071E2D] dark:border-[#1E3A52] bg-[#F3F6F8] dark:bg-[#091824] text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-white"
+            className="lg:hidden p-1.5 sm:p-2 rounded-xl border-2 border-[#071E2D] dark:border-[#1E3A52] bg-[#F3F6F8] dark:bg-[#091824] text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-white"
             aria-label="Toggle navigation menu"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
               <line x1="3" y1="12" x2="21" y2="12" />
               <line x1="3" y1="6" x2="21" y2="6" />
               <line x1="3" y1="18" x2="21" y2="18" />
@@ -97,13 +97,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
           <Logo linkTo="/dashboard" />
 
-          {/* Quick Metrics Badges (Desktop) */}
-          <div className="hidden md:flex items-center gap-2.5">
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ECFEFF] dark:bg-[#00C4B3]/15 border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] text-xs font-bold text-[#006D6A] dark:text-[#00C4B3]">
+          {/* Quick Metrics Badges (md+ only) */}
+          <div className="hidden md:flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#ECFEFF] dark:bg-[#00C4B3]/15 border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] text-xs font-bold text-[#006D6A] dark:text-[#00C4B3]">
               <span>🔥</span>
-              <span>{streak} Day Streak</span>
+              <span className="hidden lg:inline">{streak} Day Streak</span>
+              <span className="lg:hidden">{streak}d</span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] text-xs font-bold text-[#071E2D] dark:text-white">
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] text-xs font-bold text-[#071E2D] dark:text-white">
               <span className="w-2 h-2 rounded-full bg-[#00C4B3]" />
               <span>{velocity}</span>
             </div>
@@ -111,8 +112,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         </div>
 
         {/* Right side controls */}
-        <div className="flex items-center gap-3">
-          {/* TTS Audio Toggle Button */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* TTS Audio Toggle — hidden on small mobile */}
           <button
             onClick={() => {
               if (isAudioPlaying) {
@@ -123,7 +124,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             }}
             title={audioSettings.tts_enabled ? 'Voice TTS is active' : 'Voice TTS is muted'}
             className={`
-              hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full
+              hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full
               border-2 border-[#071E2D] text-xs font-bold transition-all
               ${isAudioPlaying
                 ? 'bg-[#00C4B3] text-[#071E2D] shadow-[2px_2px_0px_#071E2D] animate-pulse'
@@ -133,7 +134,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               }
             `.trim()}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               {audioSettings.tts_enabled ? (
                 <>
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -148,17 +149,18 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 </>
               )}
             </svg>
-            <span>{isAudioPlaying ? 'Speaking...' : audioSettings.tts_enabled ? 'Voice On' : 'Voice Off'}</span>
+            <span className="hidden md:inline">{isAudioPlaying ? 'Speaking...' : audioSettings.tts_enabled ? 'Voice On' : 'Voice Off'}</span>
           </button>
 
           {/* Quick Create Goal Action */}
           <Link
             to="/chat"
-            className="btn-pill btn-pill-primary text-xs py-1.5 px-3.5 sm:px-4"
+            className="btn-pill btn-pill-primary text-xs py-1.5 px-3 sm:px-3.5"
           >
-            <span>+ New Goal</span>
-            <span className="btn-bubble !w-6 !h-6 !text-xs">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <span className="hidden sm:inline">+ New Goal</span>
+            <span className="sm:hidden">+</span>
+            <span className="btn-bubble !w-5 !h-5 !text-xs">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
                 <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </span>
@@ -167,9 +169,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           {/* User Avatar & Name */}
           <Link
             to="/settings"
-            className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#F3F6F8] dark:hover:bg-white/5 transition-colors"
+            className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#F3F6F8] dark:hover:bg-white/5 transition-colors"
           >
-            <div className="w-6 h-6 rounded-full bg-[#00C4B3] border border-[#071E2D] flex items-center justify-center font-bold text-xs text-[#071E2D]">
+            <div className="w-6 h-6 rounded-full bg-[#00C4B3] border border-[#071E2D] flex items-center justify-center font-bold text-xs text-[#071E2D] flex-shrink-0">
               {user.name.charAt(0)}
             </div>
             <span className="hidden sm:inline text-xs font-bold text-[#071E2D] dark:text-white">{user.name}</span>
@@ -178,9 +180,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       </header>
 
       {/* ── Main App Body (Sidebar + Content) ─────────────────────── */}
-      <div className="flex-1 flex max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-8">
+      <div className="flex-1 flex max-w-7xl w-full mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 gap-5 lg:gap-8">
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 gap-6">
+        <aside className="hidden lg:flex flex-col w-56 xl:w-64 flex-shrink-0 gap-5">
           <nav className="flex flex-col gap-2 p-3 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000]">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path || (item.path.startsWith('/goal') && location.pathname.startsWith('/goal'))
