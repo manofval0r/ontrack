@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Audio } from 'expo-av';
+import { AudioModule, RecordingPresets, setAudioModeAsync, requestRecordingPermissionsAsync, useAudioRecorder } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
 import { Radii, Spacing, Touch } from '../constants/spacing';
@@ -13,7 +13,8 @@ import { useGoals } from '../lib/store';
 
 export default function VoiceModal() {
   const { createGoal } = useGoals();
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,16 +22,15 @@ export default function VoiceModal() {
   const start = async () => {
     try {
       setError(null);
-      const perm = await Audio.requestPermissionsAsync();
+      const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) {
         setError('Microphone permission is needed for voice input.');
         return;
       }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const rec = new Audio.Recording();
-      await rec.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      await rec.startAsync();
-      setRecording(rec);
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      setIsRecording(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     } catch {
       setError("Couldn't start recording.");
@@ -38,12 +38,12 @@ export default function VoiceModal() {
   };
 
   const stop = async (cancel = false) => {
-    if (!recording) return;
+    if (!isRecording) return;
     try {
       setBusy(true);
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
-      setRecording(null);
+      await recorder.stop();
+      const uri = recorder.uri;
+      setIsRecording(false);
       if (cancel || !uri) {
         setBusy(false);
         return;
@@ -85,13 +85,13 @@ export default function VoiceModal() {
       <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
         <View style={{ alignItems: 'center', gap: 8 }}>
           <Pressable
-            onPress={() => (recording ? stop() : start())}
-            accessibilityLabel={recording ? 'Stop recording' : 'Start recording'}
+            onPress={() => (isRecording ? stop() : start())}
+            accessibilityLabel={isRecording ? 'Stop recording' : 'Start recording'}
             style={{
               width: Touch.micHero,
               height: Touch.micHero,
               borderRadius: 999,
-              backgroundColor: recording ? '#dc2626' : Brand.turquoise,
+              backgroundColor: isRecording ? '#dc2626' : Brand.turquoise,
               borderWidth: 2,
               borderColor: Brand.navy,
               alignItems: 'center',
@@ -102,7 +102,7 @@ export default function VoiceModal() {
             <Text style={{ fontSize: 36 }}>🎤</Text>
           </Pressable>
           <Text style={{ fontWeight: '700', color: Brand.navy }}>
-            {recording ? 'Listening…' : busy ? 'Working…' : 'Tap to speak your goal'}
+            {isRecording ? 'Listening…' : busy ? 'Working…' : 'Tap to speak your goal'}
           </Text>
           {busy && <ActivityIndicator color={Brand.turquoise} />}
         </View>
@@ -129,7 +129,7 @@ export default function VoiceModal() {
         {error && <Text style={{ color: '#dc2626' }}>{error}</Text>}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <PillButton title="Re-record" onPress={() => { setTranscript(''); start(); }} disabled={!!recording || busy} />
+            <PillButton title="Re-record" onPress={() => { setTranscript(''); start(); }} disabled={isRecording || busy} />
           </View>
           <View style={{ flex: 1 }}>
             <PillButton title="Sounds good →" primary onPress={submit} disabled={!transcript.trim() || busy} />
