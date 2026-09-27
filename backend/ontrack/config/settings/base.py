@@ -58,6 +58,16 @@ MIDDLEWARE = [
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 
+# Minimal templates: no project templates exist, but DRF's browsable API
+# (rest_framework/api.html) needs APP_DIRS to resolve its own templates.
+# Without this, browser hits (Accept: text/html) 500 instead of rendering.
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "APP_DIRS": True,
+    }
+]
+
 # Postgres via DATABASE_URL (Supabase pooler, port 6543) when set;
 # otherwise a local SQLite fallback so check/runserver work pre-Supabase.
 if env("DATABASE_URL", default=""):
