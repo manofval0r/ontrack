@@ -7,12 +7,61 @@ import { ManualTracker } from '../components/trackers/ManualTracker'
 import type { Goal, GoalItem } from '../types'
 import { useGoals } from '../context/GoalContext'
 
-const EXAMPLE_CHIPS = [
-  { label: 'Sell 5 cars this week', category: 'Sales', icon: '🚗' },
-  { label: 'Read 2 books by Friday', category: 'Learning', icon: '📚' },
-  { label: 'Do 50 pushups daily', category: 'Fitness', icon: '💪' },
-  { label: 'Ship MVP by Friday', category: 'Dev', icon: '🚀' },
-]
+type PersonaKey = 'developer' | 'fitness' | 'sales' | 'student'
+
+interface PersonaInfo {
+  id: PersonaKey
+  label: string
+  category: string
+  icon: string
+  exampleGoal: string
+  illustration: string
+  description: string
+  tagline: string
+}
+
+const PERSONAS: Record<PersonaKey, PersonaInfo> = {
+  developer: {
+    id: 'developer',
+    label: 'Developer',
+    category: 'Engineering',
+    icon: '💻',
+    exampleGoal: 'Ship MVP by Friday & merge 4 PRs',
+    illustration: '/illustrations/developer.svg',
+    description: 'Autonomous Git commit logging, PR merge verification, and shipping velocity streaks.',
+    tagline: 'Streak: 12 days shipped · PR #42 Merged',
+  },
+  fitness: {
+    id: 'fitness',
+    label: 'Fitness',
+    category: 'Health',
+    icon: '🏃',
+    exampleGoal: 'Do 50 pushups daily',
+    illustration: '/illustrations/fitness.svg',
+    description: 'Rep counters, daily exercise streaks, kettlebell weight logs, and rest day pacing.',
+    tagline: '🔥 14 Days Streak · 50 Pushups Logged',
+  },
+  sales: {
+    id: 'sales',
+    label: 'Sales',
+    category: 'Business',
+    icon: '💼',
+    exampleGoal: 'Sell 5 enterprise deals this week',
+    illustration: '/illustrations/sales.svg',
+    description: 'Weekly pipeline growth curves, deal closed counters, and quota progression.',
+    tagline: '+24% Weekly Pipeline · 4/5 Deals Closed',
+  },
+  student: {
+    id: 'student',
+    label: 'Student',
+    category: 'Education',
+    icon: '📚',
+    exampleGoal: 'Read 2 books by Friday',
+    illustration: '/illustrations/student.svg',
+    description: 'Chapter milestones, book reading targets, study habits, and midterm countdowns.',
+    tagline: '2 of 4 Books · Ahead of Midterm Schedule',
+  },
+}
 
 const LOADING_STATUS_MESSAGES = [
   'Reading your goal…',
@@ -20,15 +69,76 @@ const LOADING_STATUS_MESSAGES = [
   'Building your tracker…',
 ]
 
+// Automatic persona detector from natural language
+const detectPersonaFromText = (text: string): PersonaKey => {
+  const lower = text.toLowerCase()
+  if (
+    lower.includes('code') ||
+    lower.includes('dev') ||
+    lower.includes('ship') ||
+    lower.includes('git') ||
+    lower.includes('pr') ||
+    lower.includes('mvp') ||
+    lower.includes('bug') ||
+    lower.includes('commit') ||
+    lower.includes('build')
+  ) {
+    return 'developer'
+  }
+  if (
+    lower.includes('pushup') ||
+    lower.includes('workout') ||
+    lower.includes('run') ||
+    lower.includes('gym') ||
+    lower.includes('fitness') ||
+    lower.includes('kg') ||
+    lower.includes('mile') ||
+    lower.includes('reps')
+  ) {
+    return 'fitness'
+  }
+  if (
+    lower.includes('car') ||
+    lower.includes('deal') ||
+    lower.includes('sale') ||
+    lower.includes('sell') ||
+    lower.includes('revenue') ||
+    lower.includes('pipeline') ||
+    lower.includes('client')
+  ) {
+    return 'sales'
+  }
+  if (
+    lower.includes('book') ||
+    lower.includes('read') ||
+    lower.includes('study') ||
+    lower.includes('exam') ||
+    lower.includes('chapter') ||
+    lower.includes('learn')
+  ) {
+    return 'student'
+  }
+  return 'developer'
+}
+
 export const Onboarding: React.FC = () => {
   const navigate = useNavigate()
   const { createGoal } = useGoals()
 
   // Steps: 1 (Welcome) | 2 (State Goal) | 3 (Building transition) | 4 (Your tracker is ready)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1)
-  const [goalText, setGoalText] = useState('')
+  const [selectedPersona, setSelectedPersona] = useState<PersonaKey>('developer')
+  const [goalText, setGoalText] = useState(PERSONAS.developer.exampleGoal)
   const [loadingPhase, setLoadingPhase] = useState<number>(0)
   const [isFinishing, setIsFinishing] = useState(false)
+
+  // Auto-detect persona when user types
+  useEffect(() => {
+    if (goalText.trim()) {
+      const detected = detectPersonaFromText(goalText)
+      setSelectedPersona(detected)
+    }
+  }, [goalText])
 
   // Compiled goal state for Step 4 payoff
   const [createdGoal, setCreatedGoal] = useState<Goal>({
@@ -75,16 +185,16 @@ export const Onboarding: React.FC = () => {
       lower.includes('mvp')
     ) {
       let checklistItems: GoalItem[] = [
-        { id: `${id}-1`, title: 'Define scope and gather resources', completed: false, order: 1 },
-        { id: `${id}-2`, title: 'Complete first phase milestones', completed: false, order: 2 },
-        { id: `${id}-3`, title: 'Hit the midpoint benchmark', completed: false, order: 3 },
-        { id: `${id}-4`, title: 'Review and wrap up final deliverables', completed: false, order: 4 },
+        { id: `${id}-1`, title: 'Define scope and architecture', completed: false, order: 1 },
+        { id: `${id}-2`, title: 'Build core interactive components', completed: false, order: 2 },
+        { id: `${id}-3`, title: 'Run static validation and lint suite', completed: false, order: 3 },
+        { id: `${id}-4`, title: 'Merge PR and deploy to production', completed: false, order: 4 },
       ]
 
       if (lower.includes('read') && lower.includes('book')) {
         checklistItems = [
           { id: `${id}-1`, title: 'Pick first book and read chapters 1–5', completed: false, order: 1 },
-          { id: `${id}-2`, title: 'Finish first book and capture core notes', completed: false, order: 2 },
+          { id: `${id}-2`, title: 'Finish first book and summarize key insights', completed: false, order: 2 },
           { id: `${id}-3`, title: 'Start second book and reach halfway point', completed: false, order: 3 },
           { id: `${id}-4`, title: 'Finish second book before Friday cutoff', completed: false, order: 4 },
         ]
@@ -235,11 +345,12 @@ export const Onboarding: React.FC = () => {
   }
 
   const canGoBack = currentStep === 2 || currentStep === 4
+  const activePersonaObj = PERSONAS[selectedPersona]
 
   return (
-    <div className="min-h-screen bg-[#F8FAFB] bg-dot-grid flex flex-col justify-between font-sans text-[#071E2D] selection:bg-[#00C4B3] selection:text-[#071E2D]">
+    <div className="min-h-screen bg-[#F8FAFB] dark:bg-[#051520] bg-dot-grid flex flex-col justify-between font-sans text-[#071E2D] dark:text-slate-100 selection:bg-[#00C4B3] selection:text-[#071E2D] transition-colors">
       {/* ── Minimal Top Bar ────────────────────────────────────────── */}
-      {/* Rule: NO main site navigation bar, NO logo linking home, NO marketing links, NO login/signup */}
+      {/* Rule: NO main site navigation bar, NO marketing links, NO login/signup */}
       {/* Contains ONLY: small back arrow (if step allows) and slim progress indicator */}
       <header className="w-full max-w-4xl mx-auto px-6 pt-6 sm:pt-8 flex items-center justify-between">
         {/* Left: small back arrow (Step 2 and Step 4 only) */}
@@ -247,7 +358,7 @@ export const Onboarding: React.FC = () => {
           <button
             type="button"
             onClick={handleBack}
-            className="w-10 h-10 rounded-full border-2 border-[#071E2D] bg-white flex items-center justify-center text-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:bg-[#F3F6F8] hover:-translate-x-0.5 active:translate-x-0.5 active:shadow-none transition-all cursor-pointer"
+            className="w-10 h-10 rounded-full border-2 border-[#071E2D] dark:border-[#00C4B3] bg-white dark:bg-[#071E2D] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] hover:bg-[#F3F6F8] dark:hover:bg-[#00C4B3]/20 hover:-translate-x-0.5 active:translate-x-0.5 active:shadow-none transition-all cursor-pointer"
             aria-label="Go back to previous step"
           >
             <svg
@@ -268,7 +379,7 @@ export const Onboarding: React.FC = () => {
           <div className="w-10 h-10" aria-hidden="true" />
         )}
 
-        {/* Right: slim visual progress indicator (dots / line segments — NO numbered text) */}
+        {/* Right: slim visual progress indicator */}
         <div
           className="flex items-center gap-2"
           role="progressbar"
@@ -284,8 +395,8 @@ export const Onboarding: React.FC = () => {
                 currentStep === step
                   ? 'w-9 bg-[#00C4B3] border border-[#071E2D]'
                   : currentStep > step
-                  ? 'w-4 bg-[#071E2D]'
-                  : 'w-4 bg-[#071E2D]/15'
+                  ? 'w-4 bg-[#071E2D] dark:bg-[#00C4B3]'
+                  : 'w-4 bg-[#071E2D]/20 dark:bg-white/20'
               }`}
             />
           ))}
@@ -295,33 +406,63 @@ export const Onboarding: React.FC = () => {
       {/* ── Main Content Area ─────────────────────────────────────── */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-6 sm:py-10 w-full max-w-4xl mx-auto">
         {/* ======================================================== */}
-        {/* STEP 1 — Welcome                                        */}
+        {/* STEP 1 — Welcome & Persona Showcase                     */}
         {/* ======================================================== */}
         {currentStep === 1 && (
-          <div className="w-full flex flex-col items-center text-center max-w-xl mx-auto animate-fadeIn">
-            {/* Illustration Hero Card */}
-            <div className="relative mb-8 group">
-              <div className="absolute -inset-3 bg-[#00C4B3]/20 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity" />
-              <div className="relative p-5 sm:p-6 bg-white border-2 border-[#071E2D] rounded-3xl shadow-[6px_6px_0px_#071E2D] hover:-translate-y-1 transition-all">
+          <div className="w-full flex flex-col items-center text-center max-w-2xl mx-auto animate-fadeIn">
+            {/* Dynamic Hero Illustration Card */}
+            <div className="relative mb-6 group w-full max-w-lg">
+              <div className="absolute -inset-2 bg-[#00C4B3]/20 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity" />
+              <div className="relative p-5 sm:p-6 bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#00C4B3] hover:-translate-y-1 transition-all flex flex-col items-center">
                 <img
-                  src="/illustrations/step-1.svg"
-                  alt="Say your goal illustration"
-                  className="w-72 sm:w-88 max-w-full h-auto mx-auto object-contain"
+                  src={activePersonaObj.illustration}
+                  alt={`${activePersonaObj.label} illustration`}
+                  className="w-80 sm:w-96 max-w-full h-auto mx-auto object-contain transition-all duration-300"
                 />
+                <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-[#E6F7F5] dark:bg-[#00C4B3]/15 border border-[#00C4B3]/40 rounded-full text-xs font-bold text-[#006D6A] dark:text-[#00C4B3]">
+                  <span>{activePersonaObj.icon}</span>
+                  <span>{activePersonaObj.tagline}</span>
+                </div>
               </div>
+            </div>
+
+            {/* Persona Selector Tabs */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+              {(Object.keys(PERSONAS) as PersonaKey[]).map((key) => {
+                const p = PERSONAS[key]
+                const isSelected = selectedPersona === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPersona(key)
+                      setGoalText(p.exampleGoal)
+                    }}
+                    className={`px-3.5 py-1.5 rounded-full border-2 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D] shadow-[2px_2px_0px_#071E2D] scale-105'
+                        : 'bg-white dark:bg-[#071E2D] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/40 dark:border-[#00C4B3]/40 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] hover:bg-[#E6F7F5] dark:hover:bg-[#00C4B3]/15'
+                    }`}
+                  >
+                    <span>{p.icon}</span>
+                    <span>{p.label}</span>
+                  </button>
+                )
+              })}
             </div>
 
             {/* Heading */}
             <h1
-              className="text-3xl sm:text-5xl font-extrabold text-[#071E2D] tracking-tight leading-tight"
+              className="text-3xl sm:text-5xl font-extrabold text-[#071E2D] dark:text-white tracking-tight leading-tight"
               style={{ fontFamily: "'Fraunces', Georgia, serif" }}
             >
               You're in. Let's set your first goal.
             </h1>
 
             {/* Subheading */}
-            <p className="text-base sm:text-lg text-[#071E2D]/75 mt-3 sm:mt-4 leading-relaxed font-sans max-w-md">
-              Say it however you'd say it out loud. We'll figure out the rest.
+            <p className="text-base sm:text-lg text-[#071E2D]/75 dark:text-slate-300 mt-3 sm:mt-4 leading-relaxed font-sans max-w-lg">
+              Whether you're shipping code, hitting reps, closing deals, or studying — OnTrack builds your tracker instantly from your words.
             </p>
 
             {/* Single button: Let's go */}
@@ -333,7 +474,7 @@ export const Onboarding: React.FC = () => {
               >
                 Let's go
               </Button>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[#006D6A] bg-[#E6F7F5] px-3.5 py-1.5 rounded-full border border-[#00C4B3]/40">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] bg-[#E6F7F5] dark:bg-[#00C4B3]/15 px-3.5 py-1.5 rounded-full border border-[#00C4B3]/40">
                 <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-pulse" />
                 <span>Zero setup required · Voice or text input</span>
               </div>
@@ -342,32 +483,32 @@ export const Onboarding: React.FC = () => {
         )}
 
         {/* ======================================================== */}
-        {/* STEP 2 — State your goal                                */}
+        {/* STEP 2 — State your goal (Interactive Persona SVGs)     */}
         {/* ======================================================== */}
         {currentStep === 2 && (
           <div className="w-full max-w-3xl mx-auto animate-fadeIn">
             {/* Header */}
             <div className="text-center mb-6 sm:mb-8">
               <h2
-                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#071E2D] tracking-tight"
+                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
                 style={{ fontFamily: "'Fraunces', Georgia, serif" }}
               >
                 What's your goal?
               </h2>
-              <p className="text-sm sm:text-base text-[#071E2D]/70 mt-2 font-medium">
-                Type your goal in plain English — our AI compiles it into an adaptive tracker.
+              <p className="text-sm sm:text-base text-[#071E2D]/70 dark:text-slate-300 mt-2 font-medium">
+                Type your goal or select a category below — watch your tracker build itself.
               </p>
             </div>
 
-            {/* Split layout: Input Column + AI Auto-Builder Illustration */}
+            {/* Split layout: Input Column + Dynamic Persona Illustration */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
               {/* Left Column: Input Form (7 cols) */}
               <div className="lg:col-span-7 flex flex-col justify-between">
                 <div>
                   {/* Large Chat-style text input container */}
-                  <div className="w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border-2 border-[#071E2D] shadow-[5px_5px_0px_#071E2D] focus-within:shadow-[6px_6px_0px_#00C4B3] transition-all">
-                    <label htmlFor="goal-input" className="block text-xs font-bold uppercase tracking-wider text-[#006D6A] mb-2">
-                      Target or Objective
+                  <div className="w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#00C4B3] focus-within:shadow-[6px_6px_0px_#00C4B3] transition-all">
+                    <label htmlFor="goal-input" className="block text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3] mb-2">
+                      Target or Objective ({activePersonaObj.category})
                     </label>
                     <textarea
                       id="goal-input"
@@ -380,32 +521,45 @@ export const Onboarding: React.FC = () => {
                           if (goalText.trim()) handleStartBuilding()
                         }
                       }}
-                      placeholder='Try "read 2 books by Friday" or "50 pushups a day"'
-                      className="w-full bg-transparent font-sans text-base sm:text-lg text-[#071E2D] placeholder:text-[#071E2D]/40 outline-none resize-none leading-relaxed"
+                      placeholder='Try "Ship MVP by Friday" or "50 pushups a day"'
+                      className="w-full bg-transparent font-sans text-base sm:text-lg text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none resize-none leading-relaxed"
                       autoFocus
                     />
                   </div>
 
-                  {/* Example chips */}
+                  {/* 4 Interactive Category Prompt Chips */}
                   <div className="mt-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/60 mb-2">
-                      Or select a starter prompt:
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/60 dark:text-slate-400 mb-2">
+                      Preset templates (Click to switch illustration):
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {EXAMPLE_CHIPS.map((chip) => (
-                        <button
-                          key={chip.label}
-                          type="button"
-                          onClick={() => setGoalText(chip.label)}
-                          className="text-xs font-semibold px-3 py-2 rounded-xl border-2 border-[#071E2D] bg-white text-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:bg-[#E6F7F5] hover:border-[#006D6A] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer flex items-center gap-2 text-left"
-                        >
-                          <span className="text-base">{chip.icon}</span>
-                          <div className="truncate">
-                            <span className="block font-bold text-[#071E2D] truncate">{chip.label}</span>
-                            <span className="text-[10px] text-[#006D6A] font-semibold">{chip.category}</span>
-                          </div>
-                        </button>
-                      ))}
+                      {(Object.keys(PERSONAS) as PersonaKey[]).map((key) => {
+                        const p = PERSONAS[key]
+                        const isCurrent = selectedPersona === key
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => {
+                              setSelectedPersona(key)
+                              setGoalText(p.exampleGoal)
+                            }}
+                            className={`text-xs font-semibold px-3 py-2.5 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-2.5 text-left ${
+                              isCurrent
+                                ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D] shadow-[3px_3px_0px_#071E2D] font-bold'
+                                : 'bg-white dark:bg-[#0B2536] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/30 dark:border-[#00C4B3]/40 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] hover:bg-[#E6F7F5] dark:hover:bg-[#00C4B3]/15'
+                            }`}
+                          >
+                            <span className="text-lg">{p.icon}</span>
+                            <div className="truncate">
+                              <span className="block font-bold truncate">{p.exampleGoal}</span>
+                              <span className={`text-[10px] ${isCurrent ? 'text-[#071E2D]/80' : 'text-[#006D6A] dark:text-[#00C4B3]'}`}>
+                                {p.label}
+                              </span>
+                            </div>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
@@ -423,31 +577,31 @@ export const Onboarding: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right Column: AI Auto-Builder Blueprint Illustration (5 cols) */}
+              {/* Right Column: Dynamic Persona Illustration Card */}
               <div className="lg:col-span-5 flex flex-col">
-                <div className="h-full bg-white border-2 border-[#071E2D] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-[5px_5px_0px_#071E2D] flex flex-col items-center justify-between">
-                  <div className="w-full flex items-center justify-between border-b border-[#071E2D]/10 pb-2 mb-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#006D6A] flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#00C4B3]" />
-                      Auto-Builder Blueprint
+                <div className="h-full bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#00C4B3] flex flex-col items-center justify-between transition-colors">
+                  <div className="w-full flex items-center justify-between border-b-2 border-[#071E2D]/10 dark:border-[#00C4B3]/20 pb-2 mb-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3] flex items-center gap-1.5">
+                      <span>{activePersonaObj.icon}</span>
+                      <span>{activePersonaObj.label} Tracker Engine</span>
                     </span>
-                    <span className="text-[10px] font-semibold text-[#071E2D]/50 bg-[#F3F6F8] px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-bold text-[#071E2D]/60 dark:text-slate-400 bg-[#F3F6F8] dark:bg-[#071E2D] px-2 py-0.5 rounded border border-[#071E2D]/20">
                       Step 2 of 4
                     </span>
                   </div>
 
                   <img
-                    src="/illustrations/step-2.svg"
-                    alt="Auto-Builder AI Blueprint"
-                    className="w-full h-auto object-contain max-w-[260px] my-auto"
+                    src={activePersonaObj.illustration}
+                    alt={`${activePersonaObj.label} Tracker Preview`}
+                    className="w-full h-auto object-contain max-w-[270px] my-auto transition-all duration-300"
                   />
 
-                  <div className="w-full text-center bg-[#F8FAFB] border border-[#071E2D]/15 rounded-xl p-2.5 mt-3">
-                    <span className="text-xs font-bold text-[#071E2D] block">
-                      Autonomous Logic Compiler
+                  <div className="w-full text-center bg-[#F8FAFB] dark:bg-[#071E2D] border-2 border-[#071E2D]/20 dark:border-[#00C4B3]/30 rounded-xl p-3 mt-3">
+                    <span className="text-xs font-bold text-[#071E2D] dark:text-white block">
+                      {activePersonaObj.tagline}
                     </span>
-                    <p className="text-[11px] text-[#071E2D]/65 mt-0.5 leading-snug">
-                      Extracts deadlines, quotas, and milestone checklists straight from your words.
+                    <p className="text-[11px] text-[#071E2D]/70 dark:text-slate-300 mt-1 leading-snug">
+                      {activePersonaObj.description}
                     </p>
                   </div>
                 </div>
@@ -457,21 +611,21 @@ export const Onboarding: React.FC = () => {
         )}
 
         {/* ======================================================== */}
-        {/* STEP 3 — Building (transitional/loading state)           */}
+        {/* STEP 3 — Building (Transitional / Loading with SVG)     */}
         {/* ======================================================== */}
         {currentStep === 3 && (
           <div className="w-full flex flex-col items-center justify-center text-center max-w-lg mx-auto animate-fadeIn py-4">
-            {/* Visual Progress Card with step-3.svg */}
+            {/* Visual Progress Card with Persona Illustration */}
             <div className="relative mb-6 w-full">
-              <div className="p-5 sm:p-6 bg-white border-2 border-[#071E2D] rounded-3xl shadow-[6px_6px_0px_#071E2D] flex flex-col items-center">
+              <div className="p-5 sm:p-6 bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#00C4B3] flex flex-col items-center">
                 <img
-                  src="/illustrations/step-3.svg"
+                  src={activePersonaObj.illustration}
                   alt="Building Tracker Progress"
-                  className="w-72 sm:w-84 max-w-full h-auto object-contain"
+                  className="w-72 sm:w-84 max-w-full h-auto object-contain transition-all duration-300"
                 />
 
                 {/* Animated Progress Bar */}
-                <div className="w-full max-w-xs bg-[#E2E8F0] h-3.5 rounded-full mt-5 border-2 border-[#071E2D] overflow-hidden p-0.5">
+                <div className="w-full max-w-xs bg-[#E2E8F0] dark:bg-[#071E2D] h-3.5 rounded-full mt-5 border-2 border-[#071E2D] dark:border-[#00C4B3] overflow-hidden p-0.5">
                   <div
                     className="h-full bg-[#00C4B3] rounded-full transition-all duration-700 ease-out"
                     style={{
@@ -486,43 +640,43 @@ export const Onboarding: React.FC = () => {
             <div className="h-10 flex items-center justify-center">
               <p
                 key={loadingPhase}
-                className="text-xl sm:text-2xl font-extrabold text-[#071E2D] tracking-tight animate-fadeIn"
+                className="text-xl sm:text-2xl font-extrabold text-[#071E2D] dark:text-white tracking-tight animate-fadeIn"
                 style={{ fontFamily: "'Fraunces', Georgia, serif" }}
               >
                 {LOADING_STATUS_MESSAGES[loadingPhase]}
               </p>
             </div>
-            <p className="text-xs sm:text-sm text-[#006D6A] font-bold mt-1">
-              Analyzing "{createdGoal.title || goalText}"
+            <p className="text-xs sm:text-sm text-[#006D6A] dark:text-[#00C4B3] font-bold mt-1">
+              Configuring {activePersonaObj.label} Tracker for "{createdGoal.title || goalText}"
             </p>
           </div>
         )}
 
         {/* ======================================================== */}
-        {/* STEP 4 — Your tracker is ready (the payoff)             */}
+        {/* STEP 4 — Your tracker is ready (Payoff with SVG)        */}
         {/* ======================================================== */}
         {currentStep === 4 && (
           <div className="w-full max-w-2xl mx-auto flex flex-col gap-6 animate-fadeIn">
-            {/* Celebratory Payoff Header Card with step-4.svg */}
-            <div className="bg-white border-2 border-[#071E2D] rounded-3xl p-5 sm:p-6 shadow-[6px_6px_0px_#071E2D] flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+            {/* Celebratory Payoff Header Card with Persona Illustration */}
+            <div className="bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-3xl p-5 sm:p-6 shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#00C4B3] flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
               <img
-                src="/illustrations/step-4.svg"
+                src={activePersonaObj.illustration}
                 alt="Tracker Ready Payoff"
                 className="w-36 sm:w-44 h-auto object-contain shrink-0"
               />
               <div className="text-center sm:text-left flex-1">
-                <span className="inline-block text-xs font-bold uppercase tracking-wider text-[#006D6A] bg-[#E6F7F5] px-2.5 py-1 rounded-full border border-[#00C4B3]/40 mb-1.5">
-                  ★ Tracker Configured
+                <span className="inline-block text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3] bg-[#E6F7F5] dark:bg-[#00C4B3]/15 px-2.5 py-1 rounded-full border border-[#00C4B3]/40 mb-1.5">
+                  ★ {activePersonaObj.label} Tracker Configured
                 </span>
                 <h2
-                  className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#071E2D] tracking-tight"
+                  className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
                   style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                 >
                   Your tracker is ready!
                 </h2>
-                <p className="text-xs sm:text-sm text-[#071E2D]/75 mt-1.5 font-medium leading-relaxed">
-                  We built a customized <span className="font-bold text-[#006D6A]">{trackerLabel}</span> tracker for:{' '}
-                  <span className="font-bold text-[#071E2D]">"{createdGoal.title}"</span>. Give it a test click below!
+                <p className="text-xs sm:text-sm text-[#071E2D]/75 dark:text-slate-300 mt-1.5 font-medium leading-relaxed">
+                  We built a customized <span className="font-bold text-[#006D6A] dark:text-[#00C4B3]">{trackerLabel}</span> tracker for:{' '}
+                  <span className="font-bold text-[#071E2D] dark:text-white">"{createdGoal.title}"</span>. Give it a test click below!
                 </p>
               </div>
             </div>
@@ -581,7 +735,7 @@ export const Onboarding: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setCurrentStep(2)}
-                className="text-xs sm:text-sm font-semibold text-[#071E2D]/60 hover:text-[#071E2D] underline underline-offset-4 decoration-[#071E2D]/30 hover:decoration-[#071E2D] transition-colors cursor-pointer"
+                className="text-xs sm:text-sm font-semibold text-[#071E2D]/60 dark:text-slate-400 hover:text-[#071E2D] dark:hover:text-white underline underline-offset-4 decoration-[#071E2D]/30 hover:decoration-[#071E2D] transition-colors cursor-pointer"
               >
                 Not quite right? Try a different goal
               </button>
