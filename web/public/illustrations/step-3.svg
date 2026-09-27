@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" fill="none" role="img" aria-label="Log progress as you go illustration">
+  <!-- Floor shadow -->
+  <ellipse cx="200" cy="215" rx="160" ry="12" fill="#E2E8F0" opacity="0.6"/>
+
+  <!-- Left Chat Bubble: "Did 20 pushups" -->
+  <g transform="translate(48, 55)">
+    <rect x="0" y="0" width="160" height="52" rx="16" fill="#071E2D"/>
+    <path d="M120 52 L132 64 L136 52 Z" fill="#071E2D"/>
+    <!-- Icon -->
+    <circle cx="24" cy="26" r="12" fill="#00C4B3"/>
+    <path d="M19 26 L23 30 L29 22" stroke="#071E2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="44" y="24" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="11" fill="#FFFFFF">"Did 20 pushups"</text>
+    <text x="44" y="38" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="9.5" fill="#A7E8DF">Logged via voice · 9:15 AM</text>
+  </g>
+
+  <!-- Right Progress Card (Live Ticker) -->
+  <g transform="translate(195, 40)">
+    <!-- Shadow -->
+    <rect x="5" y="5" width="160" height="145" rx="18" fill="#071E2D" opacity="0.12"/>
+    <!-- Card Frame -->
+    <rect x="0" y="0" width="160" height="145" rx="18" fill="#FFFFFF" stroke="#071E2D" stroke-width="2.5"/>
+    
+    <!-- Top header -->
+    <text x="18" y="28" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="12" fill="#071E2D">DAILY STREAK</text>
+    <rect x="106" y="16" width="38" height="16" rx="8" fill="#E6F7F5" stroke="#00C4B3" stroke-width="1"/>
+    <text x="113" y="28" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="9" fill="#006D6A">DAY 12</text>
+
+    <!-- Progress Dial in Center -->
+    <g transform="translate(80, 78)">
+      <circle cx="0" cy="0" r="32" stroke="#E2E8F0" stroke-width="6" fill="none"/>
+      <circle cx="0" cy="0" r="32" stroke="#00C4B3" stroke-width="6" stroke-dasharray="201" stroke-dashoffset="50" stroke-linecap="round" fill="none" transform="rotate(-90)"/>
+      <text x="0" y="5" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="15" fill="#071E2D" text-anchor="middle">75%</text>
+    </g>
+
+    <!-- Bottom Stat: 40 / 50 reps -->
+    <rect x="16" y="118" width="128" height="18" rx="6" fill="#F8FAFB" stroke="#071E2D" stroke-width="1"/>
+    <text x="80" y="131" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="9.5" fill="#071E2D" text-anchor="middle">40 of 50 Completed</text>
+  </g>
+
+  <!-- Floating "+20" badge -->
+  <g transform="translate(162, 115)">
+    <circle cx="18" cy="18" r="18" fill="#00C4B3" stroke="#071E2D" stroke-width="2"/>
+    <text x="18" y="23" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="12" fill="#071E2D" text-anchor="middle">+20</text>
+  </g>
+
+  <!-- Small ambient elements -->
+  <circle cx="55" cy="165" r="4" fill="#00C4B3"/>
+  <circle cx="365" cy="95" r="3" fill="#006D6A"/>
+</svg>

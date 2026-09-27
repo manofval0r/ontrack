@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" fill="none" role="img" aria-label="Fitness-focused goal tracking illustration">
+  <!-- Floor shadow -->
+  <ellipse cx="200" cy="215" rx="160" ry="12" fill="#E2E8F0" opacity="0.6"/>
+
+  <!-- Left: Kettlebell & Workout Gear -->
+  <g transform="translate(60, 60)">
+    <!-- Kettlebell handle -->
+    <path d="M40 55 C40 25 80 25 80 55" stroke="#071E2D" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M40 55 C40 32 80 32 80 55" stroke="#00C4B3" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <!-- Kettlebell body -->
+    <circle cx="60" cy="85" r="35" fill="#071E2D" stroke="#071E2D" stroke-width="2"/>
+    <!-- Weight badge -->
+    <circle cx="60" cy="85" r="18" fill="#1E293B"/>
+    <text x="60" y="90" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="12" fill="#00C4B3" text-anchor="middle">24 KG</text>
+
+    <!-- Floor dumbbell side -->
+    <g transform="translate(75, 95)">
+      <rect x="0" y="8" width="55" height="6" rx="3" fill="#071E2D"/>
+      <rect x="0" y="0" width="10" height="22" rx="3" fill="#00C4B3" stroke="#071E2D" stroke-width="1.5"/>
+      <rect x="45" y="0" width="10" height="22" rx="3" fill="#00C4B3" stroke="#071E2D" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- Right: Rep Counter & Streak Card -->
+  <g transform="translate(200, 48)">
+    <!-- Shadow -->
+    <rect x="5" y="5" width="150" height="130" rx="16" fill="#071E2D" opacity="0.12"/>
+    <rect x="0" y="0" width="150" height="130" rx="16" fill="#FFFFFF" stroke="#071E2D" stroke-width="2.5"/>
+
+    <text x="16" y="24" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="10.5" fill="#071E2D">DAILY REPS LOG</text>
+    
+    <!-- Streak flame pill -->
+    <rect x="94" y="12" width="44" height="16" rx="8" fill="#E6F7F5" stroke="#00C4B3" stroke-width="1"/>
+    <text x="100" y="23" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="9" fill="#006D6A">🔥 14 DAYS</text>
+
+    <!-- Pushups count -->
+    <text x="16" y="58" font-family="'Fraunces', Georgia, serif" font-weight="700" font-size="22" fill="#071E2D">50 Pushups</text>
+    <text x="16" y="74" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="10.5" fill="#006D6A">"Did 50 pushups" logged</text>
+
+    <!-- Circular Progress bar / Checkmarks -->
+    <g transform="translate(16, 88)">
+      <rect x="0" y="0" width="118" height="8" rx="4" fill="#F1F5F9" stroke="#071E2D" stroke-width="1"/>
+      <rect x="0" y="0" width="118" height="8" rx="4" fill="#00C4B3"/>
+    </g>
+
+    <text x="16" y="114" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="9.5" fill="#071E2D">Goal Complete · Rest Day Sun</text>
+  </g>
+
+  <!-- Sparkles -->
+  <path d="M45 80 L47 84 L51 86 L47 88 L45 92 L43 88 L39 86 L43 84 Z" fill="#00C4B3"/>
+  <circle cx="365" cy="130" r="3" fill="#006D6A"/>
+</svg>
