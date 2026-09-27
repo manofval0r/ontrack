@@ -8,6 +8,34 @@ import type {
   IntegrationItem,
   UserProfile,
 } from '../types'
+import {
+  NETWORK_MISS,
+  liveCreateGoal,
+  liveFinalizeGoal,
+  liveGetDashboard,
+  liveGetGoal,
+  liveGetGoals,
+  liveLogProgress,
+  liveRespondToCheckIn,
+  liveSynthesizeSpeech,
+  liveTranscribeSpeech,
+  liveUpdateGoal,
+  tryLive,
+} from './live'
+
+// Token + additive live helpers share one import surface for the UI.
+export {
+  clearToken,
+  deleteGoal,
+  generateCheckin,
+  getMe,
+  getSettings,
+  getToken,
+  isLive,
+  parseGoalText,
+  setToken,
+  updateSettings,
+} from './live'
 
 const LOCAL_STORAGE_KEY_GOALS = 'ontrack_goals_v1'
 
@@ -207,6 +235,8 @@ export const api = {
    * GET /api/goals
    */
   async getGoals(): Promise<Goal[]> {
+    const live = await tryLive(() => liveGetGoals())
+    if (live !== NETWORK_MISS) return live
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve(getStoredGoals())
@@ -218,6 +248,8 @@ export const api = {
    * GET /api/goals/:id
    */
   async getGoal(id: string): Promise<Goal> {
+    const live = await tryLive(() => liveGetGoal(id))
+    if (live !== NETWORK_MISS) return live
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         const goals = getStoredGoals()
@@ -236,6 +268,8 @@ export const api = {
    * POST /api/goals
    */
   async createGoal(payload: Partial<Goal>): Promise<Goal> {
+    const live = await tryLive(() => liveCreateGoal(payload))
+    if (live !== NETWORK_MISS) return live
     return new Promise((resolve) => {
       setTimeout(() => {
         const goals = getStoredGoals()
@@ -267,6 +301,8 @@ export const api = {
    * PUT /api/goals/:id
    */
   async updateGoal(id: string, updates: Partial<Goal>): Promise<Goal> {
+    const live = await tryLive(() => liveUpdateGoal(id, updates))
+    if (live !== NETWORK_MISS) return live
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         const goals = getStoredGoals()
@@ -288,6 +324,8 @@ export const api = {
    * POST /api/goals/:id/finalize
    */
   async finalizeGoal(id: string): Promise<Goal> {
+    const live = await tryLive(() => liveFinalizeGoal(id))
+    if (live !== NETWORK_MISS) return live
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         const goals = getStoredGoals()
@@ -328,6 +366,8 @@ export const api = {
    * POST /api/progress
    */
   async logProgress(payload: { goal_id: string; value: number | string; note?: string }): Promise<Goal> {
+    const live = await tryLive(() => liveLogProgress(payload))
+    if (live !== NETWORK_MISS) return live
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         const goals = getStoredGoals()
@@ -378,6 +418,8 @@ export const api = {
    * POST /api/checkins/respond
    */
   async respondToCheckIn(goal_id: string, check_in_id: string, user_response: string): Promise<Goal> {
+    const live = await tryLive(() => liveRespondToCheckIn(goal_id, check_in_id, user_response))
+    if (live !== NETWORK_MISS) return live
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         const goals = getStoredGoals()
@@ -410,6 +452,8 @@ export const api = {
    * GET /api/dashboard
    */
   async getDashboard(): Promise<DashboardData> {
+    const live = await tryLive(() => liveGetDashboard())
+    if (live !== NETWORK_MISS) return live
     return new Promise((resolve) => {
       setTimeout(() => {
         const goals = getStoredGoals()
@@ -450,6 +494,8 @@ export const api = {
    * POST /api/tts
    */
   async synthesizeSpeech(text: string): Promise<{ audioUrl: string; duration: number }> {
+    const live = await tryLive(() => liveSynthesizeSpeech(text))
+    if (live !== NETWORK_MISS) return live
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
@@ -464,6 +510,8 @@ export const api = {
    * POST /api/asr
    */
   async transcribeSpeech(_audioData?: Blob | string): Promise<{ text: string; confidence: number }> {
+    const live = await tryLive(() => liveTranscribeSpeech(_audioData))
+    if (live !== NETWORK_MISS) return live
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
