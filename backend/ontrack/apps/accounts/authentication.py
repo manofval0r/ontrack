@@ -1,17 +1,27 @@
 """Supabase JWT verification. Django verifies — it never mints tokens.
 
-Flow: `Authorization: Bearer <token>` -> HS256 verify with SUPABASE_JWT_SECRET
+Two trust paths; the token's `alg` header decides (key material is pinned
+per branch, so there is no algorithm-confusion risk):
+- HS256: legacy shared secret SUPABASE_JWT_SECRET.
+- ES256: Supabase asymmetric keys via SUPABASE_JWKS_URL (fetched + cached).
+
+Flow: `Authorization: Bearer <token>` -> verify signature + exp
 -> `sub` claim (a UUID string) becomes `request.user_id`.
 
 Verified API notes (PyJWT 2.10.1):
-- `jwt.decode(token, key, algorithms=["HS256"])` verifies signature AND `exp`
-  by default; failures raise subclasses of `jwt.PyJWTError` (verified via the
-  smoke test in scripts/smoke_auth.py).
+- `jwt.decode(token, key, algorithms=[...])` verifies signature AND `exp`
+  by default; failures raise subclasses of `jwt.PyJWTError`.
+- `jwt.get_unverified_header(token)` reads `alg`/`kid` without verifying.
 - Supabase tokens carry an `aud` claim whose value varies per project, so we
   pass `options={"verify_aud": False}` and deliberately do NOT enforce it.
   Signature + expiry is the trust boundary here.
+- ES256 needs the `cryptography` package (in requirements.txt); without it
+  ES256 tokens fail closed as unconfigured.
 """
+import json
 import logging
+import time
+import urllib.request
 import uuid
 
 import jwt
@@ -20,6 +30,10 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
 logger = logging.getLogger(__name__)
+
+_JWKS_TTL_SECONDS = 3600
+# kid -> EC public-key object. Reset in tests; never holds secrets (public).
+_jwks_cache = {"fetched_at": 0.0, "keys": {}}
 
 
 class AuthInvalid(AuthenticationFailed):
@@ -50,6 +64,65 @@ class SupabaseUser:
         return f"supabase-user:{self.id}"
 
 
+def _fetch_jwks(url):
+    """Download + parse the JWKS document. Raises on any failure."""
+    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=5) as resp:
+        doc = json.loads(resp.read().decode("utf-8"))
+    keys = doc.get("keys")
+    if not isinstance(keys, list):
+        raise ValueError("JWKS has no keys list")
+    return keys
+
+
+def _ec_key_for_kid(kid):
+    """EC public-key object for `kid`, fetching JWKS on miss/staleness.
+
+    A fresh-cache miss still refetches once, so key rotation never locks
+    out valid tokens for longer than one request.
+    """
+    cached = _jwks_cache["keys"].get(kid)
+    fresh = time.monotonic() - _jwks_cache["fetched_at"] < _JWKS_TTL_SECONDS
+    if cached is not None and fresh:
+        return cached
+    jwks_url = getattr(settings, "SUPABASE_JWKS_URL", "")
+    if not jwks_url:
+        logger.error("SUPABASE_JWKS_URL is not configured; rejecting ES256 token")
+        raise AuthInvalid("authentication is not configured")
+    try:
+        entries = _fetch_jwks(jwks_url)
+    except AuthInvalid:
+        raise
+    except Exception:
+        # Log type only — the URL may contain secrets, the body is untrusted.
+        logger.warning("Supabase JWKS fetch failed", exc_info=True)
+        raise AuthInvalid("authentication is not configured")
+    try:
+        from jwt.algorithms import ECAlgorithm
+    except ImportError:
+        logger.error("cryptography package missing; cannot verify ES256 tokens")
+        raise AuthInvalid("authentication is not configured")
+    parsed = {}
+    for entry in entries:
+        try:
+            if not isinstance(entry, dict) or entry.get("kty") != "EC":
+                continue
+            entry_kid = entry.get("kid")
+            if not entry_kid:
+                continue
+            parsed[entry_kid] = ECAlgorithm.from_jwk(json.dumps(entry))
+        except Exception:
+            logger.warning("Skipping unparsable JWKS entry")
+            continue
+    _jwks_cache["keys"] = parsed
+    _jwks_cache["fetched_at"] = time.monotonic()
+    key = parsed.get(kid)
+    if key is None:
+        logger.info("Rejected Supabase JWT: unknown kid")
+        raise AuthInvalid("invalid token")
+    return key
+
+
 class SupabaseJWTAuthentication(BaseAuthentication):
     keyword = "Bearer"
 
@@ -68,16 +141,31 @@ class SupabaseJWTAuthentication(BaseAuthentication):
         return self._authenticate_token(request, parts[1])
 
     def _authenticate_token(self, request, token):
-        secret = settings.SUPABASE_JWT_SECRET
-        if not secret:
-            # Fail closed: without a secret nothing can be trusted.
-            logger.error("SUPABASE_JWT_SECRET is not configured; rejecting token")
-            raise AuthInvalid("authentication is not configured")
+        try:
+            unverified = jwt.get_unverified_header(token)
+        except jwt.PyJWTError:
+            logger.info("Rejected Supabase JWT: unreadable header")
+            raise AuthInvalid("invalid token")
+        alg = unverified.get("alg")
+        if alg == "ES256":
+            credentials = _ec_key_for_kid(unverified.get("kid"))
+            algorithms = ["ES256"]
+        elif alg == "HS256":
+            secret = settings.SUPABASE_JWT_SECRET
+            if not secret:
+                # Fail closed: without a secret nothing can be trusted.
+                logger.error("SUPABASE_JWT_SECRET is not configured; rejecting token")
+                raise AuthInvalid("authentication is not configured")
+            credentials = secret
+            algorithms = ["HS256"]
+        else:
+            logger.info("Rejected Supabase JWT: unsupported alg")
+            raise AuthInvalid("invalid token")
         try:
             payload = jwt.decode(
                 token,
-                secret,
-                algorithms=["HS256"],
+                credentials,
+                algorithms=algorithms,
                 options={"verify_aud": False},
             )
         except jwt.ExpiredSignatureError:
