@@ -16,7 +16,7 @@ class GoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Goal
         fields = [
-            "id", "title", "goal_type", "target", "domain", "status",
+            "id", "title", "goal_type", "goal_template", "target", "domain", "status",
             "deadline", "start_at", "result_value", "finished_at",
             "parse_result", "verdict", "items",
         ]
