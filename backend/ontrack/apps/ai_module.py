@@ -3,9 +3,10 @@ logic here. Evans (backend) owns the contract; David owns the bodies.
 
 Contract (views validate everything; all functions raise on failure and the
 views fall back / degrade gracefully — AI failure must never block):
-- parse_goal(goal_text) -> dict {goal_type, target, domain, deadline, summary}
+- parse_goal(goal_text) -> dict {goal_type, target, items, domain, deadline, summary}
+  (items: list[str] for checklist only, [] otherwise — David extracts upfront)
 - generate_checkin(goal_id, goal_data, current_progress) -> str
-  (No endpoint calls this yet — stub kept for signature parity.)
+  (On-demand only: POST /api/goals/:id/checkin calls this. No auto-triggers.)
 - generate_verdict(goal_id, goal_data, final_progress) -> str
 - text_to_speech(text) -> str (audio URL; TTS endpoint caches by text hash)
 - speech_to_text(audio_file: bytes) -> str (transcript; one-shot, NOT cached)
@@ -23,6 +24,7 @@ def parse_goal(goal_text):
     return {
         "goal_type": "counter",
         "target": 10,
+        "items": [],
         "domain": "general",
         "deadline": None,
         "summary": "",

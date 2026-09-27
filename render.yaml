@@ -1,0 +1,91 @@
+# OnTrack — Render Blueprint: one image, two instances (web + mobile).
+# Deploy: Render Dashboard → New → Blueprint → select manofval0r/ontrack.
+# Render will prompt for every `sync: false` var on first apply.
+# Secrets are NEVER hardcoded here — only non-sensitive defaults.
+
+services:
+  - type: web
+    name: ontrack-api-web
+    runtime: docker
+    plan: free
+    branch: main
+    dockerfilePath: ./backend/ontrack/Dockerfile
+    dockerContext: ./backend/ontrack
+    healthCheckPath: /api/health
+    buildFilter:
+      paths:
+        - backend/ontrack/**/*
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DEBUG
+        value: False
+      - key: INSTANCE_NAME
+        value: web
+      - key: RUN_MIGRATIONS
+        value: true
+      - key: SUPABASE_URL
+        value: https://destcakvqdzhkzemdugo.supabase.co
+      - key: SUPABASE_JWKS_URL
+        value: https://destcakvqdzhkzemdugo.supabase.co/auth/v1/.well-known/jwks.json
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG_ACCESS_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: NVIDIA_API_KEY
+        sync: false
+
+  - type: web
+    name: ontrack-api-mobile
+    runtime: docker
+    plan: free
+    branch: main
+    dockerfilePath: ./backend/ontrack/Dockerfile
+    dockerContext: ./backend/ontrack
+    healthCheckPath: /api/health
+    buildFilter:
+      paths:
+        - backend/ontrack/**/*
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DEBUG
+        value: False
+      - key: INSTANCE_NAME
+        value: mobile
+      - key: RUN_MIGRATIONS
+        value: false
+      - key: SUPABASE_URL
+        value: https://destcakvqdzhkzemdugo.supabase.co
+      - key: SUPABASE_JWKS_URL
+        value: https://destcakvqdzhkzemdugo.supabase.co/auth/v1/.well-known/jwks.json
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG_ACCESS_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: NVIDIA_API_KEY
+        sync: false
