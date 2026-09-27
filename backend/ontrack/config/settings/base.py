@@ -38,6 +38,11 @@ SUPABASE_SECRET_KEY = env("SUPABASE_SECRET_KEY", default="")
 SUPABASE_JWKS_URL = env("SUPABASE_JWKS_URL", default="")
 DEBUG_ACCESS_KEY = env("DEBUG_ACCESS_KEY", default="")
 
+# --- AI (David owns the bodies in apps/ai_module.py; backend reads config) ---
+NVIDIA_BASE_URL = env("NVIDIA_BASE_URL", default="")
+NVIDIA_MODEL_NAME = env("NVIDIA_MODEL_NAME", default="")
+NVIDIA_API_KEY = env("NVIDIA_API_KEY", default="")
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
