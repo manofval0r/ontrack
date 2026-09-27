@@ -445,4 +445,52 @@ export const api = {
       body: JSON.stringify(data),
     })
   },
+
+  // ── Integrations (server-backed credential vault) ───────────────────────
+
+  /** GET /api/integrations — never includes tokens */
+  async getIntegrations(): Promise<ProviderIntegration[]> {
+    return request('/api/integrations')
+  },
+
+  /** POST /api/integrations — upsert { provider, access_token?, meta? } */
+  async saveIntegration(input: {
+    provider: string
+    access_token?: string
+    meta?: Record<string, unknown>
+  }): Promise<ProviderIntegration> {
+    return request('/api/integrations', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+  },
+
+  /** DELETE /api/integrations/:id */
+  async deleteIntegration(id: string): Promise<{ message: string; id: string }> {
+    return request(`/api/integrations/${id}`, { method: 'DELETE' })
+  },
+
+  /** POST /api/integrations/slack/notify — via stored webhook (no CORS) */
+  async slackNotify(text?: string): Promise<{ ok: boolean }> {
+    return request('/api/integrations/slack/notify', {
+      method: 'POST',
+      body: JSON.stringify(text ? { text } : {}),
+    })
+  },
+
+  /** POST /api/integrations/notion/export — verdict page (no CORS) */
+  async notionExport(goalId: string): Promise<{ ok: boolean; page_id: string }> {
+    return request('/api/integrations/notion/export', {
+      method: 'POST',
+      body: JSON.stringify({ goal_id: goalId }),
+    })
+  },
+}
+
+export interface ProviderIntegration {
+  id: string
+  provider: string
+  connected: boolean
+  status_label: string
+  updated_at?: string
 }

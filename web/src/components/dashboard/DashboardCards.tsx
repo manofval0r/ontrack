@@ -16,6 +16,7 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
   onSelectGoal,
 }) => {
   const activeGoals = goals.filter((g) => g.status === 'active')
+  const completedCount = goals.filter((g) => g.status === 'completed').length
   const executionRate = executionPercent(goals)
 
   const getDomainEmoji = (domain?: string) => {
@@ -27,6 +28,34 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
       case 'mindset': return '🧠'
       default: return '🎯'
     }
+  }
+
+  // ── EMPTY STATE: no goals yet — user can create first tracker ──────
+  if (goals.length === 0) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="bg-white dark:bg-[#0E202D] border-2 border-dashed border-[#071E2D]/30 dark:border-white/20 rounded-3xl p-8 text-center flex flex-col items-center gap-3 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000]">
+          <span className="text-4xl" aria-hidden="true">🎯</span>
+          <h3
+            className="text-lg font-extrabold text-[#071E2D] dark:text-white tracking-tight"
+            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+          >
+            No trackers yet
+          </h3>
+          <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 max-w-xs leading-relaxed">
+            Tell the AI coach a goal — e.g. “I want to sell 5 cars this week” — and your
+            Counter, Checklist or Log tracker will appear here.
+          </p>
+          <button
+            type="button"
+            onClick={onOpenNewGoal}
+            className="mt-1 px-5 py-2.5 bg-[#00C4B3] hover:bg-[#33D6C5] text-[#071E2D] font-bold text-xs rounded-full border-2 border-[#071E2D] shadow-[3px_3px_0px_#071E2D] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
+          >
+            + Tell the coach your goal
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -43,7 +72,7 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
           </div>
         </div>
 
-        {/* Big Balance Number & Delta */}
+        {/* Big Balance Number & Delta — real completion rate, not a static 84.5% */}
         <div className="mt-4">
           <span
             className="text-4xl sm:text-5xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
@@ -52,7 +81,7 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
             {executionRate}%
           </span>
           <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] mt-2 ml-3 bg-[#E6F7F5] dark:bg-[#00C4B3]/15 border border-[#00C4B3]/40 px-2.5 py-0.5 rounded-full">
-            <span>{executionRate >= 50 ? '↑ High Velocity' : '● In Progress'}</span>
+            <span>{goals.length > 0 ? `${completedCount} of ${goals.length} shipped` : '● In Progress'}</span>
           </div>
         </div>
 
@@ -77,7 +106,7 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
           </button>
         </div>
 
-        {/* Active Trackers mini cards section */}
+        {/* Active Trackers mini cards section — real goals only, no placeholders */}
         <div className="pt-3 border-t-2 border-[#071E2D]/10 dark:border-white/10">
           <div className="flex items-center justify-between text-xs text-[#071E2D]/70 dark:text-slate-300 mb-3">
             <span className="font-bold uppercase tracking-wider text-[#071E2D] dark:text-white">Active Trackers</span>

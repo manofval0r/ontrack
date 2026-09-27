@@ -1,3 +1,4 @@
+import React from 'react'
 import { BrowserRouter, Navigate, Routes, Route, useParams } from 'react-router-dom'
 import { GoalProvider } from './context/GoalContext'
 import { ThemeProvider } from './context/ThemeContext'
@@ -23,6 +24,15 @@ import { captureAuthFromUrl } from './utils/auth'
 // Capture any incoming OAuth callback tokens on load
 captureAuthFromUrl()
 
+/** Redirects unauthenticated visitors to /login.
+ * Rejects mock/dev tokens so a stale mock token can never 401-loop
+ * against the real backend — user is sent back to /login instead. */
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem('ontrack_token')
+  if (!token || token.startsWith('mock_')) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
+
 function App() {
   return (
     <ThemeProvider>
@@ -34,7 +44,15 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/onboarding" element={<Onboarding />} />
 
-            <Route path="/dashboard" element={<DashboardShell />}>
+            {/* Core Authenticated App Flow */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardShell />
+                </ProtectedRoute>
+              }
+            >
               <Route index element={<DashboardOverview />} />
               <Route path="calendar" element={<CalendarPanel />} />
               <Route path="activity" element={<ActivityPanel />} />

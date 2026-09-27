@@ -91,7 +91,6 @@ export const Signup: React.FC = () => {
     }
   }
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setAuthError(null)
