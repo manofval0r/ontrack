@@ -39,8 +39,13 @@ SUPABASE_JWKS_URL = env("SUPABASE_JWKS_URL", default="")
 DEBUG_ACCESS_KEY = env("DEBUG_ACCESS_KEY", default="")
 
 # --- AI (David owns the bodies in apps/ai_module.py; backend reads config) ---
-NVIDIA_BASE_URL = env("NVIDIA_BASE_URL", default="")
-NVIDIA_MODEL_NAME = env("NVIDIA_MODEL_NAME", default="")
+# Defaults point at NVIDIA Build cloud; override per-env (e.g. David's box).
+NVIDIA_BASE_URL = env(
+    "NVIDIA_BASE_URL", default="https://integrate.api.nvidia.com/v1"
+)
+NVIDIA_MODEL_NAME = env(
+    "NVIDIA_MODEL_NAME", default="nvidia/llama-3.1-nemotron-nano-8b-v1"
+)
 NVIDIA_API_KEY = env("NVIDIA_API_KEY", default="")
 
 INSTALLED_APPS = [
