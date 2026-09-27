@@ -205,33 +205,33 @@ body {
   background-size: 24px 24px;
 }
 
-/* ── Dark Mode Overrides ─────────────────────────────────────────── */
+/* ── Dark Mode Overrides (Plain, clean tactile aesthetic — NO neon glow) ─ */
 .dark body {
-  background-color: #051520;
+  background-color: #07141E;
   color: #F1F5F9;
 }
 
 .dark .bg-dot-grid {
-  background-color: #051520;
-  background-image: radial-gradient(rgba(0, 196, 179, 0.18) 1.25px, transparent 1.25px);
+  background-color: #07141E;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1.25px, transparent 1.25px);
   background-size: 24px 24px;
 }
 
 .dark .card-tactile {
-  background-color: #0B2536;
-  border-color: #00C4B3;
-  box-shadow: 4px 4px 0px #00C4B3;
+  background-color: #0E202D;
+  border-color: #1E3A52;
+  box-shadow: 4px 4px 0px #000000;
   color: #FFFFFF;
 }
 .dark .card-tactile:hover {
-  box-shadow: 6px 6px 0px #00C4B3;
+  box-shadow: 6px 6px 0px #000000;
 }
 
 .dark .btn-pill-primary {
   background-color: #00C4B3;
   color: #071E2D;
   border-color: #00C4B3;
-  box-shadow: 3px 3px 0px #006D6A;
+  box-shadow: 3px 3px 0px #000000;
 }
 .dark .btn-pill-primary .btn-bubble {
   background-color: #071E2D;
@@ -240,21 +240,34 @@ body {
 }
 .dark .btn-pill-primary:hover {
   background-color: #33D6C5;
-  box-shadow: 5px 5px 0px #006D6A;
+  box-shadow: 5px 5px 0px #000000;
 }
 
-.dark .btn-pill-secondary {
-  background-color: #0B2536;
+.dark .btn-pill-secondary,
+.dark .btn-pill-white {
+  background-color: #0E202D;
   color: #FFFFFF;
-  border-color: #00C4B3;
-  box-shadow: 3px 3px 0px #00C4B3;
+  border-color: #1E3A52;
+  box-shadow: 3px 3px 0px #000000;
 }
-.dark .btn-pill-secondary .btn-bubble {
-  background-color: #00C4B3;
-  color: #071E2D;
-  border-color: #00C4B3;
+.dark .btn-pill-secondary .btn-bubble,
+.dark .btn-pill-white .btn-bubble {
+  background-color: #182F43;
+  color: #FFFFFF;
+  border-color: #1E3A52;
 }
-.dark .btn-pill-secondary:hover {
-  background-color: #0F3146;
-  box-shadow: 5px 5px 0px #00C4B3;
+.dark .btn-pill-secondary:hover,
+.dark .btn-pill-white:hover {
+  background-color: #132B3E;
+  box-shadow: 5px 5px 0px #000000;
+}
+
+.dark .btn-pill-ghost {
+  color: #FFFFFF;
+  border-color: #1E3A52;
+  box-shadow: 2px 2px 0px #000000;
+}
+.dark .btn-pill-ghost:hover {
+  background-color: #0E202D;
+  box-shadow: 3px 3px 0px #000000;
 }

@@ -79,7 +79,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
         onClick={onStartRecording}
         title="Speak your goal using voice microphone"
         aria-label="Activate voice recording"
-        className="w-11 h-11 rounded-full border-2 border-[#071E2D] bg-[#ECFEFF] text-[#006D6A] flex items-center justify-center shadow-[2px_2px_0px_#071E2D] hover:bg-[#99F6E4] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0"
+        className="w-11 h-11 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-[#ECFEFF] dark:bg-[#00C4B3]/15 text-[#006D6A] dark:text-[#00C4B3] flex items-center justify-center shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#99F6E4] dark:hover:bg-[#00C4B3]/25 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0 cursor-pointer"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />

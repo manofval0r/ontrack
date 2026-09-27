@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Code2, Activity, Briefcase, BookOpen, Sparkles } from 'lucide-react'
 import { Button } from '../components/Button'
 import { CounterTracker } from '../components/trackers/CounterTracker'
 import { ChecklistTracker } from '../components/trackers/ChecklistTracker'
@@ -13,7 +14,7 @@ interface PersonaInfo {
   id: PersonaKey
   label: string
   category: string
-  icon: string
+  icon: React.ComponentType<{ className?: string }>
   exampleGoal: string
   illustration: string
   description: string
@@ -25,9 +26,9 @@ const PERSONAS: Record<PersonaKey, PersonaInfo> = {
     id: 'developer',
     label: 'Developer',
     category: 'Engineering',
-    icon: '💻',
+    icon: Code2,
     exampleGoal: 'Ship MVP by Friday & merge 4 PRs',
-    illustration: '/illustrations/developer.svg',
+    illustration: '/illustrations/undraw_deploy-globally_2k9s.svg',
     description: 'Autonomous Git commit logging, PR merge verification, and shipping velocity streaks.',
     tagline: 'Streak: 12 days shipped · PR #42 Merged',
   },
@@ -35,19 +36,19 @@ const PERSONAS: Record<PersonaKey, PersonaInfo> = {
     id: 'fitness',
     label: 'Fitness',
     category: 'Health',
-    icon: '🏃',
+    icon: Activity,
     exampleGoal: 'Do 50 pushups daily',
-    illustration: '/illustrations/fitness.svg',
+    illustration: '/illustrations/undraw_done_erdp.svg',
     description: 'Rep counters, daily exercise streaks, kettlebell weight logs, and rest day pacing.',
-    tagline: '🔥 14 Days Streak · 50 Pushups Logged',
+    tagline: '14 Days Streak · 50 Pushups Logged',
   },
   sales: {
     id: 'sales',
     label: 'Sales',
     category: 'Business',
-    icon: '💼',
+    icon: Briefcase,
     exampleGoal: 'Sell 5 enterprise deals this week',
-    illustration: '/illustrations/sales.svg',
+    illustration: '/illustrations/undraw_work-emails_3qkc.svg',
     description: 'Weekly pipeline growth curves, deal closed counters, and quota progression.',
     tagline: '+24% Weekly Pipeline · 4/5 Deals Closed',
   },
@@ -55,9 +56,9 @@ const PERSONAS: Record<PersonaKey, PersonaInfo> = {
     id: 'student',
     label: 'Student',
     category: 'Education',
-    icon: '📚',
+    icon: BookOpen,
     exampleGoal: 'Read 2 books by Friday',
-    illustration: '/illustrations/student.svg',
+    illustration: '/illustrations/undraw_casual-browsing_c09r.svg',
     description: 'Chapter milestones, book reading targets, study habits, and midterm countdowns.',
     tagline: '2 of 4 Books · Ahead of Midterm Schedule',
   },
@@ -333,22 +334,27 @@ export const Onboarding: React.FC = () => {
   // Handle transition out of onboarding (Step 4 -> Dashboard)
   const handleFinishOnboarding = async () => {
     setIsFinishing(true)
-    try {
-      await createGoal(createdGoal)
-    } catch (e) {
-      console.error('Error creating onboarding goal in context:', e)
-    } finally {
-      localStorage.setItem('ontrack_onboarded', 'true')
-      setIsFinishing(false)
-      navigate('/dashboard')
+    const hasToken = !!localStorage.getItem('ontrack_token')
+    if (hasToken) {
+      try {
+        // POST /api/goals { text: goalText } — backend AI parses the rest
+        await createGoal({ text: goalText.trim() || createdGoal.title })
+      } catch (e) {
+        // Non-fatal: goal creation failure should not block the user from
+        // continuing. The goal can be created later from the dashboard.
+        console.warn('[Onboarding] Could not persist goal to API:', e)
+      }
     }
+    localStorage.setItem('ontrack_onboarded', 'true')
+    setIsFinishing(false)
+    navigate('/dashboard')
   }
 
   const canGoBack = currentStep === 2 || currentStep === 4
   const activePersonaObj = PERSONAS[selectedPersona]
 
   return (
-    <div className="min-h-screen bg-[#F8FAFB] dark:bg-[#051520] bg-dot-grid flex flex-col justify-between font-sans text-[#071E2D] dark:text-slate-100 selection:bg-[#00C4B3] selection:text-[#071E2D] transition-colors">
+    <div className="min-h-screen bg-[#F8FAFB] dark:bg-[#07141E] bg-dot-grid flex flex-col justify-between font-sans text-[#071E2D] dark:text-slate-100 selection:bg-[#00C4B3] selection:text-[#071E2D] transition-colors">
       {/* ── Minimal Top Bar ────────────────────────────────────────── */}
       {/* Rule: NO main site navigation bar, NO marketing links, NO login/signup */}
       {/* Contains ONLY: small back arrow (if step allows) and slim progress indicator */}
@@ -358,7 +364,7 @@ export const Onboarding: React.FC = () => {
           <button
             type="button"
             onClick={handleBack}
-            className="w-10 h-10 rounded-full border-2 border-[#071E2D] dark:border-[#00C4B3] bg-white dark:bg-[#071E2D] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] hover:bg-[#F3F6F8] dark:hover:bg-[#00C4B3]/20 hover:-translate-x-0.5 active:translate-x-0.5 active:shadow-none transition-all cursor-pointer"
+            className="w-10 h-10 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#F3F6F8] dark:hover:bg-[#132B3E] hover:-translate-x-0.5 active:translate-x-0.5 active:shadow-none transition-all cursor-pointer"
             aria-label="Go back to previous step"
           >
             <svg
@@ -410,17 +416,16 @@ export const Onboarding: React.FC = () => {
         {/* ======================================================== */}
         {currentStep === 1 && (
           <div className="w-full flex flex-col items-center text-center max-w-2xl mx-auto animate-fadeIn">
-            {/* Dynamic Hero Illustration Card */}
-            <div className="relative mb-6 group w-full max-w-lg">
-              <div className="absolute -inset-2 bg-[#00C4B3]/20 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity" />
-              <div className="relative p-5 sm:p-6 bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#00C4B3] hover:-translate-y-1 transition-all flex flex-col items-center">
+            {/* Dynamic Hero Illustration Card (No Blur Glow) */}
+            <div className="relative mb-6 w-full max-w-lg">
+              <div className="relative p-5 sm:p-6 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] hover:-translate-y-1 transition-all flex flex-col items-center">
                 <img
                   src={activePersonaObj.illustration}
                   alt={`${activePersonaObj.label} illustration`}
                   className="w-80 sm:w-96 max-w-full h-auto mx-auto object-contain transition-all duration-300"
                 />
                 <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-[#E6F7F5] dark:bg-[#00C4B3]/15 border border-[#00C4B3]/40 rounded-full text-xs font-bold text-[#006D6A] dark:text-[#00C4B3]">
-                  <span>{activePersonaObj.icon}</span>
+                  <activePersonaObj.icon className="w-3.5 h-3.5" />
                   <span>{activePersonaObj.tagline}</span>
                 </div>
               </div>
@@ -430,6 +435,7 @@ export const Onboarding: React.FC = () => {
             <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
               {(Object.keys(PERSONAS) as PersonaKey[]).map((key) => {
                 const p = PERSONAS[key]
+                const Icon = p.icon
                 const isSelected = selectedPersona === key
                 return (
                   <button
@@ -442,10 +448,10 @@ export const Onboarding: React.FC = () => {
                     className={`px-3.5 py-1.5 rounded-full border-2 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       isSelected
                         ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D] shadow-[2px_2px_0px_#071E2D] scale-105'
-                        : 'bg-white dark:bg-[#071E2D] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/40 dark:border-[#00C4B3]/40 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] hover:bg-[#E6F7F5] dark:hover:bg-[#00C4B3]/15'
+                        : 'bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/40 dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#E6F7F5] dark:hover:bg-[#132B3E]'
                     }`}
                   >
-                    <span>{p.icon}</span>
+                    <Icon className="w-3.5 h-3.5" />
                     <span>{p.label}</span>
                   </button>
                 )
@@ -506,7 +512,7 @@ export const Onboarding: React.FC = () => {
               <div className="lg:col-span-7 flex flex-col justify-between">
                 <div>
                   {/* Large Chat-style text input container */}
-                  <div className="w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#00C4B3] focus-within:shadow-[6px_6px_0px_#00C4B3] transition-all">
+                  <div className="w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] focus-within:dark:border-[#00C4B3] transition-all">
                     <label htmlFor="goal-input" className="block text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3] mb-2">
                       Target or Objective ({activePersonaObj.category})
                     </label>
@@ -535,6 +541,7 @@ export const Onboarding: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {(Object.keys(PERSONAS) as PersonaKey[]).map((key) => {
                         const p = PERSONAS[key]
+                        const Icon = p.icon
                         const isCurrent = selectedPersona === key
                         return (
                           <button
@@ -547,10 +554,12 @@ export const Onboarding: React.FC = () => {
                             className={`text-xs font-semibold px-3 py-2.5 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-2.5 text-left ${
                               isCurrent
                                 ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D] shadow-[3px_3px_0px_#071E2D] font-bold'
-                                : 'bg-white dark:bg-[#0B2536] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/30 dark:border-[#00C4B3]/40 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] hover:bg-[#E6F7F5] dark:hover:bg-[#00C4B3]/15'
+                                : 'bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/30 dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#E6F7F5] dark:hover:bg-[#152E42]'
                             }`}
                           >
-                            <span className="text-lg">{p.icon}</span>
+                            <span className="p-1.5 rounded-lg bg-black/5 dark:bg-white/5 shrink-0">
+                              <Icon className="w-4 h-4" />
+                            </span>
                             <div className="truncate">
                               <span className="block font-bold truncate">{p.exampleGoal}</span>
                               <span className={`text-[10px] ${isCurrent ? 'text-[#071E2D]/80' : 'text-[#006D6A] dark:text-[#00C4B3]'}`}>
@@ -579,13 +588,13 @@ export const Onboarding: React.FC = () => {
 
               {/* Right Column: Dynamic Persona Illustration Card */}
               <div className="lg:col-span-5 flex flex-col">
-                <div className="h-full bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#00C4B3] flex flex-col items-center justify-between transition-colors">
-                  <div className="w-full flex items-center justify-between border-b-2 border-[#071E2D]/10 dark:border-[#00C4B3]/20 pb-2 mb-2">
+                <div className="h-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] flex flex-col items-center justify-between transition-colors">
+                  <div className="w-full flex items-center justify-between border-b-2 border-[#071E2D]/10 dark:border-white/10 pb-2 mb-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3] flex items-center gap-1.5">
-                      <span>{activePersonaObj.icon}</span>
+                      <activePersonaObj.icon className="w-3.5 h-3.5" />
                       <span>{activePersonaObj.label} Tracker Engine</span>
                     </span>
-                    <span className="text-[10px] font-bold text-[#071E2D]/60 dark:text-slate-400 bg-[#F3F6F8] dark:bg-[#071E2D] px-2 py-0.5 rounded border border-[#071E2D]/20">
+                    <span className="text-[10px] font-bold text-[#071E2D]/60 dark:text-slate-400 bg-[#F3F6F8] dark:bg-[#07141E] px-2 py-0.5 rounded border border-[#071E2D]/20 dark:border-white/10">
                       Step 2 of 4
                     </span>
                   </div>
@@ -596,7 +605,7 @@ export const Onboarding: React.FC = () => {
                     className="w-full h-auto object-contain max-w-[270px] my-auto transition-all duration-300"
                   />
 
-                  <div className="w-full text-center bg-[#F8FAFB] dark:bg-[#071E2D] border-2 border-[#071E2D]/20 dark:border-[#00C4B3]/30 rounded-xl p-3 mt-3">
+                  <div className="w-full text-center bg-[#F8FAFB] dark:bg-[#07141E] border-2 border-[#071E2D]/20 dark:border-[#1E3A52] rounded-xl p-3 mt-3">
                     <span className="text-xs font-bold text-[#071E2D] dark:text-white block">
                       {activePersonaObj.tagline}
                     </span>
@@ -617,7 +626,7 @@ export const Onboarding: React.FC = () => {
           <div className="w-full flex flex-col items-center justify-center text-center max-w-lg mx-auto animate-fadeIn py-4">
             {/* Visual Progress Card with Persona Illustration */}
             <div className="relative mb-6 w-full">
-              <div className="p-5 sm:p-6 bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#00C4B3] flex flex-col items-center">
+              <div className="p-5 sm:p-6 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] flex flex-col items-center">
                 <img
                   src={activePersonaObj.illustration}
                   alt="Building Tracker Progress"
@@ -625,7 +634,7 @@ export const Onboarding: React.FC = () => {
                 />
 
                 {/* Animated Progress Bar */}
-                <div className="w-full max-w-xs bg-[#E2E8F0] dark:bg-[#071E2D] h-3.5 rounded-full mt-5 border-2 border-[#071E2D] dark:border-[#00C4B3] overflow-hidden p-0.5">
+                <div className="w-full max-w-xs bg-[#E2E8F0] dark:bg-[#07141E] h-3.5 rounded-full mt-5 border-2 border-[#071E2D] dark:border-[#1E3A52] overflow-hidden p-0.5">
                   <div
                     className="h-full bg-[#00C4B3] rounded-full transition-all duration-700 ease-out"
                     style={{
@@ -658,15 +667,16 @@ export const Onboarding: React.FC = () => {
         {currentStep === 4 && (
           <div className="w-full max-w-2xl mx-auto flex flex-col gap-6 animate-fadeIn">
             {/* Celebratory Payoff Header Card with Persona Illustration */}
-            <div className="bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-3xl p-5 sm:p-6 shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#00C4B3] flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+            <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-5 sm:p-6 shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
               <img
                 src={activePersonaObj.illustration}
                 alt="Tracker Ready Payoff"
                 className="w-36 sm:w-44 h-auto object-contain shrink-0"
               />
               <div className="text-center sm:text-left flex-1">
-                <span className="inline-block text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3] bg-[#E6F7F5] dark:bg-[#00C4B3]/15 px-2.5 py-1 rounded-full border border-[#00C4B3]/40 mb-1.5">
-                  ★ {activePersonaObj.label} Tracker Configured
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3] bg-[#E6F7F5] dark:bg-[#00C4B3]/15 px-2.5 py-1 rounded-full border border-[#00C4B3]/40 mb-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{activePersonaObj.label} Tracker Configured</span>
                 </span>
                 <h2
                   className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
@@ -680,6 +690,7 @@ export const Onboarding: React.FC = () => {
                 </p>
               </div>
             </div>
+
 
             {/* Live Interactive Generated Tracker pre-filled at zero progress */}
             <div className="w-full">

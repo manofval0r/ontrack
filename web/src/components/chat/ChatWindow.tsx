@@ -6,6 +6,7 @@ import { SuggestedAction } from './SuggestedAction'
 import { ChatInput } from './ChatInput'
 import { Loader } from '../common/Loader'
 import { useGoals } from '../../context/GoalContext'
+import { api } from '../../services/api'
 
 interface ChatWindowProps {
   initialPrompt?: string
@@ -18,7 +19,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     {
       id: 'msg-welcome',
       sender: 'ai',
-      content: `Hi ${user.name}! I am your Nemotron AI Accountability Partner. Speak or type your ambitious goal, and I will parse your target, assign the optimal tracker format (Counter, Checklist, or Reflection), and set up your execution workspace.`,
+      content: `Hi ${user.name || 'there'}! I'm your Nemotron AI Accountability Partner. Speak or type your goal and I'll parse your target, assign the optimal tracker format (Counter, Checklist, or Reflection), and set up your execution workspace.`,
       timestamp: 'Just now',
     },
   ])
@@ -39,7 +40,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     }
   }, [initialPrompt])
 
-  // Handle incoming user message
   const handleSendMessage = (content: string) => {
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -47,79 +47,64 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
       content,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
-
     setMessages((prev) => [...prev, userMsg])
     setIsThinking(true)
 
-    // Simulate Nemotron AI Goal Parsing response
-    setTimeout(() => {
-      setIsThinking(false)
-      const lower = content.toLowerCase()
-
-      let goalProposal: Partial<Goal>
-      let aiText = ''
-
-      if (lower.includes('close') || lower.includes('deal') || lower.includes('car') || lower.includes('sell') || lower.includes('number') || lower.includes('count') || lower.includes('run') || lower.includes('km')) {
-        // Counter Goal
-        const numbers = content.match(/\d+/)
-        const targetNum = numbers ? parseInt(numbers[0]) : 5
-        goalProposal = {
-          title: content.length > 50 ? `${content.slice(0, 48)}...` : content,
-          description: `Conversational goal created via Nemotron AI: ${content}`,
-          goal_type: 'counter',
-          target: targetNum,
-          unit: lower.includes('deal') ? 'deals' : lower.includes('km') ? 'km' : 'units',
-          domain: lower.includes('deal') || lower.includes('sell') ? 'sales' : lower.includes('run') || lower.includes('km') ? 'fitness' : 'general',
-          deadline: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+    // Call POST /api/chat/parse-goal — backend AI returns proposal + response text
+    api.parseGoal(content)
+      .then(({ ai_response_text, goal_proposal }) => {
+        const goalProposal: Partial<Goal> = {
+          title: goal_proposal.title || content,
+          description: goal_proposal.summary || '',
+          goal_type: (goal_proposal.goal_type as Goal['goal_type']) || 'manual',
+          target: goal_proposal.target ?? 1,
+          unit: '',
+          domain: (goal_proposal.domain as Goal['domain']) || 'general',
+          deadline: goal_proposal.deadline ?? undefined,
+          items: goal_proposal.items?.map((title, idx) => ({
+            id: `item-${idx}`,
+            title,
+            completed: false,
+            order: idx + 1,
+          })),
         }
-        aiText = `Understood! I've structured this as a **Counter Tracker** with a target of ${targetNum} ${goalProposal.unit}. I've set a recommended 14-day execution horizon with proactive daily accountability check-ins.`
-      } else if (lower.includes('ship') || lower.includes('complete') || lower.includes('steps') || lower.includes('task') || lower.includes('milestone') || lower.includes('build')) {
-        // Checklist Goal
-        goalProposal = {
-          title: content.length > 50 ? `${content.slice(0, 48)}...` : content,
-          description: `Structured milestone checklist for: ${content}`,
-          goal_type: 'checklist',
-          target: 4,
-          unit: 'milestones',
-          domain: 'engineering',
-          deadline: new Date(Date.now() + 10 * 86400000).toISOString().split('T')[0],
-          items: [
-            { id: 'it-1', title: 'Phase 1: Architecture, tokens & setup', completed: true, order: 1 },
-            { id: 'it-2', title: 'Phase 2: Core functional components', completed: false, order: 2 },
-            { id: 'it-3', title: 'Phase 3: Integration & validation testing', completed: false, order: 3 },
-            { id: 'it-4', title: 'Phase 4: Final release & demo review', completed: false, order: 4 },
-          ],
-        }
-        aiText = `Got it! A complex execution goal like this works best as a **Milestone Checklist**. I broke this down into 4 clear phases so you can check off items and track completion velocity.`
-      } else {
-        // Manual Reflection Goal
-        goalProposal = {
-          title: content.length > 50 ? `${content.slice(0, 48)}...` : content,
-          description: `Daily qualitative reflection habit: ${content}`,
-          goal_type: 'manual',
-          target: 7,
-          unit: 'days',
-          domain: 'mindset',
-          deadline: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-        }
-        aiText = `Excellent habit focus! For qualitative growth and consistency, I've created a **Daily Reflection Tracker**. You can log qualitative wins, blockers, and focus levels each day.`
-      }
 
-      const aiMsg: ChatMessage = {
-        id: `msg-ai-${Date.now()}`,
-        sender: 'ai',
-        content: aiText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        goal_proposal: goalProposal,
-      }
-
-      setMessages((prev) => [...prev, aiMsg])
-    }, 1200)
+        const aiMsg: ChatMessage = {
+          id: `msg-ai-${Date.now()}`,
+          sender: 'ai',
+          content: ai_response_text,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          goal_proposal: goalProposal,
+        }
+        setMessages((prev) => [...prev, aiMsg])
+      })
+      .catch(() => {
+        // Fallback if backend is unreachable
+        const aiMsg: ChatMessage = {
+          id: `msg-ai-${Date.now()}`,
+          sender: 'ai',
+          content: `Got it — I've noted your goal: "${content}". Click "Activate Tracker" below to start tracking it.`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          goal_proposal: {
+            title: content,
+            goal_type: 'manual',
+            target: 7,
+            unit: 'days',
+            domain: 'general',
+            deadline: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+          },
+        }
+        setMessages((prev) => [...prev, aiMsg])
+      })
+      .finally(() => {
+        setIsThinking(false)
+      })
   }
 
   const handleActivateGoal = async (proposed: Partial<Goal>) => {
     try {
-      const created = await createGoal(proposed)
+      // POST /api/goals { text } — send the goal title as the text
+      const created = await createGoal({ text: proposed.title ?? '' } as any)
       navigate(`/goal/${created.id}`)
     } catch (e) {
       console.error(e)
@@ -129,7 +114,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[560px] max-w-4xl mx-auto w-full gap-4">
       {/* Chat Messages Stream */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-white border-2 border-[#071E2D] rounded-2xl shadow-[4px_4px_0px_#071E2D] flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] flex flex-col gap-6 transition-colors">
         {messages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} onActivateGoal={handleActivateGoal} />
         ))}

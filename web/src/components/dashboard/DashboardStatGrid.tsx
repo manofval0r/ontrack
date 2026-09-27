@@ -1,4 +1,5 @@
 import React from 'react'
+import { Target, Clock, Check, Flame, Zap } from 'lucide-react'
 
 interface DashboardStatGridProps {
   completedCount?: number
@@ -14,8 +15,8 @@ export const DashboardStatGrid: React.FC<DashboardStatGridProps> = ({
   totalScore = 850,
 }) => {
   return (
-    <div className="bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#00C4B3] flex flex-col justify-between h-full transition-colors">
-      <div className="flex items-center justify-between pb-3 border-b-2 border-[#071E2D]/10 dark:border-[#00C4B3]/20 mb-4">
+    <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] flex flex-col justify-between h-full transition-colors">
+      <div className="flex items-center justify-between pb-3 border-b-2 border-[#071E2D]/10 dark:border-white/10 mb-4">
         <h3
           className="text-base sm:text-lg font-bold text-[#071E2D] dark:text-white tracking-tight"
           style={{ fontFamily: "'Fraunces', Georgia, serif" }}
@@ -29,11 +30,11 @@ export const DashboardStatGrid: React.FC<DashboardStatGridProps> = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 flex-1 items-stretch">
         {/* ── Tile 1 (Top Left): Vibrant Turquoise Brand Tile ── */}
-        <div className="bg-[#00C4B3] text-[#071E2D] border-2 border-[#071E2D] rounded-2xl p-4 shadow-[3px_3px_0px_#071E2D] flex flex-col justify-between relative overflow-hidden group hover:-translate-y-0.5 transition-all">
+        <div className="bg-[#00C4B3] text-[#071E2D] border-2 border-[#071E2D] rounded-2xl p-4 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] flex flex-col justify-between relative overflow-hidden group hover:-translate-y-0.5 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/80">Total Targets</span>
             <div className="w-8 h-8 rounded-full bg-[#071E2D] text-[#00C4B3] border border-[#071E2D] flex items-center justify-center text-xs font-bold">
-              🎯
+              <Target className="w-4 h-4" />
             </div>
           </div>
 
@@ -52,11 +53,11 @@ export const DashboardStatGrid: React.FC<DashboardStatGridProps> = ({
         </div>
 
         {/* ── Tile 2 (Top Right): Clean Light/Dark Tactile Card (Pending Tasks) ── */}
-        <div className="bg-[#F8FAFB] dark:bg-[#071E2D] border-2 border-[#071E2D] dark:border-[#00C4B3]/40 rounded-2xl p-4 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#00C4B3] flex flex-col justify-between group hover:-translate-y-0.5 transition-all">
+        <div className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl p-4 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] flex flex-col justify-between group hover:-translate-y-0.5 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/70 dark:text-slate-300">Pending Tasks</span>
-            <div className="w-8 h-8 rounded-full bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3]/50 flex items-center justify-center text-[#071E2D] dark:text-[#00C4B3] text-xs font-bold">
-              ⏳
+            <div className="w-8 h-8 rounded-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center text-[#071E2D] dark:text-[#00C4B3] text-xs font-bold">
+              <Clock className="w-4 h-4" />
             </div>
           </div>
 
@@ -75,11 +76,11 @@ export const DashboardStatGrid: React.FC<DashboardStatGridProps> = ({
         </div>
 
         {/* ── Tile 3 (Bottom Left): Clean Light/Dark Tactile Card (Completed Goals) ── */}
-        <div className="bg-[#F8FAFB] dark:bg-[#071E2D] border-2 border-[#071E2D] dark:border-[#00C4B3]/40 rounded-2xl p-4 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#00C4B3] flex flex-col justify-between group hover:-translate-y-0.5 transition-all">
+        <div className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl p-4 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] flex flex-col justify-between group hover:-translate-y-0.5 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/70 dark:text-slate-300">Completed Goals</span>
-            <div className="w-8 h-8 rounded-full bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3]/50 flex items-center justify-center text-[#071E2D] dark:text-[#00C4B3] text-xs font-bold">
-              ✓
+            <div className="w-8 h-8 rounded-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center text-[#071E2D] dark:text-[#00C4B3] text-xs font-bold">
+              <Check className="w-4 h-4" />
             </div>
           </div>
 
@@ -98,11 +99,11 @@ export const DashboardStatGrid: React.FC<DashboardStatGridProps> = ({
         </div>
 
         {/* ── Tile 4 (Bottom Right): Deep Navy Tactile Card (Momentum Streak) ── */}
-        <div className="bg-[#071E2D] text-white border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-2xl p-4 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#00C4B3] flex flex-col justify-between group hover:-translate-y-0.5 transition-all">
+        <div className="bg-[#071E2D] dark:bg-[#091824] text-white border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl p-4 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] flex flex-col justify-between group hover:-translate-y-0.5 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[#00C4B3]">Daily Streak</span>
             <div className="w-8 h-8 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center text-[#071E2D] text-xs font-black">
-              🔥
+              <Flame className="w-4 h-4" />
             </div>
           </div>
 
@@ -114,7 +115,10 @@ export const DashboardStatGrid: React.FC<DashboardStatGridProps> = ({
               {streakDays} Days
             </span>
             <div className="inline-flex items-center gap-1 text-[11px] font-bold text-[#00C4B3] mt-1 bg-white/10 border border-[#00C4B3]/30 px-2 py-0.5 rounded-full">
-              <span>⚡ Active</span>
+              <span className="inline-flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                <span>Active</span>
+              </span>
               <span className="text-white/70 font-normal">top 5% consistency</span>
             </div>
           </div>

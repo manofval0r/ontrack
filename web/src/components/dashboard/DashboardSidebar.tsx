@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { UserProfile } from '../../types'
+import logoImg from '../../assets/ChatGPT Image Sep 27, 2026, 02_35_50 PM.png'
 
 export type DashboardNavView = 'dashboard' | 'all' | 'completed' | 'settings'
 
@@ -96,11 +97,16 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           className="flex items-center gap-2.5 text-left group cursor-pointer px-1"
           aria-label="Ontrack Dashboard Home"
         >
-          <div className="w-8 h-8 rounded-xl bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center font-bold text-sm text-[#071E2D] shadow-[2px_2px_0px_#071E2D] group-hover:-translate-y-0.5 transition-transform">
-            ⚡
-          </div>
+          <img
+            src={logoImg}
+            alt=""
+            aria-hidden="true"
+            width={32}
+            height={32}
+            className="rounded-xl flex-shrink-0 object-contain group-hover:-translate-y-0.5 transition-transform"
+          />
           <span
-            className="text-xl font-extrabold text-[#071E2D] tracking-tight"
+            className="text-xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
             Ontrack

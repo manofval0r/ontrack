@@ -54,9 +54,9 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
 
       {/* Slide-over Drawer Panel */}
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
-        <div className="w-screen max-w-xl bg-[#F8FAFB] dark:bg-[#051520] border-l-2 border-[#071E2D] dark:border-[#00C4B3] shadow-[-6px_0px_0px_#071E2D] dark:shadow-[-6px_0px_0px_#00C4B3] flex flex-col justify-between overflow-y-auto animate-slideInRight">
+        <div className="w-screen max-w-xl bg-[#F8FAFB] dark:bg-[#07141E] border-l-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[-6px_0px_0px_#071E2D] dark:shadow-[-6px_0px_0px_#000000] flex flex-col justify-between overflow-y-auto animate-slideInRight">
           {/* Header */}
-          <div className="sticky top-0 z-10 bg-white/95 dark:bg-[#0B2536]/95 backdrop-blur-md px-6 py-5 border-b-2 border-[#071E2D] dark:border-[#00C4B3]/40 flex items-start justify-between gap-4">
+          <div className="sticky top-0 z-10 bg-white/95 dark:bg-[#0E202D]/95 backdrop-blur-md px-6 py-5 border-b-2 border-[#071E2D] dark:border-white/10 flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1.5 pr-2">
               <div className="flex items-center gap-2">
                 <GoalStatusPill status={status} />
@@ -76,7 +76,7 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-9 h-9 rounded-full border-2 border-[#071E2D] dark:border-[#00C4B3] bg-white dark:bg-[#071E2D] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] hover:bg-[#F3F6F8] dark:hover:bg-[#00C4B3]/20 hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all flex-shrink-0 cursor-pointer"
+              className="w-9 h-9 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#F3F6F8] dark:hover:bg-white/5 hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all flex-shrink-0 cursor-pointer"
               aria-label="Close goal detail panel"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -124,8 +124,8 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
             </div>
 
             {/* Activity Log Section */}
-            <div className="flex flex-col gap-3 p-5 bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-2xl shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#00C4B3]">
-              <div className="flex items-center justify-between pb-2 border-b border-[#071E2D]/10 dark:border-[#00C4B3]/20">
+            <div className="flex flex-col gap-3 p-5 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]">
+              <div className="flex items-center justify-between pb-2 border-b border-[#071E2D]/10 dark:border-white/10">
                 <h3 className="text-sm font-bold text-[#071E2D] dark:text-white uppercase tracking-wider">
                   Activity History
                 </h3>
@@ -143,7 +143,7 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
                   {logs.map((log) => (
                     <div
                       key={log.id}
-                      className="p-3 rounded-xl border border-[#071E2D]/20 dark:border-[#00C4B3]/30 bg-[#F8FAFB] dark:bg-[#071E2D] flex flex-col gap-0.5 text-xs"
+                      className="p-3 rounded-xl border border-[#071E2D]/20 dark:border-[#1E3A52] bg-[#F8FAFB] dark:bg-[#091824] flex flex-col gap-0.5 text-xs"
                     >
                       <div className="flex items-center justify-between text-[#071E2D]/60 dark:text-slate-400">
                         <span className="font-semibold text-[#006D6A] dark:text-[#00C4B3]">

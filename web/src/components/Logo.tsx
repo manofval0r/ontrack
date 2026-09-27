@@ -1,45 +1,36 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import logoImg from '../assets/ChatGPT Image Sep 27, 2026, 02_35_50 PM.png'
 
 interface LogoProps {
   /** light = white text (for dark backgrounds), dark = navy text (default) */
   theme?: 'light' | 'dark'
   className?: string
   linkTo?: string
+  /** Size of the logo image. Defaults to 32px (h-8). */
+  size?: number
 }
 
 export const Logo: React.FC<LogoProps> = ({
   theme = 'dark',
   className = '',
   linkTo = '/',
+  size = 32,
 }) => {
-  const textColor = theme === 'light' ? 'text-white' : 'text-[#071E2D]'
+  const textColor = theme === 'light' ? 'text-white' : 'text-[#071E2D] dark:text-white'
 
   const mark = (
     <span className={`inline-flex items-center gap-2 ${className}`}>
-      {/* Icon mark: turquoise rounded square with track/arrow motif */}
-      <span
-        className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#00C4B3] flex-shrink-0"
+      {/* Logo image */}
+      <img
+        src={logoImg}
+        alt=""
         aria-hidden="true"
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 18 18"
-          fill="none"
-          aria-hidden="true"
-        >
-          {/* Target/check circle motif */}
-          <circle cx="9" cy="9" r="6" stroke="#071E2D" strokeWidth="1.8" />
-          <path
-            d="M6 9l2.2 2.2L12 7"
-            stroke="#071E2D"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </span>
+        width={size}
+        height={size}
+        className="flex-shrink-0 rounded-lg object-contain"
+        style={{ width: size, height: size }}
+      />
       {/* Wordmark */}
       <span
         className={`font-display font-700 text-xl tracking-tight ${textColor}`}

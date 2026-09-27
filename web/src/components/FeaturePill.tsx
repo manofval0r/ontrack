@@ -21,12 +21,12 @@ export const FeaturePill: React.FC<FeaturePillProps> = ({
         inline-flex items-center gap-2.5
         px-4 py-2
         rounded-full
-        border-2 border-[#071E2D]
-        bg-white
-        shadow-[2.5px_2.5px_0px_#071E2D]
-        font-sans font-medium text-sm text-[#071E2D]
+        border-2 border-[#071E2D] dark:border-[#1E3A52]
+        bg-white dark:bg-[#0E202D]
+        shadow-[2.5px_2.5px_0px_#071E2D] dark:shadow-[2.5px_2.5px_0px_#000000]
+        font-sans font-medium text-sm text-[#071E2D] dark:text-white
         transition-all duration-150
-        hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#071E2D]
+        hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#071E2D] dark:hover:shadow-[4px_4px_0px_#000000]
         ${className}
       `.trim()}
     >

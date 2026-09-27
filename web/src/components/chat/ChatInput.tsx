@@ -30,7 +30,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-3 sm:p-4 bg-white border-2 border-[#071E2D] rounded-2xl shadow-[4px_4px_0px_#071E2D] flex items-center gap-2 sm:gap-3"
+      className="p-3 sm:p-4 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] flex items-center gap-2 sm:gap-3 transition-colors"
     >
       {/* Voice Recorder button / wave container */}
       <VoiceInput
@@ -48,7 +48,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onChange={(e) => setText(e.target.value)}
         disabled={disabled || isRecording}
         placeholder={isRecording ? 'Listening to your voice...' : placeholder}
-        className="flex-1 font-sans text-sm text-[#071E2D] placeholder:text-[#071E2D]/40 outline-none bg-transparent py-2"
+        className="flex-1 font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none bg-transparent py-2"
       />
 
       {/* Send Button */}
@@ -56,7 +56,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         type="submit"
         disabled={!text.trim() || disabled}
         aria-label="Send message"
-        className="btn-pill btn-pill-primary text-xs !py-2 !px-4 !shadow-[2px_2px_0px_#071E2D] disabled:opacity-40"
+        className="btn-pill btn-pill-primary text-xs !py-2 !px-4 !shadow-[2px_2px_0px_#071E2D] dark:!shadow-[2px_2px_0px_#000000] disabled:opacity-40"
       >
         <span className="hidden sm:inline">Send</span>
         <span className="btn-bubble !w-6 !h-6">

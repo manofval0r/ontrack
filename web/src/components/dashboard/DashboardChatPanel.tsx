@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { Zap, Sparkles, Target, ArrowRight } from 'lucide-react'
 import type { Goal } from '../../types'
 import { GoalStatusPill, computeGoalStatus } from '../common/GoalStatusPill'
 
@@ -142,7 +143,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
         id: `ai-${Date.now()}`,
         sender: 'ai',
         content: `Got it! Logged +${delta} to "${goal.title}". ${
-          isNowDone ? '🎯 Target reached — tracker marked as done!' : `Current total: ${nextVal} / ${goal.target}.`
+          isNowDone ? 'Target reached — tracker marked as done!' : `Current total: ${nextVal} / ${goal.target}.`
         }`,
         timestamp: nowTime,
         actionSnapshot: {
@@ -255,7 +256,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
               sender: 'ai',
               content: `Logged +${delta} to "${targetGoal.title}". ${
                 isNowDone
-                  ? '🎉 Target reached! Marked tracker as completed.'
+                  ? 'Target reached! Marked tracker as completed.'
                   : `Current total: ${nextVal} / ${targetGoal.target} ${targetGoal.unit || ''}.`
               }`,
               timestamp: timeStr,
@@ -336,7 +337,8 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
       }
 
       try {
-        const created = await onCreateGoal(newGoalData)
+        // POST /api/goals { text: cleanTitle } — backend AI parses and returns the goal
+        const created = await onCreateGoal({ text: cleanTitle } as any)
         setMessages((prev) => [
           ...prev,
           {
@@ -374,7 +376,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
       <div className="px-5 py-4 border-b-2 border-[#071E2D] bg-[#F8FAFB] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center font-bold text-xs text-[#071E2D]">
-            ⚡
+            <Zap className="w-3.5 h-3.5" />
           </div>
           <span
             className="font-bold text-base text-[#071E2D] tracking-tight"
@@ -426,9 +428,10 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
                           key={g.id}
                           type="button"
                           onClick={() => handleSelectAmbiguousGoal(g)}
-                          className="px-3 py-1.5 rounded-xl border-2 border-[#071E2D] bg-white text-xs font-bold text-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:bg-[#ECFEFF] hover:border-[#006D6A] text-left transition-all cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl border-2 border-[#071E2D] bg-white text-xs font-bold text-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:bg-[#ECFEFF] hover:border-[#006D6A] text-left transition-all cursor-pointer inline-flex items-center gap-1.5"
                         >
-                          → {g.title} ({g.current_value} / {g.target} {g.unit || ''})
+                          <ArrowRight className="w-3 h-3 text-[#006D6A] shrink-0" />
+                          <span>{g.title} ({g.current_value} / {g.target} {g.unit || ''})</span>
                         </button>
                       ))}
                     </div>
@@ -439,12 +442,23 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
                 {msg.actionSnapshot && (
                   <div className="mt-3 p-3.5 bg-white border-2 border-[#071E2D] rounded-xl shadow-[2px_2px_0px_#071E2D] flex flex-col gap-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#006D6A]">
-                        {msg.actionSnapshot.type === 'goal_created'
-                          ? '✨ New Tracker Live'
-                          : msg.actionSnapshot.type === 'verdict'
-                          ? '🎯 Goal Completed'
-                          : '⚡ Progress Logged'}
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#006D6A]">
+                        {msg.actionSnapshot.type === 'goal_created' ? (
+                          <>
+                            <Sparkles className="w-3 h-3" />
+                            <span>New Tracker Live</span>
+                          </>
+                        ) : msg.actionSnapshot.type === 'verdict' ? (
+                          <>
+                            <Target className="w-3 h-3" />
+                            <span>Goal Completed</span>
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-3 h-3" />
+                            <span>Progress Logged</span>
+                          </>
+                        )}
                       </span>
                       <GoalStatusPill status={computeGoalStatus(msg.actionSnapshot.goal)} />
                     </div>

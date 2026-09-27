@@ -1,4 +1,5 @@
 import React from 'react'
+import { Check } from 'lucide-react'
 import type { ProgressLog } from '../../types'
 
 interface HistoryProps {
@@ -34,7 +35,7 @@ export const History: React.FC<HistoryProps> = ({ activity }) => {
             >
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-[#ECFEFF] border border-[#006D6A] flex items-center justify-center text-[#006D6A] text-xs font-bold flex-shrink-0 mt-0.5">
-                  ✓
+                  <Check className="w-4 h-4 text-[#006D6A]" />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xs font-bold text-[#071E2D]">{item.note}</span>

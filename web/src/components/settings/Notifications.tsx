@@ -39,15 +39,15 @@ export const Notifications: React.FC = () => {
   ]
 
   return (
-    <div className="flex flex-col gap-6 p-6 sm:p-8 bg-white border-2 border-[#071E2D] rounded-2xl shadow-[4px_4px_0px_#071E2D]">
-      <div className="pb-4 border-b-2 border-[#071E2D]/10">
+    <div className="flex flex-col gap-6 p-6 sm:p-8 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] transition-colors">
+      <div className="pb-4 border-b-2 border-[#071E2D]/10 dark:border-white/10">
         <h3
-          className="text-xl sm:text-2xl font-bold text-[#071E2D]"
+          className="text-xl sm:text-2xl font-bold text-[#071E2D] dark:text-white"
           style={{ fontFamily: "'Fraunces', Georgia, serif" }}
         >
           Notification & Alert Center
         </h3>
-        <p className="text-xs sm:text-sm text-[#071E2D]/70 mt-1">
+        <p className="text-xs sm:text-sm text-[#071E2D]/70 dark:text-slate-300 mt-1">
           Customize when and how OnTrack holds you accountable across your active goals.
         </p>
       </div>
@@ -63,18 +63,18 @@ export const Notifications: React.FC = () => {
               className={`
                 p-4 rounded-xl border-2 transition-all flex items-center justify-between gap-4
                 ${item.isMaster
-                  ? 'bg-[#ECFEFF] border-[#071E2D] shadow-[3px_3px_0px_#071E2D]'
+                  ? 'bg-[#ECFEFF] dark:bg-[#00C4B3]/15 border-[#071E2D] dark:border-[#00C4B3] shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]'
                   : isDisabled
-                  ? 'bg-gray-50 border-gray-200 opacity-50'
-                  : 'bg-[#F8FAFB] border-[#071E2D]/20 hover:border-[#071E2D]'
+                  ? 'bg-gray-50 dark:bg-slate-900/40 border-gray-200 dark:border-slate-800 opacity-50'
+                  : 'bg-[#F8FAFB] dark:bg-[#091824] border-[#071E2D]/20 dark:border-[#1E3A52] hover:border-[#071E2D] dark:hover:border-slate-400'
                 }
               `}
             >
               <div className="flex flex-col">
-                <span className={`text-sm font-bold ${item.isMaster ? 'text-[#006D6A]' : 'text-[#071E2D]'}`}>
+                <span className={`text-sm font-bold ${item.isMaster ? 'text-[#006D6A] dark:text-[#00C4B3]' : 'text-[#071E2D] dark:text-white'}`}>
                   {item.label}
                 </span>
-                <span className="text-xs text-[#071E2D]/65 mt-0.5">{item.description}</span>
+                <span className="text-xs text-[#071E2D]/65 dark:text-slate-400 mt-0.5">{item.description}</span>
               </div>
 
               <button
@@ -82,11 +82,11 @@ export const Notifications: React.FC = () => {
                 disabled={isDisabled}
                 onClick={() => updateNotificationSettings({ [item.key]: !isChecked })}
                 className={`
-                  w-12 h-6 flex items-center rounded-full p-1 border-2 border-[#071E2D] transition-colors flex-shrink-0
-                  ${isChecked ? 'bg-[#00C4B3] justify-end' : 'bg-gray-200 justify-start'}
+                  w-12 h-6 flex items-center rounded-full p-1 border-2 border-[#071E2D] dark:border-[#1E3A52] transition-colors flex-shrink-0
+                  ${isChecked ? 'bg-[#00C4B3] justify-end' : 'bg-gray-200 dark:bg-slate-700 justify-start'}
                 `}
               >
-                <span className="bg-[#071E2D] w-4 h-4 rounded-full shadow-md" />
+                <span className="bg-[#071E2D] dark:bg-white w-4 h-4 rounded-full shadow-md" />
               </button>
             </div>
           )

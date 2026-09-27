@@ -1,4 +1,5 @@
 import React from 'react'
+import { Flame } from 'lucide-react'
 import type { DashboardStats } from '../../types'
 
 interface StatsProps {
@@ -23,7 +24,7 @@ export const Stats: React.FC<StatsProps> = ({ stats }) => {
       label: 'Daily Streak',
       value: `${stats.streak_days} Days`,
       subtext: 'Consistency record',
-      icon: '🔥',
+      icon: <Flame className="w-5 h-5 text-amber-600" />,
       color: 'bg-amber-50 text-amber-800',
     },
     {

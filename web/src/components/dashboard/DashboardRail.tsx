@@ -1,5 +1,6 @@
 import React from 'react'
 import { useTheme } from '../../context/ThemeContext'
+import logoImg from '../../assets/ChatGPT Image Sep 27, 2026, 02_35_50 PM.png'
 
 interface DashboardRailProps {
   activeTab: string
@@ -99,19 +100,22 @@ export const DashboardRail: React.FC<DashboardRailProps> = ({
   ]
 
   return (
-    <div className="w-16 h-full bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-3xl py-4 px-2 shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#00C4B3] flex flex-col justify-between items-center select-none transition-colors">
+    <div className="w-16 h-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl py-4 px-2 shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] flex flex-col justify-between items-center select-none transition-colors">
       {/* Top: Mini Brand Mark & Theme Mode Toggle */}
       <div className="flex flex-col items-center gap-3">
         {/* OnTrack Mini Logo Icon */}
-        <div
-          className="w-10 h-10 rounded-2xl bg-[#00C4B3] border-2 border-[#071E2D] text-[#071E2D] flex items-center justify-center font-extrabold text-sm shadow-[2px_2px_0px_#071E2D]"
+        <img
+          src={logoImg}
+          alt=""
+          aria-hidden="true"
+          width={40}
+          height={40}
+          className="rounded-2xl object-contain"
           title="OnTrack"
-        >
-          ⚡
-        </div>
+        />
 
         {/* Theme Mode Toggle Pill */}
-        <div className="flex flex-col items-center bg-[#F3F6F8] dark:bg-[#071E2D] p-1 rounded-full border-2 border-[#071E2D] dark:border-[#00C4B3]/40 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3]">
+        <div className="flex flex-col items-center bg-[#F3F6F8] dark:bg-[#091824] p-1 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]">
           <button
             type="button"
             onClick={() => setTheme('light')}
@@ -173,15 +177,15 @@ export const DashboardRail: React.FC<DashboardRailProps> = ({
                   w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-150 cursor-pointer
                   ${
                     isActive
-                      ? 'bg-[#00C4B3] text-[#071E2D] border-2 border-[#071E2D] dark:border-[#071E2D] shadow-[2px_2px_0px_#071E2D] scale-105 font-bold'
-                      : 'text-[#071E2D]/70 dark:text-slate-300 hover:text-[#071E2D] dark:hover:text-[#00C4B3] hover:bg-[#E6F7F5] dark:hover:bg-[#00C4B3]/15'
+                      ? 'bg-[#00C4B3] text-[#071E2D] border-2 border-[#071E2D] dark:border-[#00C4B3] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] scale-105 font-bold'
+                      : 'text-[#071E2D]/70 dark:text-slate-300 hover:text-[#071E2D] dark:hover:text-[#00C4B3] hover:bg-[#E6F7F5] dark:hover:bg-white/5'
                   }
                 `}
               >
                 {item.icon}
               </button>
               {/* Tooltip */}
-              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-[#071E2D] text-white text-[11px] font-bold rounded-lg whitespace-nowrap shadow-[2px_2px_0px_#00C4B3] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-[#071E2D] dark:bg-[#0E202D] text-white text-[11px] font-bold rounded-lg whitespace-nowrap border border-white/10 shadow-[2px_2px_0px_#000000] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
                 {item.label}
               </div>
             </div>
@@ -190,7 +194,7 @@ export const DashboardRail: React.FC<DashboardRailProps> = ({
       </div>
 
       {/* Bottom: Help & Logout */}
-      <div className="flex flex-col items-center gap-2 pt-2 border-t-2 border-[#071E2D]/10 dark:border-[#00C4B3]/20 w-full">
+      <div className="flex flex-col items-center gap-2 pt-2 border-t-2 border-[#071E2D]/10 dark:border-white/10 w-full">
         <button
           type="button"
           onClick={onToggleChat}

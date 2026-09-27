@@ -53,11 +53,11 @@ export const GoalWorkspace: React.FC = () => {
   if (!activeGoal) {
     return (
       <AppLayout title="Goal Workspace" subtitle="Goal not found">
-        <div className="flex flex-col items-center justify-center p-12 bg-white border-2 border-[#071E2D] rounded-2xl shadow-[4px_4px_0px_#071E2D] text-center gap-4">
-          <h2 className="text-xl font-bold text-[#071E2D]" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+        <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] text-center gap-4 transition-colors">
+          <h2 className="text-xl font-bold text-[#071E2D] dark:text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
             Goal Not Found
           </h2>
-          <p className="text-sm text-[#071E2D]/70 max-w-md">
+          <p className="text-sm text-[#071E2D]/70 dark:text-slate-300 max-w-md">
             The requested goal tracker could not be retrieved or has been archived.
           </p>
           <Button variant="primary" onClick={() => navigate('/dashboard')}>
@@ -112,7 +112,7 @@ export const GoalWorkspace: React.FC = () => {
 
         {/* Goal Quick Switcher Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/50 flex-shrink-0">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/50 dark:text-slate-400 flex-shrink-0">
             Switch Tracker:
           </span>
           {goals.map((g) => (
@@ -122,8 +122,8 @@ export const GoalWorkspace: React.FC = () => {
               className={`
                 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border-2 flex-shrink-0
                 ${g.id === activeGoal.id
-                  ? 'bg-[#071E2D] text-white border-[#071E2D] shadow-[2px_2px_0px_#00C4B3]'
-                  : 'bg-white text-[#071E2D] border-[#071E2D]/20 hover:border-[#071E2D]'
+                  ? 'bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] border-[#071E2D] dark:border-[#00C4B3] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]'
+                  : 'bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/20 dark:border-[#1E3A52] hover:border-[#071E2D] dark:hover:border-slate-500 shadow-[2px_2px_0px_#071E2D]/20 dark:shadow-[2px_2px_0px_#000000]'
                 }
               `}
             >
@@ -166,16 +166,16 @@ export const GoalWorkspace: React.FC = () => {
         onClose={() => setConfirmFinalizeOpen(false)}
         title="Finalize Goal & Run AI Verdict?"
       >
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-[#071E2D]/80 leading-relaxed">
+        <div className="flex flex-col gap-4 text-[#071E2D] dark:text-white">
+          <p className="text-sm text-[#071E2D]/80 dark:text-slate-300 leading-relaxed">
             Finalizing will close this goal tracking cycle. Nemotron will analyze your current progress ({activeGoal.current_value}/{activeGoal.target} {activeGoal.unit || ''}), calculate your final completion score, and issue an accountability verdict.
           </p>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#071E2D]/10">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#071E2D]/10 dark:border-white/10">
             <button
               type="button"
               onClick={() => setConfirmFinalizeOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-[#071E2D]/70 hover:text-[#071E2D]"
+              className="px-4 py-2 text-xs font-semibold text-[#071E2D]/70 dark:text-slate-400 hover:text-[#071E2D] dark:hover:text-white"
             >
               Keep Tracking
             </button>

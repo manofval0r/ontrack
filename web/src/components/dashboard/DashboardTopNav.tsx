@@ -36,7 +36,7 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
       </div>
 
       {/* Center: Tactile Pill Navigation matching OnTrack design system */}
-      <nav className="hidden md:flex items-center bg-white dark:bg-[#0B2536] p-1 rounded-full border-2 border-[#071E2D] dark:border-[#00C4B3] shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#00C4B3] transition-colors">
+      <nav className="hidden md:flex items-center bg-white dark:bg-[#0E202D] p-1 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] transition-colors">
         {navPills.map((pill) => {
           const isActive = activePill === pill.id
           return (
@@ -49,7 +49,7 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
                 ${
                   isActive
                     ? 'bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] shadow-sm'
-                    : 'text-[#071E2D]/70 dark:text-slate-300 hover:text-[#071E2D] dark:hover:text-white hover:bg-[#E6F7F5] dark:hover:bg-[#00C4B3]/15'
+                    : 'text-[#071E2D]/70 dark:text-slate-300 hover:text-[#071E2D] dark:hover:text-white hover:bg-[#E6F7F5] dark:hover:bg-white/5'
                 }
               `}
             >
@@ -65,7 +65,7 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
         <button
           type="button"
           onClick={onToggleSearch}
-          className="w-10 h-10 rounded-full bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
+          className="w-10 h-10 rounded-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
           title="Search"
           aria-label="Search"
         >
@@ -79,7 +79,7 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
         <button
           type="button"
           onClick={onToggleChat}
-          className="w-10 h-10 rounded-full bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] relative hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
+          className="w-10 h-10 rounded-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] relative hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
           title="Notifications & AI Coach"
           aria-label="Notifications"
         >
@@ -93,7 +93,7 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
         </button>
 
         {/* User Profile Pill */}
-        <div className="flex items-center gap-2 pl-1.5 pr-3 py-1 bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-full shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3]">
+        <div className="flex items-center gap-2 pl-1.5 pr-3 py-1 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]">
           <div className="w-7 h-7 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center text-[#071E2D] font-extrabold text-xs">
             {user.name ? user.name[0].toUpperCase() : 'I'}
           </div>

@@ -50,24 +50,24 @@ export const ChecklistTracker: React.FC<ChecklistTrackerProps> = ({ goal, onUpda
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 sm:p-8 bg-white border-2 border-[#071E2D] rounded-2xl shadow-[4px_4px_0px_#071E2D]">
+    <div className="flex flex-col gap-6 p-6 sm:p-8 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] transition-colors">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b-2 border-[#071E2D]/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b-2 border-[#071E2D]/10 dark:border-white/10">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[#166534]">AI-Determined Format</span>
-          <h3 className="text-xl sm:text-2xl font-bold text-[#071E2D]" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#166534] dark:text-emerald-400">AI-Determined Format</span>
+          <h3 className="text-xl sm:text-2xl font-bold text-[#071E2D] dark:text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
             Milestone Checklist
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-[#F0FDF4] border-2 border-[#071E2D] text-xs font-bold text-[#166534]">
+          <span className="px-3 py-1 rounded-full bg-[#F0FDF4] dark:bg-emerald-950/40 border-2 border-[#071E2D] dark:border-emerald-800 text-xs font-bold text-[#166534] dark:text-emerald-400">
             {completedCount} of {items.length} Completed ({percent}%)
           </span>
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full h-3.5 rounded-full bg-[#E5E7EB] border-2 border-[#071E2D] overflow-hidden p-0.5 shadow-inner">
+      <div className="w-full h-3.5 rounded-full bg-[#E5E7EB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] overflow-hidden p-0.5 shadow-inner">
         <div
           className="h-full rounded-full bg-gradient-to-r from-[#10B981] to-[#006D6A] transition-all duration-300"
           style={{ width: `${percent}%` }}
@@ -81,19 +81,19 @@ export const ChecklistTracker: React.FC<ChecklistTrackerProps> = ({ goal, onUpda
             key={item.id}
             onClick={() => !submitting && toggleItem(item.id)}
             className={`
-              flex items-center gap-3.5 p-4 rounded-xl border-2 border-[#071E2D]
+              flex items-center gap-3.5 p-4 rounded-xl border-2 border-[#071E2D] dark:border-[#1E3A52]
               cursor-pointer select-none transition-all duration-150
               ${item.completed
-                ? 'bg-[#F0FDF4]/70 shadow-[2px_2px_0px_#071E2D] opacity-90'
-                : 'bg-white shadow-[3px_3px_0px_#071E2D] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#071E2D]'
+                ? 'bg-[#F0FDF4]/70 dark:bg-[#091824] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] opacity-90'
+                : 'bg-white dark:bg-[#0E202D] shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#071E2D] dark:hover:shadow-[5px_5px_0px_#000000]'
               }
             `.trim()}
           >
             <div
               className={`
-                w-6 h-6 rounded-lg border-2 border-[#071E2D] flex items-center justify-center
+                w-6 h-6 rounded-lg border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center
                 flex-shrink-0 transition-colors
-                ${item.completed ? 'bg-[#00C4B3] text-[#071E2D]' : 'bg-white'}
+                ${item.completed ? 'bg-[#00C4B3] text-[#071E2D]' : 'bg-white dark:bg-[#091824]'}
               `.trim()}
             >
               {item.completed && (
@@ -104,7 +104,7 @@ export const ChecklistTracker: React.FC<ChecklistTrackerProps> = ({ goal, onUpda
             </div>
             <span
               className={`text-sm font-semibold flex-1 ${
-                item.completed ? 'line-through text-[#071E2D]/50' : 'text-[#071E2D]'
+                item.completed ? 'line-through text-[#071E2D]/50 dark:text-slate-500' : 'text-[#071E2D] dark:text-white'
               }`}
             >
               {item.title}
@@ -114,13 +114,13 @@ export const ChecklistTracker: React.FC<ChecklistTrackerProps> = ({ goal, onUpda
       </div>
 
       {/* Add New Milestone */}
-      <form onSubmit={addItem} className="flex flex-col sm:flex-row gap-3 pt-3 border-t-2 border-[#071E2D]/10">
+      <form onSubmit={addItem} className="flex flex-col sm:flex-row gap-3 pt-3 border-t-2 border-[#071E2D]/10 dark:border-white/10">
         <input
           type="text"
           value={newItemText}
           onChange={(e) => setNewItemText(e.target.value)}
           placeholder="Add sub-task or milestone item..."
-          className="flex-1 px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 focus:border-[#00C4B3] text-sm text-[#071E2D] placeholder:text-[#071E2D]/40 outline-none transition-colors"
+          className="flex-1 px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors"
         />
         <Button type="submit" variant="secondary" noBubble disabled={!newItemText.trim() || submitting} className="text-xs py-2 px-5">
           + Add Milestone
