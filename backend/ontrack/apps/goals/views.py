@@ -22,6 +22,14 @@ logger = logging.getLogger(__name__)
 
 CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 GOAL_TYPES = {Goal.GOAL_TYPE_COUNTER, Goal.GOAL_TYPE_CHECKLIST, Goal.GOAL_TYPE_MANUAL}
+GOAL_TEMPLATES = {
+    Goal.TEMPLATE_SALES_COUNTER,
+    Goal.TEMPLATE_FITNESS_COUNTER,
+    Goal.TEMPLATE_GITHUB_CHECKLIST,
+    Goal.TEMPLATE_STUDY_CHECKLIST,
+    Goal.TEMPLATE_REFLECTION_MANUAL,
+    Goal.TEMPLATE_GENERIC,
+}
 STATUSES = {Goal.STATUS_ACTIVE, Goal.STATUS_COMPLETED, Goal.STATUS_MISSED}
 GENERIC_VERDICT = (
     "Goal finalized. No detailed verdict is available right now — "
@@ -88,14 +96,14 @@ def _clean_items(raw, goal_type):
 
 def coerce_parse_result(raw):
     """Validate ai_module.parse_goal output ({goal_type, target, items,
-    domain, deadline, summary}).
+    domain, deadline, summary, goal_template}).
 
     Core fields (goal_type/target/domain) are strict: anything off ->
-    ("manual", None, [], "", None, None, True). Extras (items/deadline/
-    summary) are lenient: malformed values are dropped, never fatal.
-    Never raises.
+    ("manual", None, [], "", None, None, "generic", True). Extras
+    (items/deadline/summary/goal_template) are lenient: malformed values
+    are dropped, never fatal. Never raises.
     """
-    fallback = (Goal.GOAL_TYPE_MANUAL, None, [], "", None, None, True)
+    fallback = (Goal.GOAL_TYPE_MANUAL, None, [], "", None, None, Goal.TEMPLATE_GENERIC, True)
     if not isinstance(raw, dict):
         return fallback
     goal_type = raw.get("goal_type")
@@ -115,18 +123,32 @@ def coerce_parse_result(raw):
         summary = CONTROL_CHARS.sub("", summary).strip()[:2000] or None
     deadline = _parse_deadline(raw.get("deadline"))
     items = _clean_items(raw.get("items"), goal_type)
-    return (goal_type, target, items, domain, deadline, summary, False)
+    template = raw.get("goal_template")
+    if template not in GOAL_TEMPLATES:
+        template = Goal.TEMPLATE_GENERIC
+    return (goal_type, target, items, domain, deadline, summary, template, False)
 
 
 def parse_goal_safely(text):
-    """Call David's parser; on ANY failure return the manual fallback."""
+    """Call David's parser; on ANY failure return the manual fallback.
+
+    The template still comes from local keyword rules even on fallback,
+    so the tracker renders sensibly without an LLM round-trip.
+    """
     try:
         parsed = coerce_parse_result(ai_module.parse_goal(text))
     except Exception:
         logger.warning("ai_module.parse_goal failed; using manual fallback", exc_info=True)
-        return (Goal.GOAL_TYPE_MANUAL, None, [], "", None, None, True)
+        return (
+            Goal.GOAL_TYPE_MANUAL, None, [], "", None, None,
+            ai_module.infer_goal_template(text), True,
+        )
     if parsed[-1]:
         logger.warning("ai_module.parse_goal returned malformed data; using manual fallback")
+        return (
+            Goal.GOAL_TYPE_MANUAL, None, [], "", None, None,
+            ai_module.infer_goal_template(text), True,
+        )
     return parsed
 
 
@@ -147,11 +169,12 @@ class GoalListCreateView(APIView):
     def post(self, request):
         data = request.data if isinstance(request.data, dict) else {}
         text = clean_text(data.get("text"), max_length=500)
-        goal_type, target, items, domain, deadline, summary, used_fallback = parse_goal_safely(text)
+        goal_type, target, items, domain, deadline, summary, goal_template, used_fallback = parse_goal_safely(text)
         goal = Goal.objects.create(
             user_id=request.user_id,
             title=text[:255],
             goal_type=goal_type,
+            goal_template=goal_template,
             target=target,
             domain=domain,
             deadline=deadline,
@@ -162,6 +185,7 @@ class GoalListCreateView(APIView):
                 "domain": domain,
                 "deadline": deadline.isoformat() if deadline else None,
                 "summary": summary or "",
+                "goal_template": goal_template,
             },
         )
         if goal_type == Goal.GOAL_TYPE_CHECKLIST and items:
@@ -180,7 +204,9 @@ class GoalDetailView(APIView):
             pk=goal_id,
             user_id=request.user_id,
         )
-        return Response(GoalSerializer(goal).data)
+        payload = GoalSerializer(goal).data
+        payload["template_context"] = _template_context(goal)
+        return Response(payload)
 
     def put(self, request, goal_id):
         """Partial update: title/target/domain/deadline/status only.
@@ -256,6 +282,35 @@ class ProgressCreateView(APIView):
         return Response(payload, status=status.HTTP_201_CREATED)
 
 
+def _template_context(goal):
+    """Per-goal tracker context for template copy/icons.
+
+    Uses the already-prefetched progress_logs (no extra queries):
+    - streak_days: consecutive days with logs, anchored today/yesterday.
+    - commits_this_week: log count in the last 7 days (stored count for now).
+    - last_activity: newest logged_at ISO or None.
+    """
+    logs = list(getattr(goal, "progress_logs").all())
+    if not logs:
+        return {"streak_days": 0, "commits_this_week": 0, "last_activity": None}
+    now = timezone.now()
+    week_ago = now - timedelta(days=7)
+    commits_this_week = sum(1 for log in logs if log.logged_at >= week_ago)
+    last_activity = max(log.logged_at for log in logs).isoformat()
+    day_set = {log.logged_at.date() for log in logs}
+    today = now.date()
+    cursor = today if today in day_set else today - timedelta(days=1)
+    streak = 0
+    while cursor in day_set:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return {
+        "streak_days": streak,
+        "commits_this_week": commits_this_week,
+        "last_activity": last_activity,
+    }
+
+
 def _progress_pct(goal):
     if goal.goal_type == Goal.GOAL_TYPE_COUNTER:
         if not goal.target:
@@ -293,6 +348,7 @@ class DashboardView(APIView):
                 "id": str(goal.id),
                 "title": goal.title,
                 "goal_type": goal.goal_type,
+                "goal_template": goal.goal_template,
                 "target": goal.target,
                 "progress_pct": _progress_pct(goal),
             }
@@ -432,10 +488,11 @@ class ChatParseGoalView(APIView):
     def post(self, request):
         data = request.data if isinstance(request.data, dict) else {}
         prompt = clean_text(data.get("prompt"), field="prompt", max_length=500)
-        goal_type, target, items, domain, deadline, summary, used_fallback = parse_goal_safely(prompt)
+        goal_type, target, items, domain, deadline, summary, goal_template, used_fallback = parse_goal_safely(prompt)
         proposal = {
             "title": summary or prompt[:255],
             "goal_type": goal_type,
+            "goal_template": goal_template,
             "target": target,
             "items": items,
             "domain": domain,

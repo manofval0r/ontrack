@@ -18,6 +18,23 @@ class Goal(models.Model):
         (GOAL_TYPE_MANUAL, "Manual"),
     ]
 
+    # Tracker template (selects frontend copy/icons only — never a full
+    # per-goal LLM redesign). Set at creation via parse_goal() keyword rules.
+    TEMPLATE_SALES_COUNTER = "sales_counter"
+    TEMPLATE_FITNESS_COUNTER = "fitness_counter"
+    TEMPLATE_GITHUB_CHECKLIST = "github_checklist"
+    TEMPLATE_STUDY_CHECKLIST = "study_checklist"
+    TEMPLATE_REFLECTION_MANUAL = "reflection_manual"
+    TEMPLATE_GENERIC = "generic"
+    TEMPLATE_CHOICES = [
+        (TEMPLATE_SALES_COUNTER, "Sales counter"),
+        (TEMPLATE_FITNESS_COUNTER, "Fitness counter"),
+        (TEMPLATE_GITHUB_CHECKLIST, "GitHub checklist"),
+        (TEMPLATE_STUDY_CHECKLIST, "Study checklist"),
+        (TEMPLATE_REFLECTION_MANUAL, "Reflection manual"),
+        (TEMPLATE_GENERIC, "Generic"),
+    ]
+
     STATUS_ACTIVE = "active"
     STATUS_COMPLETED = "completed"
     STATUS_MISSED = "missed"
@@ -32,6 +49,9 @@ class Goal(models.Model):
     user_id = models.UUIDField(db_index=True)
     title = models.CharField(max_length=255)
     goal_type = models.CharField(max_length=20, choices=GOAL_TYPE_CHOICES)
+    goal_template = models.CharField(
+        max_length=30, choices=TEMPLATE_CHOICES, default=TEMPLATE_GENERIC
+    )
     target = models.IntegerField(null=True, blank=True)
     domain = models.CharField(max_length=100, default="", blank=True)
     start_at = models.DateTimeField(auto_now_add=True)
