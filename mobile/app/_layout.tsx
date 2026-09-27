@@ -6,7 +6,6 @@ import {
   useFonts,
   DMSans_400Regular,
   DMSans_500Medium,
-  DMSans_600SemiBold,
   DMSans_700Bold,
 } from '@expo-google-fonts/dm-sans';
 import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
@@ -16,7 +15,6 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     DMSans_400Regular,
     DMSans_500Medium,
-    DMSans_600SemiBold,
     DMSans_700Bold,
     Fraunces_700Bold,
   });
