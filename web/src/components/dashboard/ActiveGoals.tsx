@@ -6,9 +6,11 @@ import { EmptyState } from '../common/EmptyState'
 
 interface ActiveGoalsProps {
   goals: Goal[]
+  onCreateGoal?: () => void
+  onSelectGoal?: (goal: Goal) => void
 }
 
-export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals }) => {
+export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, onSelectGoal }) => {
   const [filter, setFilter] = useState<'all' | TrackerType>('all')
   const [search, setSearch] = useState('')
 
@@ -69,13 +71,16 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals }) => {
           title="No Matching Goals Found"
           description="You don't have any goals matching the selected filter. Create a new goal with Nemotron AI in seconds."
           actionLabel="Create New Goal with AI"
-          onAction={() => {}}
+          onAction={onCreateGoal || (() => {})}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGoals.map((g) => (
-            <GoalCard key={g.id} goal={g} />
+            <div key={g.id} onClick={() => onSelectGoal?.(g)} className="cursor-pointer">
+              <GoalCard goal={g} />
+            </div>
           ))}
+
 
           {/* Quick Add Goal Card */}
           <Link

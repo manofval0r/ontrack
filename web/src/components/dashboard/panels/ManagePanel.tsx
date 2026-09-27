@@ -1,21 +1,30 @@
 import React from 'react'
-import { EmptyState } from '../../common/EmptyState'
-import type { Goal } from '../../../types'
+import { useNavigate } from 'react-router-dom'
+import { useGoals } from '../../../context/GoalContext'
+import { ActiveGoals } from '../ActiveGoals'
 
-interface ManagePanelProps {
-  onSelectGoal: (goal: Goal) => void
-  onOpenChat: () => void
+export const ManagePanel: React.FC = () => {
+  const navigate = useNavigate()
+  const { goals } = useGoals()
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <h2
+          className="text-2xl sm:text-3xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
+          style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+        >
+          Trackers
+        </h2>
+        <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 mt-0.5 font-medium">
+          Search and open any goal in this workspace.
+        </p>
+      </div>
+      <ActiveGoals
+        goals={goals}
+        onCreateGoal={() => navigate('/dashboard/chat')}
+        onSelectGoal={(g) => navigate(`/dashboard/goal/${g.id}`)}
+      />
+    </div>
+  )
 }
-
-/**
- * Placeholder — Israel's full ManagePanel restores on his push.
- * Same filename/props contract so the swap is a clean overwrite.
- */
-export const ManagePanel: React.FC<ManagePanelProps> = ({ onOpenChat }) => (
-  <EmptyState
-    title="Manage goals"
-    description="Search, filter, and bulk-manage every goal from one place. Meanwhile, the AI coach can set one up for you."
-    actionLabel="Open AI Chat"
-    onAction={onOpenChat}
-  />
-)

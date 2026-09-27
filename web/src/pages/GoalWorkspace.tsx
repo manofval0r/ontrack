@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { AppLayout } from '../components/layout/AppLayout'
+import { ArrowLeft, MessageSquare } from 'lucide-react'
 import { GoalHeader } from '../components/goals/GoalHeader'
 import { CounterTracker } from '../components/trackers/CounterTracker'
 import { ChecklistTracker } from '../components/trackers/ChecklistTracker'
@@ -42,29 +42,25 @@ export const GoalWorkspace: React.FC = () => {
 
   if (loading && !activeGoal) {
     return (
-      <AppLayout title="Goal Workspace" subtitle="Loading tracker details...">
-        <div className="flex-1 flex items-center justify-center min-h-[400px]">
-          <Loader label="Retrieving goal state and progress ledger..." />
-        </div>
-      </AppLayout>
+      <div className="flex-1 flex items-center justify-center min-h-[400px]">
+        <Loader label="Retrieving goal state and progress ledger..." />
+      </div>
     )
   }
 
   if (!activeGoal) {
     return (
-      <AppLayout title="Goal Workspace" subtitle="Goal not found">
-        <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] text-center gap-4 transition-colors">
-          <h2 className="text-xl font-bold text-[#071E2D] dark:text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
-            Goal Not Found
-          </h2>
-          <p className="text-sm text-[#071E2D]/70 dark:text-slate-300 max-w-md">
-            The requested goal tracker could not be retrieved or has been archived.
-          </p>
-          <Button variant="primary" onClick={() => navigate('/dashboard')}>
-            Return to Dashboard
-          </Button>
-        </div>
-      </AppLayout>
+      <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] text-center gap-4 transition-colors">
+        <h2 className="text-xl font-bold text-[#071E2D] dark:text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+          Goal Not Found
+        </h2>
+        <p className="text-sm text-[#071E2D]/70 dark:text-slate-300 max-w-md">
+          The requested goal tracker could not be retrieved or has not been created yet.
+        </p>
+        <Button variant="primary" onClick={() => navigate('/dashboard')}>
+          Return to Dashboard
+        </Button>
+      </div>
     )
   }
 
@@ -96,29 +92,40 @@ export const GoalWorkspace: React.FC = () => {
   }
 
   return (
-    <AppLayout
-      title="Goal Workspace"
-      subtitle="Intelligent execution radar, dynamic tracker, and accountability timeline."
-      actions={
-        <Link to="/chat" className="btn-pill btn-pill-secondary text-xs !py-1.5 !px-3">
-          <span>Chat with Nemotron</span>
-          <span className="btn-bubble !w-5 !h-5">💬</span>
-        </Link>
-      }
-    >
-      <div className="flex flex-col gap-6 pb-12">
-        {/* Error notification */}
-        {error && <ErrorState error={error} onRetry={clearError} />}
+    <div className="flex flex-col gap-6 pb-12">
+      {/* Top action / back bar */}
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard/goals')}
+          className="flex items-center gap-2 text-xs font-bold text-[#071E2D] dark:text-slate-200 hover:text-[#006D6A] dark:hover:text-[#00C4B3] transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Trackers</span>
+        </button>
 
-        {/* Goal Quick Switcher Pills */}
+        <Link
+          to="/dashboard/chat"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#00C4B3] text-[#071E2D] text-xs font-bold border-2 border-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:-translate-y-0.5 transition-all"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span>Chat with Nemotron</span>
+        </Link>
+      </div>
+
+      {/* Error notification */}
+      {error && <ErrorState error={error} onRetry={clearError} />}
+
+      {/* Goal Quick Switcher Pills */}
+      {goals.length > 1 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           <span className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/50 dark:text-slate-400 flex-shrink-0">
-            Switch Tracker:
+            Switch:
           </span>
           {goals.map((g) => (
             <Link
               key={g.id}
-              to={`/goal/${g.id}`}
+              to={`/dashboard/goal/${g.id}`}
               className={`
                 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border-2 flex-shrink-0
                 ${g.id === activeGoal.id
@@ -131,33 +138,33 @@ export const GoalWorkspace: React.FC = () => {
             </Link>
           ))}
         </div>
+      )}
 
-        {/* Goal Header */}
-        <GoalHeader goal={activeGoal} onFinalize={() => setConfirmFinalizeOpen(true)} />
+      {/* Goal Header */}
+      <GoalHeader goal={activeGoal} onFinalize={() => setConfirmFinalizeOpen(true)} />
 
-        {/* Dynamic Tracker based on AI format */}
-        {activeGoal.goal_type === 'counter' && (
-          <CounterTracker goal={activeGoal} onUpdate={handleCounterUpdate} />
-        )}
-        {activeGoal.goal_type === 'checklist' && (
-          <ChecklistTracker goal={activeGoal} onUpdateItems={handleChecklistUpdate} />
-        )}
-        {activeGoal.goal_type === 'manual' && (
-          <ManualTracker goal={activeGoal} onLogReflection={handleReflectionLog} />
-        )}
+      {/* Dynamic Tracker based on AI format */}
+      {activeGoal.goal_type === 'counter' && (
+        <CounterTracker goal={activeGoal} onUpdate={handleCounterUpdate} />
+      )}
+      {activeGoal.goal_type === 'checklist' && (
+        <ChecklistTracker goal={activeGoal} onUpdateItems={handleChecklistUpdate} />
+      )}
+      {activeGoal.goal_type === 'manual' && (
+        <ManualTracker goal={activeGoal} onLogReflection={handleReflectionLog} />
+      )}
 
-        {/* Final Verdict Banner (if finalized) */}
-        {activeGoal.verdict && <Verdict goal={activeGoal} />}
+      {/* Final Verdict Banner (if finalized) */}
+      {activeGoal.verdict && <Verdict goal={activeGoal} />}
 
-        {/* Two-Column Bottom Layout: Check-ins + Progress History */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <CheckIn
-            checkIns={activeGoal.check_ins || []}
-            goalId={activeGoal.id}
-            onRespond={handleCheckInResponse}
-          />
-          <ProgressLog logs={activeGoal.progress_logs || []} />
-        </div>
+      {/* Two-Column Bottom Layout: Check-ins + Progress History */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <CheckIn
+          checkIns={activeGoal.check_ins || []}
+          goalId={activeGoal.id}
+          onRespond={handleCheckInResponse}
+        />
+        <ProgressLog logs={activeGoal.progress_logs || []} />
       </div>
 
       {/* Finalize Confirmation Modal */}
@@ -185,6 +192,6 @@ export const GoalWorkspace: React.FC = () => {
           </div>
         </div>
       </Modal>
-    </AppLayout>
+    </div>
   )
 }

@@ -48,25 +48,18 @@ const GoogleIcon = () => (
   </svg>
 )
 
-const AppleIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.38c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.66-1.06 1.73-.93 2.76 1 .08 2.02-.51 2.63-1.26z" />
-  </svg>
-)
-
 const GithubIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
   </svg>
 )
 
 // ─── Signup Page ──────────────────────────────────────────────────────────────
 
-// Public defaults (anon key is public by design); Vercel env overrides these.
 const SUPABASE_URL =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? 'https://destcakvqdzhkzemdugo.supabase.co'
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, '') || 'https://destcakvqdzhkzemdugo.supabase.co'
 const SUPABASE_ANON_KEY =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
   'sb_publishable_kT5JCbb2BFocdW23HIJYfw_jk879gsk'
 
 export const Signup: React.FC = () => {
@@ -79,7 +72,7 @@ export const Signup: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null)
 
   const handleGoogleAuth = () => {
-    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
       const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
       window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
     } else {
@@ -89,7 +82,7 @@ export const Signup: React.FC = () => {
   }
 
   const handleGithubAuth = () => {
-    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
       const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
       window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=github&redirect_to=${redirectTo}`
     } else {
@@ -267,28 +260,23 @@ export const Signup: React.FC = () => {
               <div className="flex-1 h-px bg-[#071E2D]/12 dark:bg-white/10" />
             </div>
 
-            {/* Social Login Buttons (matching reference circular style) */}
+            {/* Social Login Buttons: Google and GitHub */}
             <div className="flex items-center justify-center gap-4 mb-8">
               <button
                 type="button"
                 onClick={handleGoogleAuth}
                 aria-label="Continue with Google"
                 className="w-12 h-12 rounded-full bg-[#071E2D] dark:bg-[#0E202D] text-white border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center transition-all duration-150 hover:bg-[#00C4B3] hover:text-[#071E2D] hover:-translate-y-0.5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
+                title="Continue with Google"
               >
                 <GoogleIcon />
-              </button>
-              <button
-                type="button"
-                aria-label="Continue with Apple"
-                className="w-12 h-12 rounded-full bg-[#071E2D] dark:bg-[#0E202D] text-white border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center transition-all duration-150 hover:bg-[#00C4B3] hover:text-[#071E2D] hover:-translate-y-0.5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
-              >
-                <AppleIcon />
               </button>
               <button
                 type="button"
                 onClick={handleGithubAuth}
                 aria-label="Continue with GitHub"
                 className="w-12 h-12 rounded-full bg-[#071E2D] dark:bg-[#0E202D] text-white border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center transition-all duration-150 hover:bg-[#00C4B3] hover:text-[#071E2D] hover:-translate-y-0.5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
+                title="Continue with GitHub"
               >
                 <GithubIcon />
               </button>

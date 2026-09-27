@@ -1,33 +1,68 @@
-import React, { useState } from 'react'
-import { ChevronLeft, ChevronRight, Check, Zap } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronLeft, ChevronRight, Check, Plus } from 'lucide-react'
+import { useGoals } from '../../../context/GoalContext'
+import type { Goal } from '../../../types'
 
 interface DayCell {
   date: number
+  dateStr: string
   isCurrentMonth: boolean
   isToday: boolean
   hasActivity: boolean
   completedCount: number
+  activeCount: number
 }
 
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+]
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-// Mock activity data
-const ACTIVITY_DATA: Record<string, { completed: number; pending: number }> = {
-  '2026-04-15': { completed: 3, pending: 2 },
-  '2026-04-16': { completed: 5, pending: 1 },
-  '2026-04-17': { completed: 2, pending: 3 },
-  '2026-04-18': { completed: 4, pending: 2 },
-  '2026-04-20': { completed: 1, pending: 4 },
-  '2026-04-22': { completed: 6, pending: 0 },
-  '2026-04-24': { completed: 3, pending: 2 },
-}
-
 export const CalendarPanel: React.FC = () => {
+  const navigate = useNavigate()
+  const { goals } = useGoals()
   const today = new Date()
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  })
+
+  // Map real activities and deadlines by 'YYYY-MM-DD'
+  const activityMap = useMemo(() => {
+    const map: Record<string, { completed: number; active: number; goals: Goal[]; logs: { goalTitle: string; note: string; value: any }[] }> = {}
+
+    goals.forEach((g) => {
+      // Check deadline
+      if (g.deadline) {
+        const dStr = g.deadline.split('T')[0]
+        if (!map[dStr]) map[dStr] = { completed: 0, active: 0, goals: [], logs: [] }
+        map[dStr].goals.push(g)
+        if (g.status === 'completed') {
+          map[dStr].completed += 1
+        } else {
+          map[dStr].active += 1
+        }
+      }
+
+      // Check progress logs
+      ;(g.progress_logs || []).forEach((log) => {
+        if (log.timestamp) {
+          const lStr = log.timestamp.split('T')[0]
+          if (!map[lStr]) map[lStr] = { completed: 0, active: 0, goals: [], logs: [] }
+          map[lStr].logs.push({
+            goalTitle: g.title,
+            note: log.note || 'Logged progress',
+            value: log.value,
+          })
+        }
+      })
+    })
+
+    return map
+  }, [goals])
 
   const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month + 1, 0).getDate()
@@ -37,7 +72,7 @@ export const CalendarPanel: React.FC = () => {
     return new Date(year, month, 1).getDay()
   }
 
-  const generateCalendarDays = (): DayCell[] => {
+  const calendarDays = useMemo((): DayCell[] => {
     const daysInMonth = getDaysInMonth(currentMonth, currentYear)
     const firstDay = getFirstDayOfMonth(currentMonth, currentYear)
     const prevMonthDays = getDaysInMonth(currentMonth - 1, currentYear)
@@ -46,44 +81,61 @@ export const CalendarPanel: React.FC = () => {
 
     // Previous month trailing days
     for (let i = firstDay - 1; i >= 0; i--) {
-      const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(prevMonthDays - i).padStart(2, '0')}`
+      const pMonth = currentMonth === 0 ? 12 : currentMonth
+      const pYear = currentMonth === 0 ? currentYear - 1 : currentYear
+      const dateNum = prevMonthDays - i
+      const dateStr = `${pYear}-${String(pMonth).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`
+      const entry = activityMap[dateStr]
       days.push({
-        date: prevMonthDays - i,
+        date: dateNum,
+        dateStr,
         isCurrentMonth: false,
         isToday: false,
-        hasActivity: !!ACTIVITY_DATA[dateStr],
-        completedCount: ACTIVITY_DATA[dateStr]?.completed || 0,
+        hasActivity: !!entry && (entry.completed > 0 || entry.active > 0 || entry.logs.length > 0),
+        completedCount: entry?.completed || 0,
+        activeCount: entry?.active || 0,
       })
     }
 
     // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-      const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear()
+      const isToday =
+        day === today.getDate() &&
+        currentMonth === today.getMonth() &&
+        currentYear === today.getFullYear()
+      const entry = activityMap[dateStr]
       days.push({
         date: day,
+        dateStr,
         isCurrentMonth: true,
         isToday,
-        hasActivity: !!ACTIVITY_DATA[dateStr],
-        completedCount: ACTIVITY_DATA[dateStr]?.completed || 0,
+        hasActivity: !!entry && (entry.completed > 0 || entry.active > 0 || entry.logs.length > 0),
+        completedCount: entry?.completed || 0,
+        activeCount: entry?.active || 0,
       })
     }
 
     // Next month leading days
     const remainingCells = 42 - days.length
     for (let day = 1; day <= remainingCells; day++) {
-      const dateStr = `${currentYear}-${String(currentMonth + 2).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      const nMonth = currentMonth === 11 ? 1 : currentMonth + 2
+      const nYear = currentMonth === 11 ? currentYear + 1 : currentYear
+      const dateStr = `${nYear}-${String(nMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      const entry = activityMap[dateStr]
       days.push({
         date: day,
+        dateStr,
         isCurrentMonth: false,
         isToday: false,
-        hasActivity: !!ACTIVITY_DATA[dateStr],
-        completedCount: ACTIVITY_DATA[dateStr]?.completed || 0,
+        hasActivity: !!entry && (entry.completed > 0 || entry.active > 0 || entry.logs.length > 0),
+        completedCount: entry?.completed || 0,
+        activeCount: entry?.active || 0,
       })
     }
 
     return days
-  }
+  }, [currentMonth, currentYear, activityMap, today])
 
   const handlePrevMonth = () => {
     if (currentMonth === 0) {
@@ -103,7 +155,7 @@ export const CalendarPanel: React.FC = () => {
     }
   }
 
-  const calendarDays = generateCalendarDays()
+  const selectedEntry = activityMap[selectedDateStr]
 
   return (
     <div className="flex flex-col gap-6 animate-fadeIn">
@@ -117,7 +169,7 @@ export const CalendarPanel: React.FC = () => {
             Goal Calendar
           </h2>
           <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 mt-0.5 font-medium">
-            Track progress, streaks, and upcoming deadlines across all trackers.
+            Schedule deadlines, track progress logs, and view milestone consistency across all goals.
           </p>
         </div>
 
@@ -146,10 +198,10 @@ export const CalendarPanel: React.FC = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs">
+      <div className="flex items-center gap-4 text-xs flex-wrap">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-md bg-[#00C4B3] border border-[#071E2D]" />
-          <span className="text-[#071E2D]/70 dark:text-slate-300 font-semibold">Active Day</span>
+          <span className="text-[#071E2D]/70 dark:text-slate-300 font-semibold">Active Tracker / Log</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-md bg-[#071E2D] dark:bg-white border border-[#071E2D]" />
@@ -157,7 +209,7 @@ export const CalendarPanel: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <Check className="w-3.5 h-3.5 text-[#006D6A] dark:text-[#00C4B3]" />
-          <span className="text-[#071E2D]/70 dark:text-slate-300 font-semibold">Goals Completed</span>
+          <span className="text-[#071E2D]/70 dark:text-slate-300 font-semibold">Goal Completed</span>
         </div>
       </div>
 
@@ -174,51 +226,115 @@ export const CalendarPanel: React.FC = () => {
 
         {/* Date cells */}
         <div className="grid grid-cols-7 gap-2">
-          {calendarDays.map((cell, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => setSelectedDate(`${currentYear}-${currentMonth + 1}-${cell.date}`)}
-              className={`
-                aspect-square rounded-xl border-2 p-2 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative
-                ${cell.isCurrentMonth ? 'text-[#071E2D] dark:text-white' : 'text-[#071E2D]/30 dark:text-slate-500'}
-                ${cell.isToday ? 'bg-[#071E2D] dark:bg-white text-white dark:text-[#071E2D] border-[#071E2D] dark:border-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] font-extrabold' : 'bg-[#F8FAFB] dark:bg-[#091824] border-[#071E2D]/20 dark:border-[#1E3A52]'}
-                ${cell.hasActivity && !cell.isToday ? 'bg-[#E6F7F5] dark:bg-[#00C4B3]/10 border-[#00C4B3]/50' : ''}
-                hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none
-              `}
-            >
-              <span className={`text-xs ${cell.isToday ? 'font-extrabold' : 'font-semibold'}`}>
-                {cell.date}
-              </span>
-              {cell.hasActivity && cell.completedCount > 0 && (
-                <div className="absolute bottom-1 flex items-center gap-0.5">
-                  {Array.from({ length: Math.min(cell.completedCount, 3) }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`w-1 h-1 rounded-full ${cell.isToday ? 'bg-[#00C4B3]' : 'bg-[#00C4B3]'}`}
-                    />
-                  ))}
-                </div>
-              )}
-            </button>
-          ))}
+          {calendarDays.map((cell, idx) => {
+            const isSelected = selectedDateStr === cell.dateStr
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setSelectedDateStr(cell.dateStr)}
+                className={`
+                  aspect-square rounded-xl border-2 p-2 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative
+                  ${cell.isCurrentMonth ? 'text-[#071E2D] dark:text-white' : 'text-[#071E2D]/30 dark:text-slate-500'}
+                  ${cell.isToday ? 'border-[#00C4B3] font-extrabold' : ''}
+                  ${isSelected ? 'bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] border-[#071E2D] dark:border-[#00C4B3] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] scale-105 z-10' : 'bg-[#F8FAFB] dark:bg-[#091824] border-[#071E2D]/20 dark:border-[#1E3A52]'}
+                  ${cell.hasActivity && !isSelected ? 'bg-[#E6F7F5] dark:bg-[#00C4B3]/10 border-[#00C4B3]/50' : ''}
+                  hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none
+                `}
+              >
+                <span className={`text-xs ${cell.isToday ? 'font-black underline decoration-[#00C4B3] underline-offset-2' : 'font-semibold'}`}>
+                  {cell.date}
+                </span>
+                {cell.hasActivity && (
+                  <div className="flex items-center gap-0.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00C4B3]" />
+                    {cell.completedCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                  </div>
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      {/* Selected date summary */}
-      {selectedDate && (
-        <div className="bg-[#E6F7F5] dark:bg-[#00C4B3]/10 border-2 border-[#00C4B3]/50 rounded-2xl p-4 flex items-start gap-3">
-          <Zap className="w-5 h-5 text-[#006D6A] dark:text-[#00C4B3] shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <span className="text-sm font-bold text-[#071E2D] dark:text-white block">
-              {selectedDate}
-            </span>
-            <p className="text-xs text-[#071E2D]/70 dark:text-slate-300 mt-1">
-              3 goals completed, 2 pending. Logged 5 activities via AI coach.
-            </p>
+      {/* Selected Date Real Summary */}
+      <div className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-5 sm:p-6 shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] flex flex-col gap-4">
+        <div className="flex items-center justify-between border-b-2 border-[#071E2D]/10 dark:border-white/10 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center text-[#071E2D] text-xs font-bold">
+              📅
+            </div>
+            <h3 className="font-bold text-sm text-[#071E2D] dark:text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+              Agenda for {selectedDateStr}
+            </h3>
           </div>
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard/chat')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#00C4B3] text-[#071E2D] text-xs font-bold border-2 border-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:-translate-y-0.5 transition-all cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Entry</span>
+          </button>
         </div>
-      )}
+
+        {selectedEntry && (selectedEntry.goals.length > 0 || selectedEntry.logs.length > 0) ? (
+          <div className="flex flex-col gap-3">
+            {selectedEntry.goals.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">
+                  Trackers Due / Scheduled ({selectedEntry.goals.length})
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {selectedEntry.goals.map((g) => (
+                    <div
+                      key={g.id}
+                      onClick={() => navigate(`/dashboard/goal/${g.id}`)}
+                      className="p-3 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl flex items-center justify-between cursor-pointer hover:border-[#00C4B3] shadow-sm transition-all"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-[#071E2D] dark:text-white truncate">{g.title}</p>
+                        <p className="text-[10px] text-[#071E2D]/60 dark:text-slate-400 mt-0.5">
+                          Status: {g.status} · Progress: {g.current_value}/{g.target} {g.unit || ''}
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-[#006D6A] dark:text-[#00C4B3]">Open →</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedEntry.logs.length > 0 && (
+              <div className="flex flex-col gap-2 mt-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">
+                  Logs Recorded ({selectedEntry.logs.length})
+                </span>
+                <div className="flex flex-col gap-1.5">
+                  {selectedEntry.logs.map((log, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2.5 bg-white dark:bg-[#0E202D] border border-[#071E2D]/20 dark:border-[#1E3A52] rounded-xl flex items-center justify-between text-xs"
+                    >
+                      <div className="min-w-0">
+                        <span className="font-bold text-[#071E2D] dark:text-white">{log.goalTitle}</span>
+                        <span className="text-[#071E2D]/60 dark:text-slate-400 ml-2">{log.note}</span>
+                      </div>
+                      <span className="font-mono font-bold text-[#006D6A] dark:text-[#00C4B3] shrink-0">
+                        +{log.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="py-6 text-center text-xs text-[#071E2D]/60 dark:text-slate-400">
+            No goals due or progress logged on this date. Use the AI Chat or Quick Log to add an entry!
+          </div>
+        )}
+      </div>
     </div>
   )
 }

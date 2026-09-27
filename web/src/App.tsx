@@ -1,15 +1,28 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import React from 'react'
+import { BrowserRouter, Navigate, Routes, Route, useParams } from 'react-router-dom'
 import { GoalProvider } from './context/GoalContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { Landing } from './pages/Landing'
 import { Login } from './pages/Login'
 import { Signup } from './pages/Signup'
 import { Onboarding } from './pages/Onboarding'
-import { Dashboard } from './pages/Dashboard'
+import { DashboardOverview } from './pages/DashboardOverview'
 import { Chat } from './pages/Chat'
 import { GoalWorkspace } from './pages/GoalWorkspace'
-import { Settings } from './pages/Settings'
 import { NotFound } from './pages/NotFound'
+import { DashboardShell } from './components/dashboard/DashboardShell'
+import { ActivityPanel } from './components/dashboard/panels/ActivityPanel'
+import { ManagePanel } from './components/dashboard/panels/ManagePanel'
+import { ProgramPanel } from './components/dashboard/panels/ProgramPanel'
+import { ReportsPanel } from './components/dashboard/panels/ReportsPanel'
+import { CommunityPanel } from './components/dashboard/panels/CommunityPanel'
+import { IntegrationsPanel } from './components/dashboard/panels/IntegrationsPanel'
+import { CalendarPanel } from './components/dashboard/panels/CalendarPanel'
+import { AccountPanel } from './components/dashboard/panels/AccountPanel'
+import { captureAuthFromUrl } from './utils/auth'
+
+// Capture any incoming OAuth callback tokens on load
+captureAuthFromUrl()
 
 /** Redirects unauthenticated visitors to /login.
  * Rejects mock/dev tokens so a stale mock token can never 401-loop
@@ -26,27 +39,48 @@ function App() {
       <GoalProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public / Marketing */}
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-
-            {/* Onboarding Flow */}
             <Route path="/onboarding" element={<Onboarding />} />
 
             {/* Core Authenticated App Flow */}
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-            <Route path="/goal/:id" element={<ProtectedRoute><GoalWorkspace /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardShell />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<DashboardOverview />} />
+              <Route path="calendar" element={<CalendarPanel />} />
+              <Route path="activity" element={<ActivityPanel />} />
+              <Route path="goals" element={<ManagePanel />} />
+              <Route path="program" element={<ProgramPanel />} />
+              <Route path="reports" element={<ReportsPanel />} />
+              <Route path="community" element={<CommunityPanel />} />
+              <Route path="integrations" element={<IntegrationsPanel />} />
+              <Route path="account" element={<AccountPanel />} />
+              <Route path="chat" element={<Chat />} />
+              <Route path="goal/:id" element={<GoalWorkspace />} />
+            </Route>
 
-            {/* 404 Catch-all */}
+            <Route path="/settings" element={<Navigate to="/dashboard/account" replace />} />
+            <Route path="/chat" element={<Navigate to="/dashboard/chat" replace />} />
+            <Route path="/goal/:id" element={<GoalIdRedirect />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </GoalProvider>
     </ThemeProvider>
   )
+}
+
+function GoalIdRedirect() {
+  const { id } = useParams()
+  return <Navigate to={`/dashboard/goal/${id}`} replace />
 }
 
 export default App

@@ -1,25 +1,98 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
+import type { Goal } from '../../types'
 
-interface MonthlyData {
-  month: string
+interface DashboardChartProps {
+  goals?: Goal[]
+}
+
+interface MetricPoint {
+  label: string
   completed: number
   inProgress: number
 }
 
-const MONTH_METRICS: MonthlyData[] = [
-  { month: 'Jan', completed: 18, inProgress: 14 },
-  { month: 'Feb', completed: 24, inProgress: 16 },
-  { month: 'Mar', completed: 14, inProgress: 20 },
-  { month: 'Apr', completed: 28, inProgress: 12 },
-  { month: 'May', completed: 22, inProgress: 18 },
-  { month: 'Jun', completed: 32, inProgress: 15 },
-  { month: 'Jul', completed: 20, inProgress: 24 },
-  { month: 'Aug', completed: 26, inProgress: 14 },
-]
-
-export const DashboardChart: React.FC = () => {
+export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [] }) => {
   const [selectedRange, setSelectedRange] = useState<'1W' | '1M' | '1Y'>('1M')
-  const maxTotal = 50
+
+  const chartData: MetricPoint[] = useMemo(() => {
+    const now = new Date()
+
+    if (selectedRange === '1W') {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date()
+        d.setDate(now.getDate() - (6 - i))
+        const dayLabel = days[d.getDay()]
+        const dateStr = d.toISOString().split('T')[0]
+
+        let completed = 0
+        let inProgress = 0
+
+        goals.forEach((g) => {
+          const logsToday = (g.progress_logs || []).filter(
+            (l) => l.timestamp && l.timestamp.startsWith(dateStr)
+          )
+          if (logsToday.length > 0) {
+            inProgress += logsToday.length
+          }
+          if (g.status === 'completed' && g.deadline && g.deadline.startsWith(dateStr)) {
+            completed += 1
+          }
+        })
+
+        return { label: dayLabel, completed, inProgress }
+      })
+    }
+
+    if (selectedRange === '1M') {
+      return [
+        { label: 'W1', completed: 0, inProgress: 0 },
+        { label: 'W2', completed: 0, inProgress: 0 },
+        { label: 'W3', completed: 0, inProgress: 0 },
+        { label: 'W4', completed: 0, inProgress: 0 },
+      ].map((w, idx) => {
+        const completed = goals.filter((g) => g.status === 'completed').length
+        const inProgress = goals.filter((g) => g.status === 'active').length
+        // Distribute proportionally across weeks for visual throughput
+        const splitComp = idx === 3 ? completed : Math.min(completed, idx)
+        const splitProg = Math.max(0, inProgress - idx)
+        return {
+          label: w.label,
+          completed: splitComp,
+          inProgress: splitProg,
+        }
+      })
+    }
+
+    // 1Y (Months)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const curMonth = now.getMonth()
+    const sliceStart = Math.max(0, curMonth - 5)
+    const relevantMonths = months.slice(sliceStart, curMonth + 1)
+
+    return relevantMonths.map((m, idx) => {
+      const compCount = goals.filter(
+        (g) => g.status === 'completed' && (g.deadline ? new Date(g.deadline).getMonth() === sliceStart + idx : true)
+      ).length
+      const activeCount = goals.filter((g) => g.status === 'active').length
+      return {
+        label: m,
+        completed: compCount,
+        inProgress: Math.max(0, activeCount - (idx === relevantMonths.length - 1 ? 0 : 1)),
+      }
+    })
+  }, [goals, selectedRange])
+
+  const maxVal = useMemo(() => {
+    const highest = Math.max(
+      ...chartData.map((d) => d.completed + d.inProgress),
+      1
+    )
+    return Math.max(highest, 5)
+  }, [chartData])
+
+  const totalCompleted = goals.filter((g) => g.status === 'completed').length
+  const totalActive = goals.filter((g) => g.status === 'active').length
 
   return (
     <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] flex flex-col justify-between h-full transition-colors">
@@ -33,7 +106,7 @@ export const DashboardChart: React.FC = () => {
             Total Velocity
           </h3>
           <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 mt-0.5 font-medium">
-            Weekly & monthly goal completion throughput
+            Goal completion & activity throughput
           </p>
         </div>
 
@@ -59,11 +132,11 @@ export const DashboardChart: React.FC = () => {
           <div className="flex items-center gap-3 text-xs font-bold pl-2 border-l border-[#071E2D]/20 dark:border-white/15">
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md bg-[#071E2D] dark:bg-white border border-[#071E2D] dark:border-white" />
-              <span className="text-[#071E2D]/80 dark:text-slate-300 text-[11px]">Done</span>
+              <span className="text-[#071E2D]/80 dark:text-slate-300 text-[11px]">Done ({totalCompleted})</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md bg-[#00C4B3] border border-[#071E2D]" />
-              <span className="text-[#071E2D]/80 dark:text-slate-300 text-[11px]">In Progress</span>
+              <span className="text-[#071E2D]/80 dark:text-slate-300 text-[11px]">Active ({totalActive})</span>
             </div>
           </div>
         </div>
@@ -73,41 +146,46 @@ export const DashboardChart: React.FC = () => {
       <div className="flex items-end gap-3 sm:gap-4 pt-4 h-48 sm:h-52 w-full">
         {/* Y-Axis Labels */}
         <div className="flex flex-col justify-between h-full text-[10px] text-[#071E2D]/50 dark:text-slate-400 font-mono pb-6 pr-1 select-none font-bold">
-          <span>50k</span>
-          <span>40k</span>
-          <span>30k</span>
-          <span>20k</span>
-          <span>10k</span>
-          <span>00</span>
+          <span>{maxVal}</span>
+          <span>{Math.round(maxVal * 0.75)}</span>
+          <span>{Math.round(maxVal * 0.5)}</span>
+          <span>{Math.round(maxVal * 0.25)}</span>
+          <span>0</span>
         </div>
 
         {/* Bars Container */}
         <div className="flex-1 flex items-end justify-between h-full border-b-2 border-[#071E2D]/15 dark:border-white/10 pb-2 px-1 gap-2">
-          {MONTH_METRICS.map((item) => {
-            const completedHeight = Math.round((item.completed / maxTotal) * 100)
-            const inProgressHeight = Math.round((item.inProgress / maxTotal) * 100)
+          {chartData.map((item) => {
+            const completedHeight = Math.min(100, Math.round((item.completed / maxVal) * 100))
+            const inProgressHeight = Math.min(100 - completedHeight, Math.round((item.inProgress / maxVal) * 100))
 
             return (
-              <div key={item.month} className="flex-1 flex flex-col items-center h-full justify-end group">
-                <div className="w-full max-w-[28px] flex flex-col items-center justify-end rounded-t-xl overflow-hidden border-2 border-b-0 border-[#071E2D] dark:border-[#1E3A52] transition-all duration-300 group-hover:scale-y-105 group-hover:shadow-[2px_0px_0px_#071E2D] dark:group-hover:shadow-[2px_0px_0px_#000000]">
+              <div key={item.label} className="flex-1 flex flex-col items-center h-full justify-end group">
+                <div className="w-full max-w-[28px] h-full flex flex-col items-center justify-end rounded-t-xl overflow-hidden transition-all duration-300 group-hover:scale-y-105">
                   {/* Top Bar: Turquoise Accent */}
-                  <div
-                    className="w-full bg-[#00C4B3] rounded-t-md relative overflow-hidden"
-                    style={{ height: `${inProgressHeight}%` }}
-                    title={`${item.month} In Progress: ${item.inProgress}k`}
-                  />
+                  {inProgressHeight > 0 && (
+                    <div
+                      className="w-full bg-[#00C4B3] rounded-t-md relative transition-all"
+                      style={{ height: `${inProgressHeight}%` }}
+                      title={`${item.label} Active: ${item.inProgress}`}
+                    />
+                  )}
 
                   {/* Bottom Bar: Deep Navy Solid */}
-                  <div
-                    className="w-full bg-[#071E2D] dark:bg-white"
-                    style={{ height: `${completedHeight}%` }}
-                    title={`${item.month} Completed: ${item.completed}k`}
-                  />
+                  {completedHeight > 0 ? (
+                    <div
+                      className="w-full bg-[#071E2D] dark:bg-white transition-all"
+                      style={{ height: `${completedHeight}%` }}
+                      title={`${item.label} Completed: ${item.completed}`}
+                    />
+                  ) : inProgressHeight === 0 ? (
+                    <div className="w-full h-1 bg-[#071E2D]/10 dark:bg-white/10 rounded-full" />
+                  ) : null}
                 </div>
 
-                {/* X-Axis Month Label */}
+                {/* X-Axis Label */}
                 <span className="text-[11px] text-[#071E2D]/60 dark:text-slate-400 font-bold mt-2 group-hover:text-[#071E2D] dark:group-hover:text-[#00C4B3] transition-colors">
-                  {item.month}
+                  {item.label}
                 </span>
               </div>
             )

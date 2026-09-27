@@ -4,11 +4,18 @@ import { Button } from '../Button'
 
 export const Profile: React.FC = () => {
   const { user, updateUserProfile } = useGoals()
-  const [name, setName] = useState(user.name)
-  const [email, setEmail] = useState(user.email)
+  const [name, setName] = useState(user.name || '')
+  const [email, setEmail] = useState(user.email || '')
   const [persona, setPersona] = useState(user.accountability_persona)
   const [timezone, setTimezone] = useState(user.timezone)
   const [savedNotice, setSavedNotice] = useState(false)
+
+  React.useEffect(() => {
+    setName(user.name || '')
+    setEmail(user.email || '')
+    if (user.accountability_persona) setPersona(user.accountability_persona)
+    if (user.timezone) setTimezone(user.timezone)
+  }, [user])
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
