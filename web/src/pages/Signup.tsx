@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { AuthIllustration } from '../components/AuthIllustration'
 
@@ -63,6 +63,7 @@ const FacebookIcon = () => (
 // ─── Signup Page ──────────────────────────────────────────────────────────────
 
 export const Signup: React.FC = () => {
+  const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -70,6 +71,7 @@ export const Signup: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    navigate('/onboarding')
   }
 
   return (

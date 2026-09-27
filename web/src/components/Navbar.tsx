@@ -225,16 +225,22 @@ export const Navbar: React.FC = () => {
           {isLanding && (
             <>
               <Link
+                to="/onboarding"
+                className="font-sans font-semibold text-sm text-[#006D6A] hover:text-[#00C4B3] transition-colors px-2 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3]"
+              >
+                Onboarding
+              </Link>
+              <Link
                 to="/login"
-                className="font-sans font-semibold text-sm text-[#071E2D]/75 hover:text-[#00C4B3] transition-colors px-2 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2"
+                className="font-sans font-semibold text-sm text-[#071E2D]/75 hover:text-[#00C4B3] transition-colors px-2 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3]"
               >
                 Log in
               </Link>
               <Link
-                to="/signup"
+                to="/dashboard"
                 className="btn-pill btn-pill-primary text-[0.875rem] py-2 px-3.5 pl-5"
               >
-                <span>Sign up</span>
+                <span>Launch App</span>
                 <span
                   className="btn-bubble !w-6 !h-6 bg-white text-[#006D6A]"
                   style={{ width: '1.5rem', height: '1.5rem' }}
