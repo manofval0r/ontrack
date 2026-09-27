@@ -1,8 +1,16 @@
 /** Voice Input modal — record → POST /api/asr → editable transcript → create/log. */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { AudioModule, RecordingPresets, setAudioModeAsync, requestRecordingPermissionsAsync, useAudioRecorder } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
@@ -15,6 +23,22 @@ export default function VoiceModal() {
   const { createGoal } = useGoals();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [isRecording, setIsRecording] = useState(false);
+  const pulse = useSharedValue(1);
+
+  useEffect(() => {
+    if (isRecording) {
+      pulse.value = withRepeat(
+        withSequence(withTiming(1.1, { duration: 600 }), withTiming(1, { duration: 600 })),
+        -1,
+        false
+      );
+    } else {
+      cancelAnimation(pulse);
+      pulse.value = 1;
+    }
+  }, [isRecording, pulse]);
+
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
   const [transcript, setTranscript] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +108,7 @@ export default function VoiceModal() {
       </Pressable>
       <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
         <View style={{ alignItems: 'center', gap: 8 }}>
+          <Animated.View style={pulseStyle}>
           <Pressable
             onPress={() => (isRecording ? stop() : start())}
             accessibilityLabel={isRecording ? 'Stop recording' : 'Start recording'}
@@ -101,6 +126,7 @@ export default function VoiceModal() {
           >
             <Text style={{ fontSize: 36 }}>🎤</Text>
           </Pressable>
+          </Animated.View>
           <Text style={{ fontWeight: '700', color: Brand.navy }}>
             {isRecording ? 'Listening…' : busy ? 'Working…' : 'Tap to speak your goal'}
           </Text>

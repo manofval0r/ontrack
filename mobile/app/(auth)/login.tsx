@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '../../constants/colors';
 import { Radii, Spacing } from '../../constants/spacing';
 import { Card, PillButton } from '../../components/ui';
-import { signInWithEmail, signInWithGoogle } from '../../lib/auth';
+import { signInWithEmail, signInWithProvider } from '../../lib/auth';
 import { useGoals } from '../../lib/store';
 
 export default function Login() {
@@ -34,14 +34,14 @@ export default function Login() {
     }
   };
 
-  const onGoogle = async () => {
+  const onProvider = async (provider: 'google' | 'github') => {
     try {
       setBusy(true);
       setError(null);
-      await signInWithGoogle();
+      await signInWithProvider(provider);
       await afterAuth();
     } catch (e: any) {
-      setError(e.message ?? 'Google sign-in failed.');
+      setError(e.message ?? `${provider} sign-in failed.`);
     } finally {
       setBusy(false);
     }
@@ -56,7 +56,8 @@ export default function Login() {
           <TextInput value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry style={input} />
           {error && <Text style={{ color: '#dc2626', fontSize: 13 }}>{error}</Text>}
           <PillButton title={busy ? 'Logging in…' : 'Log in'} primary onPress={onEmail} disabled={busy} />
-          <PillButton title="Continue with Google" onPress={onGoogle} disabled={busy} />
+          <PillButton title="Continue with Google" onPress={() => onProvider('google')} disabled={busy} />
+          <PillButton title="Continue with GitHub" onPress={() => onProvider('github')} disabled={busy} />
         </View>
       </Card>
       <Link href="/(auth)/signup" style={{ marginTop: 16, textAlign: 'center', color: Brand.teal, fontWeight: '600' }}>

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '../../constants/colors';
 import { Spacing, Touch } from '../../constants/spacing';
 import { GoalCard } from '../../components/GoalCard';
+import { SkeletonCard } from '../../components/Skeleton';
 import { Card } from '../../components/ui';
 import { useGoals } from '../../lib/store';
 
@@ -55,6 +56,12 @@ export default function Home() {
               <Card>
                 <Text style={{ color: '#dc2626' }}>{error}</Text>
               </Card>
+            )}
+            {loading && active.length === 0 && (
+              <>
+                <SkeletonCard />
+                <SkeletonCard />
+              </>
             )}
             {active.length === 0 && !loading && (
               <Card>

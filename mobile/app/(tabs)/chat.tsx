@@ -12,6 +12,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Brand } from '../../constants/colors';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { api } from '../../lib/api';
@@ -88,11 +89,13 @@ export default function Chat() {
           keyExtractor={(m) => m.id}
           contentContainerStyle={{ padding: Spacing.lg, gap: 10 }}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const isUser = item.sender === 'user';
             return (
-              <View style={{ alignSelf: isUser ? 'flex-end' : 'flex-start', maxWidth: '88%' }}>
-                <View
+              <Animated.View
+                entering={FadeInUp.duration(280).delay(Math.min(index, 4) * 40)}
+                style={{ flexDirection: 'column', gap: 1, maxWidth: '88%', alignSelf: isUser ? 'flex-end' : 'flex-start', alignItems: isUser ? 'flex-end' : 'flex-start' }}
+              >  <View
                   style={{
                     backgroundColor: isUser ? Brand.navy : '#fff',
                     borderWidth: 2,
@@ -126,7 +129,7 @@ export default function Chat() {
                     </View>
                   )}
                 </View>
-              </View>
+              </Animated.View>
             );
           }}
         />

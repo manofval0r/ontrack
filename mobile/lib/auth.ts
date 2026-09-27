@@ -54,19 +54,34 @@ export async function signUpWithEmail(name: string, email: string, password: str
   return data.access_token as string | undefined;
 }
 
-/** Google OAuth: system browser → Supabase → deep link back to ontrack://auth. */
-export async function signInWithGoogle(): Promise<string> {
+/** OAuth via system browser → Supabase → deep link back to the app scheme.
+ *
+ * NO separate GitHub/Google OAuth app is needed for mobile: the OAuth App
+ * callback is server-side (https://<ref>.supabase.co/auth/v1/callback), so the
+ * SAME provider credentials serve web + mobile. The only mobile-side config is
+ * the Supabase Redirect URLs allowlist, which must contain:
+ *   - ontrack://auth            (standalone builds, matches `scheme` in app.json)
+ *   - exp://<lan-ip>:8081/--/auth (Expo Go dev — changes per machine/network)
+ * If the redirect is missing from the allowlist, Supabase falls back to the
+ * Site URL (the Vercel web app) — that is the "lands on web" symptom.
+ */
+export async function signInWithProvider(provider: 'google' | 'github'): Promise<string> {
   const redirect = Linking.createURL('auth');
   const authUrl =
-    `${SUPABASE_URL}/auth/v1/authorize?provider=google` +
+    `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}` +
     `&redirect_to=${encodeURIComponent(redirect)}`;
   const result = await WebBrowser.openAuthSessionAsync(authUrl, redirect);
-  if (result.type !== 'success' || !result.url) throw new Error('Google sign-in cancelled.');
+  if (result.type !== 'success' || !result.url) throw new Error(`${provider} sign-in cancelled.`);
   const hash = result.url.split('#')[1] ?? '';
   const params = new URLSearchParams(hash);
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
-  if (!accessToken) throw new Error('Google sign-in returned no token.');
+  if (!accessToken) throw new Error(`${provider} sign-in returned no token.`);
   await setSession(accessToken, refreshToken ?? undefined);
   return accessToken;
+}
+
+/** Kept for existing callers — Google via the shared provider flow. */
+export async function signInWithGoogle(): Promise<string> {
+  return signInWithProvider('google');
 }

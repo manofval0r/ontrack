@@ -4,30 +4,34 @@
     "slug": "ontrack",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "scheme": "ontrack",
     "userInterfaceStyle": "automatic",
     "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#071E2D"
     },
     "ios": {
       "supportsTablet": true,
+      "icon": "./assets/icon.png",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "OnTrack uses the microphone for voice goal input.",
         "NSSpeechRecognitionUsageDescription": "OnTrack transcribes your voice into goals and progress logs."
       }
     },
     "android": {
-      "permissions": [
-        "RECORD_AUDIO"
-      ],
+      "permissions": ["RECORD_AUDIO"],
       "adaptiveIcon": {
-        "backgroundColor": "#071E2D"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#00C4B3"
       }
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-asset"
+      "expo-asset",
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true

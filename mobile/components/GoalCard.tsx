@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
@@ -19,6 +20,13 @@ function pct(goal: any): number {
 export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
   const [speaking, setSpeaking] = useState(false);
   const playerRef = useRef<AudioPlayer | null>(null);
+  const fill = useSharedValue(pct(goal));
+
+  useEffect(() => {
+    fill.value = withTiming(pct(goal), { duration: 600 });
+  }, [goal.current_value, goal.target, fill]);
+
+  const barStyle = useAnimatedStyle(() => ({ width: `${Math.round(fill.value)}%` }));
 
   useEffect(() => {
     return () => {
@@ -90,7 +98,7 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
           overflow: 'hidden',
         }}
       >
-        <View style={{ width: `${pct(goal)}%`, height: '100%', backgroundColor: Brand.turquoise }} />
+        <Animated.View style={[{ height: '100%', backgroundColor: Brand.turquoise }, barStyle]} />
       </View>
       <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.teal }}>
