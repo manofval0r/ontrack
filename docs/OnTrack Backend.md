@@ -36,5 +36,5 @@ Same Django codebase, two Render instances (`ontrack-api-web`, `ontrack-api-mobi
 *What I need from David by end of Sprint 1*
 Function signatures for `parse_goal()`, `generate_checkin()`, `generate_verdict()`, `text_to_speech()`, `speech_to_text()` — I plug these into my endpoints as soon as I have the shapes.
 
-*What I need from Chioma/Eniola/Israel*
+*What I need from Eniola/Israel*
 Nothing blocking yet — I'll have all endpoints returning dummy JSON by end of Sprint 1 so you can start wiring against the real API contract immediately instead of waiting on Nemotron integration.
