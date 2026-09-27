@@ -97,6 +97,23 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearError = () => setError(null)
 
+  // ── Supabase Google OAuth redirect: parse #access_token from URL hash ─────
+  // Supabase redirects back as /dashboard#access_token=...&refresh_token=...
+  // Without this, the JWT is lost and every API call 401s.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+      const params = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      if (accessToken) {
+        localStorage.setItem('ontrack_token', accessToken)
+        if (refreshToken) localStorage.setItem('ontrack_refresh_token', refreshToken)
+        // Clean the hash so the token never leaks via copy-paste / referrer
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      }
+    }
+  }, [])
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   /** Returns true when there is a token — the user is authenticated */
