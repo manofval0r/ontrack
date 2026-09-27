@@ -182,6 +182,52 @@ class GoalDetailView(APIView):
         )
         return Response(GoalSerializer(goal).data)
 
+    def put(self, request, goal_id):
+        """Partial update: title/target/domain/deadline/status only.
+        Items/progress go through their own endpoints. Unknown fields ignored."""
+        goal = get_object_or_404(Goal, pk=goal_id, user_id=request.user_id)
+        data = request.data if isinstance(request.data, dict) else {}
+        updated = []
+        if "title" in data:
+            goal.title = clean_text(data.get("title"), field="title", max_length=255)
+            updated.append("title")
+        if "target" in data:
+            target = data.get("target")
+            if target is not None and (not _is_int(target) or target < 0):
+                raise ApiError("target must be a non-negative integer", "VALIDATION_ERROR")
+            goal.target = target
+            updated.append("target")
+        if "domain" in data:
+            domain = data.get("domain", "")
+            if not isinstance(domain, str):
+                raise ApiError("domain must be a string", "VALIDATION_ERROR")
+            goal.domain = domain[:100]
+            updated.append("domain")
+        if "deadline" in data:
+            goal.deadline = _parse_deadline(data.get("deadline"))
+            updated.append("deadline")
+        if "status" in data:
+            new_status = data.get("status")
+            if new_status not in STATUSES:
+                raise ApiError(
+                    f"status must be one of {sorted(STATUSES)}", "VALIDATION_ERROR"
+                )
+            goal.status = new_status
+            if new_status in (Goal.STATUS_COMPLETED, Goal.STATUS_MISSED) and not goal.finished_at:
+                goal.finished_at = timezone.now()
+            updated.append("status")
+        if not updated:
+            raise ApiError("no updatable fields provided", "VALIDATION_ERROR")
+        goal.save(update_fields=updated + (["finished_at"] if "finished_at" in updated or "status" in updated else []))
+        goal = Goal.objects.prefetch_related("items", "progress_logs").get(pk=goal.pk)
+        return Response(GoalSerializer(goal).data)
+
+    def delete(self, request, goal_id):
+        goal = get_object_or_404(Goal, pk=goal_id, user_id=request.user_id)
+        gid = str(goal.id)
+        goal.delete()
+        return Response({"message": "Goal successfully deleted.", "id": gid})
+
 
 class ProgressCreateView(APIView):
     def post(self, request):
@@ -352,6 +398,57 @@ def _current_progress(goal, logs):
     if logs and _is_int(logs[0].value):
         return logs[0].value
     return 0
+
+
+class CheckinRespondView(APIView):
+    """POST /api/goals/:id/checkins/:checkin_id/respond — store the user's
+    reply on an existing check-in. No new Nemotron call (verdict_preview is
+    a deterministic acknowledgement, not AI)."""
+
+    def post(self, request, goal_id, checkin_id):
+        goal = get_object_or_404(Goal, pk=goal_id, user_id=request.user_id)
+        checkin = get_object_or_404(CheckIn, pk=checkin_id, goal=goal)
+        data = request.data if isinstance(request.data, dict) else {}
+        reply = clean_text(data.get("user_response"), field="user_response", max_length=2000)
+        checkin.user_response = reply
+        checkin.save(update_fields=["user_response"])
+        return Response(
+            {
+                "id": str(checkin.id),
+                "goal_id": str(goal.id),
+                "status": "responded",
+                "user_response": reply,
+                "verdict_preview": "Noted — keep pushing toward your target.",
+            }
+        )
+
+
+class ChatParseGoalView(APIView):
+    """POST /api/chat/parse-goal — proposal only, no DB write.
+    Frontend shows the proposal, then creates via POST /api/goals {text}."""
+
+    throttle_classes = [GoalsBurstThrottle]
+
+    def post(self, request):
+        data = request.data if isinstance(request.data, dict) else {}
+        prompt = clean_text(data.get("prompt"), field="prompt", max_length=500)
+        goal_type, target, items, domain, deadline, summary, used_fallback = parse_goal_safely(prompt)
+        proposal = {
+            "title": summary or prompt[:255],
+            "goal_type": goal_type,
+            "target": target,
+            "items": items,
+            "domain": domain,
+            "deadline": deadline.date().isoformat() if deadline else None,
+            "summary": summary or "",
+        }
+        if used_fallback:
+            ai_text = "Got it — I set this up as a manual goal. You can adjust the details."
+        elif goal_type == "checklist":
+            ai_text = f"Understood! I structured this as a checklist with {len(items)} items."
+        else:
+            ai_text = f"Understood! I structured this as a {goal_type} goal (target {target})."
+        return Response({"ai_response_text": ai_text, "goal_proposal": proposal})
 
 
 class GoalFinalizeView(APIView):
