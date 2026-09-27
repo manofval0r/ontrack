@@ -12,11 +12,11 @@ import { Settings } from './pages/Settings'
 import { NotFound } from './pages/NotFound'
 
 /** Redirects unauthenticated visitors to /login.
- * Rejects mock/dev tokens so a stale `mock_google_oauth_token` can never 401-loop
+ * Rejects mock/dev tokens so a stale mock token can never 401-loop
  * against the real backend — user is sent back to /login instead. */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('ontrack_token')
-  if (!token || token === 'mock_google_oauth_token') return <Navigate to="/login" replace />
+  if (!token || token.startsWith('mock_')) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 

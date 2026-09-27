@@ -14,6 +14,49 @@ import uuid
 from django.db import models
 
 
+class Integration(models.Model):
+    """Per-user third-party credential vault (Evans).
+
+    One row per (user, provider). `access_token` is stored in plaintext for
+    the hackathon window — flag: move to KMS/encrypted field before real PII.
+    Tokens are NEVER serialized to clients (views whitelist fields).
+    """
+
+    PROVIDER_GITHUB = "github"
+    PROVIDER_GOOGLE_CAL = "google-cal"
+    PROVIDER_SLACK = "slack"
+    PROVIDER_NOTION = "notion"
+    PROVIDER_CHOICES = [
+        (PROVIDER_GITHUB, "GitHub"),
+        (PROVIDER_GOOGLE_CAL, "Google Calendar"),
+        (PROVIDER_SLACK, "Slack"),
+        (PROVIDER_NOTION, "Notion"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Supabase auth user id; plain UUID, deliberately no FK (no local users).
+    user_id = models.UUIDField(db_index=True)
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
+    access_token = models.TextField(default="", blank=True)
+    # Provider extras: slack {webhook_url}, notion {api_token, database_id},
+    # github/google {login, scopes}. Never secrets beyond access_token.
+    meta = models.JSONField(default=dict, blank=True)
+    connected = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user_id", "provider"], name="uniq_integration_user_provider"
+            )
+        ]
+        indexes = [models.Index(fields=["user_id", "provider"])]
+
+    def __str__(self):
+        return f"{self.provider} for {self.user_id} ({'on' if self.connected else 'off'})"
+
+
 class Profile(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     display_name = models.CharField(max_length=255, null=True, blank=True)

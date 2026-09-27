@@ -97,30 +97,47 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearError = () => setError(null)
 
-  // ── Supabase Google OAuth redirect: parse #access_token from URL hash ─────
-  // Supabase redirects back as /dashboard#access_token=...&refresh_token=...
-  // Without this, the JWT is lost and every API call 401s.
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
-      const params = new URLSearchParams(window.location.hash.substring(1))
-      const accessToken = params.get('access_token')
-      const refreshToken = params.get('refresh_token')
-      if (accessToken) {
-        localStorage.setItem('ontrack_token', accessToken)
-        if (refreshToken) localStorage.setItem('ontrack_refresh_token', refreshToken)
-        // Clean the hash so the token never leaks via copy-paste / referrer
-        window.history.replaceState(null, '', window.location.pathname + window.location.search)
-      }
-    }
-  }, [])
-
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   /** Returns true when there is a token — the user is authenticated */
   const isAuthenticated = () => !!localStorage.getItem('ontrack_token')
 
+  // ── OAuth callback: Supabase redirects here with #access_token=… ────────
+  // Captures session + provider tokens, persists any pending integration
+  // (stash `ontrack_oauth_provider` before redirecting to authorize),
+  // then scrubs the fragment so tokens never linger in history.
+  const consumeOAuthCallback = useCallback(async () => {
+    if (!window.location.hash) return
+    const frag = new URLSearchParams(window.location.hash.slice(1))
+    const access = frag.get('access_token')
+    if (!access) return
+    try {
+      localStorage.setItem('ontrack_token', access)
+      const refresh = frag.get('refresh_token')
+      if (refresh) localStorage.setItem('ontrack_refresh_token', refresh)
+      const pendingProvider = localStorage.getItem('ontrack_oauth_provider')
+      const providerToken = frag.get('provider_token')
+      if (pendingProvider && providerToken) {
+        try {
+          await api.saveIntegration({ provider: pendingProvider, access_token: providerToken })
+          // Local copy lets the Integrations tab verify identity (hackathon
+          // tradeoff — same sensitivity class as the session token).
+          const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
+          stored[pendingProvider] = providerToken
+          localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
+        } catch (err) {
+          console.warn('[GoalContext] Could not persist OAuth integration', err)
+        }
+      }
+    } finally {
+      localStorage.removeItem('ontrack_oauth_provider')
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+  }, [])
+
   // ── Bootstrap: fetch user profile + settings from real API ───────────────────
   const bootstrapUser = useCallback(async () => {
+    await consumeOAuthCallback()
     if (!isAuthenticated()) return
     try {
       const [me, settings] = await Promise.all([
@@ -153,7 +170,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Non-fatal: UI falls back to local defaults
       console.warn('[GoalContext] Could not bootstrap user from API', err)
     }
-  }, [])
+  }, [consumeOAuthCallback])
 
   // ── Goals ────────────────────────────────────────────────────────────────────
 
