@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "OnTrack",
-    "slug": "ontrack",
+    "slug": "onTrack",
+    "owner": "manofval0r",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,12 +16,15 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/icon.png",
+      "bundleIdentifier": "com.manofval0r.ontrack",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "OnTrack uses the microphone for voice goal input.",
         "NSSpeechRecognitionUsageDescription": "OnTrack transcribes your voice into goals and progress logs."
       }
     },
     "android": {
+      "package": "com.manofval0r.ontrack",
+      "versionCode": 1,
       "permissions": ["RECORD_AUDIO"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
