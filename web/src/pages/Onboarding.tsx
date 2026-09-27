@@ -356,38 +356,27 @@ export const Onboarding: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFB] dark:bg-[#07141E] bg-dot-grid flex flex-col justify-between font-sans text-[#071E2D] dark:text-slate-100 selection:bg-[#00C4B3] selection:text-[#071E2D] transition-colors">
       {/* ── Minimal Top Bar ────────────────────────────────────────── */}
-      {/* Rule: NO main site navigation bar, NO marketing links, NO login/signup */}
-      {/* Contains ONLY: small back arrow (if step allows) and slim progress indicator */}
-      <header className="w-full max-w-4xl mx-auto px-6 pt-6 sm:pt-8 flex items-center justify-between">
+      <header className="w-full max-w-4xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 flex items-center justify-between">
         {/* Left: small back arrow (Step 2 and Step 4 only) */}
         {canGoBack ? (
           <button
             type="button"
             onClick={handleBack}
-            className="w-10 h-10 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#F3F6F8] dark:hover:bg-[#132B3E] hover:-translate-x-0.5 active:translate-x-0.5 active:shadow-none transition-all cursor-pointer"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#F3F6F8] dark:hover:bg-[#132B3E] hover:-translate-x-0.5 active:translate-x-0.5 active:shadow-none transition-all cursor-pointer"
             aria-label="Go back to previous step"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="19" y1="12" x2="5" y2="12" />
               <polyline points="12 19 5 12 12 5" />
             </svg>
           </button>
         ) : (
-          <div className="w-10 h-10" aria-hidden="true" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10" aria-hidden="true" />
         )}
 
-        {/* Right: slim visual progress indicator */}
+        {/* Right: slim progress indicator */}
         <div
-          className="flex items-center gap-2"
+          className="flex items-center gap-1.5 sm:gap-2"
           role="progressbar"
           aria-label="Onboarding Progress"
           aria-valuenow={currentStep}
@@ -399,10 +388,10 @@ export const Onboarding: React.FC = () => {
               key={step}
               className={`h-2 rounded-full transition-all duration-300 ${
                 currentStep === step
-                  ? 'w-9 bg-[#00C4B3] border border-[#071E2D]'
+                  ? 'w-7 sm:w-9 bg-[#00C4B3] border border-[#071E2D]'
                   : currentStep > step
-                  ? 'w-4 bg-[#071E2D] dark:bg-[#00C4B3]'
-                  : 'w-4 bg-[#071E2D]/20 dark:bg-white/20'
+                  ? 'w-3 sm:w-4 bg-[#071E2D] dark:bg-[#00C4B3]'
+                  : 'w-3 sm:w-4 bg-[#071E2D]/20 dark:bg-white/20'
               }`}
             />
           ))}
@@ -410,29 +399,29 @@ export const Onboarding: React.FC = () => {
       </header>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-6 sm:py-10 w-full max-w-4xl mx-auto">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-5 sm:py-10 w-full max-w-4xl mx-auto">
         {/* ======================================================== */}
         {/* STEP 1 — Welcome & Persona Showcase                     */}
         {/* ======================================================== */}
         {currentStep === 1 && (
           <div className="w-full flex flex-col items-center text-center max-w-2xl mx-auto animate-fadeIn">
-            {/* Dynamic Hero Illustration Card (No Blur Glow) */}
-            <div className="relative mb-6 w-full max-w-lg">
-              <div className="relative p-5 sm:p-6 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] hover:-translate-y-1 transition-all flex flex-col items-center">
+            {/* Dynamic Hero Illustration Card */}
+            <div className="relative mb-5 sm:mb-6 w-full max-w-sm sm:max-w-lg">
+              <div className="relative p-4 sm:p-6 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] hover:-translate-y-1 transition-all flex flex-col items-center">
                 <img
                   src={activePersonaObj.illustration}
                   alt={`${activePersonaObj.label} illustration`}
-                  className="w-80 sm:w-96 max-w-full h-auto mx-auto object-contain transition-all duration-300"
+                  className="w-56 sm:w-80 md:w-96 max-w-full h-auto mx-auto object-contain transition-all duration-300"
                 />
                 <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-[#E6F7F5] dark:bg-[#00C4B3]/15 border border-[#00C4B3]/40 rounded-full text-xs font-bold text-[#006D6A] dark:text-[#00C4B3]">
-                  <activePersonaObj.icon className="w-3.5 h-3.5" />
-                  <span>{activePersonaObj.tagline}</span>
+                  <activePersonaObj.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate max-w-[200px]">{activePersonaObj.tagline}</span>
                 </div>
               </div>
             </div>
 
             {/* Persona Selector Tabs */}
-            <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-5 sm:mb-6">
               {(Object.keys(PERSONAS) as PersonaKey[]).map((key) => {
                 const p = PERSONAS[key]
                 const Icon = p.icon
@@ -445,7 +434,7 @@ export const Onboarding: React.FC = () => {
                       setSelectedPersona(key)
                       setGoalText(p.exampleGoal)
                     }}
-                    className={`px-3.5 py-1.5 rounded-full border-2 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-full border-2 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       isSelected
                         ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D] shadow-[2px_2px_0px_#071E2D] scale-105'
                         : 'bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/40 dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#E6F7F5] dark:hover:bg-[#132B3E]'
@@ -460,28 +449,28 @@ export const Onboarding: React.FC = () => {
 
             {/* Heading */}
             <h1
-              className="text-3xl sm:text-5xl font-extrabold text-[#071E2D] dark:text-white tracking-tight leading-tight"
+              className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-[#071E2D] dark:text-white tracking-tight leading-tight px-2"
               style={{ fontFamily: "'Fraunces', Georgia, serif" }}
             >
               You're in. Let's set your first goal.
             </h1>
 
             {/* Subheading */}
-            <p className="text-base sm:text-lg text-[#071E2D]/75 dark:text-slate-300 mt-3 sm:mt-4 leading-relaxed font-sans max-w-lg">
+            <p className="text-sm sm:text-base lg:text-lg text-[#071E2D]/75 dark:text-slate-300 mt-3 sm:mt-4 leading-relaxed font-sans max-w-lg px-2">
               Whether you're shipping code, hitting reps, closing deals, or studying — OnTrack builds your tracker instantly from your words.
             </p>
 
-            {/* Single button: Let's go */}
-            <div className="mt-8 flex flex-col items-center gap-3">
+            {/* CTA */}
+            <div className="mt-6 sm:mt-8 flex flex-col items-center gap-3 w-full px-4 sm:px-0">
               <Button
                 variant="primary"
                 onClick={() => setCurrentStep(2)}
-                className="text-base sm:text-lg px-9 py-3.5"
+                className="text-base sm:text-lg px-9 py-3.5 w-full sm:w-auto"
               >
                 Let's go
               </Button>
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] bg-[#E6F7F5] dark:bg-[#00C4B3]/15 px-3.5 py-1.5 rounded-full border border-[#00C4B3]/40">
-                <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-pulse flex-shrink-0" />
                 <span>Zero setup required · Voice or text input</span>
               </div>
             </div>
@@ -489,29 +478,29 @@ export const Onboarding: React.FC = () => {
         )}
 
         {/* ======================================================== */}
-        {/* STEP 2 — State your goal (Interactive Persona SVGs)     */}
+        {/* STEP 2 — State your goal                                */}
         {/* ======================================================== */}
         {currentStep === 2 && (
           <div className="w-full max-w-3xl mx-auto animate-fadeIn">
             {/* Header */}
-            <div className="text-center mb-6 sm:mb-8">
+            <div className="text-center mb-5 sm:mb-8">
               <h2
-                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
+                className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
                 style={{ fontFamily: "'Fraunces', Georgia, serif" }}
               >
                 What's your goal?
               </h2>
               <p className="text-sm sm:text-base text-[#071E2D]/70 dark:text-slate-300 mt-2 font-medium">
-                Type your goal or select a category below — watch your tracker build itself.
+                Type your goal or select a category below.
               </p>
             </div>
 
-            {/* Split layout: Input Column + Dynamic Persona Illustration */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-              {/* Left Column: Input Form (7 cols) */}
-              <div className="lg:col-span-7 flex flex-col justify-between">
+            {/* Split layout: stacks on mobile, 2-col on lg */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
+              {/* Left Column: Input Form */}
+              <div className="lg:col-span-7 flex flex-col justify-between gap-4">
                 <div>
-                  {/* Large Chat-style text input container */}
+                  {/* Goal text input */}
                   <div className="w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] focus-within:dark:border-[#00C4B3] transition-all">
                     <label htmlFor="goal-input" className="block text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3] mb-2">
                       Target or Objective ({activePersonaObj.category})
@@ -533,10 +522,10 @@ export const Onboarding: React.FC = () => {
                     />
                   </div>
 
-                  {/* 4 Interactive Category Prompt Chips */}
-                  <div className="mt-4">
+                  {/* Preset template chips */}
+                  <div className="mt-3 sm:mt-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/60 dark:text-slate-400 mb-2">
-                      Preset templates (Click to switch illustration):
+                      Preset templates:
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {(Object.keys(PERSONAS) as PersonaKey[]).map((key) => {
@@ -557,10 +546,10 @@ export const Onboarding: React.FC = () => {
                                 : 'bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/30 dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#E6F7F5] dark:hover:bg-[#152E42]'
                             }`}
                           >
-                            <span className="p-1.5 rounded-lg bg-black/5 dark:bg-white/5 shrink-0">
+                            <span className="p-1.5 rounded-lg bg-black/5 dark:bg-white/5 flex-shrink-0">
                               <Icon className="w-4 h-4" />
                             </span>
-                            <div className="truncate">
+                            <div className="min-w-0">
                               <span className="block font-bold truncate">{p.exampleGoal}</span>
                               <span className={`text-[10px] ${isCurrent ? 'text-[#071E2D]/80' : 'text-[#006D6A] dark:text-[#00C4B3]'}`}>
                                 {p.label}
@@ -573,8 +562,8 @@ export const Onboarding: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Primary button: Build my tracker */}
-                <div className="mt-6">
+                {/* Build button */}
+                <div className="mt-4">
                   <Button
                     variant="primary"
                     disabled={!goalText.trim()}
@@ -586,8 +575,8 @@ export const Onboarding: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right Column: Dynamic Persona Illustration Card */}
-              <div className="lg:col-span-5 flex flex-col">
+              {/* Right Column: Persona Illustration — hidden on mobile, shown on lg */}
+              <div className="hidden lg:flex lg:col-span-5 flex-col">
                 <div className="h-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] flex flex-col items-center justify-between transition-colors">
                   <div className="w-full flex items-center justify-between border-b-2 border-[#071E2D]/10 dark:border-white/10 pb-2 mb-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3] flex items-center gap-1.5">
@@ -598,13 +587,11 @@ export const Onboarding: React.FC = () => {
                       Step 2 of 4
                     </span>
                   </div>
-
                   <img
                     src={activePersonaObj.illustration}
                     alt={`${activePersonaObj.label} Tracker Preview`}
                     className="w-full h-auto object-contain max-w-[270px] my-auto transition-all duration-300"
                   />
-
                   <div className="w-full text-center bg-[#F8FAFB] dark:bg-[#07141E] border-2 border-[#071E2D]/20 dark:border-[#1E3A52] rounded-xl p-3 mt-3">
                     <span className="text-xs font-bold text-[#071E2D] dark:text-white block">
                       {activePersonaObj.tagline}
@@ -620,95 +607,77 @@ export const Onboarding: React.FC = () => {
         )}
 
         {/* ======================================================== */}
-        {/* STEP 3 — Building (Transitional / Loading with SVG)     */}
+        {/* STEP 3 — Building (Loading)                             */}
         {/* ======================================================== */}
         {currentStep === 3 && (
-          <div className="w-full flex flex-col items-center justify-center text-center max-w-lg mx-auto animate-fadeIn py-4">
-            {/* Visual Progress Card with Persona Illustration */}
-            <div className="relative mb-6 w-full">
-              <div className="p-5 sm:p-6 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] flex flex-col items-center">
+          <div className="w-full flex flex-col items-center justify-center text-center max-w-lg mx-auto animate-fadeIn py-4 px-2">
+            <div className="relative mb-5 sm:mb-6 w-full">
+              <div className="p-4 sm:p-6 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] flex flex-col items-center">
                 <img
                   src={activePersonaObj.illustration}
                   alt="Building Tracker Progress"
-                  className="w-72 sm:w-84 max-w-full h-auto object-contain transition-all duration-300"
+                  className="w-56 sm:w-72 max-w-full h-auto object-contain transition-all duration-300"
                 />
-
-                {/* Animated Progress Bar */}
-                <div className="w-full max-w-xs bg-[#E2E8F0] dark:bg-[#07141E] h-3.5 rounded-full mt-5 border-2 border-[#071E2D] dark:border-[#1E3A52] overflow-hidden p-0.5">
+                <div className="w-full max-w-xs bg-[#E2E8F0] dark:bg-[#07141E] h-3 sm:h-3.5 rounded-full mt-4 sm:mt-5 border-2 border-[#071E2D] dark:border-[#1E3A52] overflow-hidden p-0.5">
                   <div
                     className="h-full bg-[#00C4B3] rounded-full transition-all duration-700 ease-out"
-                    style={{
-                      width: loadingPhase === 0 ? '35%' : loadingPhase === 1 ? '70%' : '98%',
-                    }}
+                    style={{ width: loadingPhase === 0 ? '35%' : loadingPhase === 1 ? '70%' : '98%' }}
                   />
                 </div>
               </div>
             </div>
-
-            {/* Rotating status text changing every ~800ms–1s */}
-            <div className="h-10 flex items-center justify-center">
+            <div className="h-9 sm:h-10 flex items-center justify-center px-4">
               <p
                 key={loadingPhase}
-                className="text-xl sm:text-2xl font-extrabold text-[#071E2D] dark:text-white tracking-tight animate-fadeIn"
+                className="text-lg sm:text-2xl font-extrabold text-[#071E2D] dark:text-white tracking-tight animate-fadeIn"
                 style={{ fontFamily: "'Fraunces', Georgia, serif" }}
               >
                 {LOADING_STATUS_MESSAGES[loadingPhase]}
               </p>
             </div>
-            <p className="text-xs sm:text-sm text-[#006D6A] dark:text-[#00C4B3] font-bold mt-1">
+            <p className="text-xs sm:text-sm text-[#006D6A] dark:text-[#00C4B3] font-bold mt-1 px-4">
               Configuring {activePersonaObj.label} Tracker for "{createdGoal.title || goalText}"
             </p>
           </div>
         )}
 
         {/* ======================================================== */}
-        {/* STEP 4 — Your tracker is ready (Payoff with SVG)        */}
+        {/* STEP 4 — Your tracker is ready                         */}
         {/* ======================================================== */}
         {currentStep === 4 && (
-          <div className="w-full max-w-2xl mx-auto flex flex-col gap-6 animate-fadeIn">
-            {/* Celebratory Payoff Header Card with Persona Illustration */}
-            <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-5 sm:p-6 shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+          <div className="w-full max-w-2xl mx-auto flex flex-col gap-4 sm:gap-6 animate-fadeIn">
+            {/* Payoff Header Card */}
+            <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-4 sm:p-6 shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
               <img
                 src={activePersonaObj.illustration}
                 alt="Tracker Ready Payoff"
-                className="w-36 sm:w-44 h-auto object-contain shrink-0"
+                className="w-28 sm:w-40 h-auto object-contain shrink-0"
               />
-              <div className="text-center sm:text-left flex-1">
+              <div className="text-center sm:text-left flex-1 min-w-0">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3] bg-[#E6F7F5] dark:bg-[#00C4B3]/15 px-2.5 py-1 rounded-full border border-[#00C4B3]/40 mb-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>{activePersonaObj.label} Tracker Configured</span>
                 </span>
                 <h2
-                  className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
+                  className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
                   style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                 >
                   Your tracker is ready!
                 </h2>
                 <p className="text-xs sm:text-sm text-[#071E2D]/75 dark:text-slate-300 mt-1.5 font-medium leading-relaxed">
-                  We built a customized <span className="font-bold text-[#006D6A] dark:text-[#00C4B3]">{trackerLabel}</span> tracker for:{' '}
-                  <span className="font-bold text-[#071E2D] dark:text-white">"{createdGoal.title}"</span>. Give it a test click below!
+                  We built a <span className="font-bold text-[#006D6A] dark:text-[#00C4B3]">{trackerLabel}</span> tracker for:{' '}
+                  <span className="font-bold text-[#071E2D] dark:text-white">"{createdGoal.title}"</span>
                 </p>
               </div>
             </div>
 
-
-            {/* Live Interactive Generated Tracker pre-filled at zero progress */}
+            {/* Live Interactive Tracker */}
             <div className="w-full">
               {createdGoal.goal_type === 'counter' && (
-                <CounterTracker
-                  goal={createdGoal}
-                  onUpdate={async (val) => {
-                    setCreatedGoal((prev) => ({ ...prev, current_value: val }))
-                  }}
-                />
+                <CounterTracker goal={createdGoal} onUpdate={async (val) => setCreatedGoal((prev) => ({ ...prev, current_value: val }))} />
               )}
               {createdGoal.goal_type === 'checklist' && (
-                <ChecklistTracker
-                  goal={createdGoal}
-                  onUpdateItems={async (items) => {
-                    setCreatedGoal((prev) => ({ ...prev, items }))
-                  }}
-                />
+                <ChecklistTracker goal={createdGoal} onUpdateItems={async (items) => setCreatedGoal((prev) => ({ ...prev, items }))} />
               )}
               {createdGoal.goal_type === 'manual' && (
                 <ManualTracker
@@ -716,33 +685,23 @@ export const Onboarding: React.FC = () => {
                   onLogReflection={async (ref, sent) => {
                     setCreatedGoal((prev) => ({
                       ...prev,
-                      progress_logs: [
-                        {
-                          id: `log-${Date.now()}`,
-                          goal_id: prev.id,
-                          value: sent,
-                          note: ref,
-                          timestamp: 'Just now',
-                        },
-                      ],
+                      progress_logs: [{ id: `log-${Date.now()}`, goal_id: prev.id, value: sent, note: ref, timestamp: 'Just now' }],
                     }))
                   }}
                 />
               )}
             </div>
 
-            {/* Primary Action & Secondary Redo Link */}
-            <div className="flex flex-col items-center gap-3.5 mt-1">
+            {/* CTA */}
+            <div className="flex flex-col items-center gap-3 mt-1 px-4 sm:px-0">
               <Button
                 variant="primary"
                 onClick={handleFinishOnboarding}
                 disabled={isFinishing}
-                className="text-base sm:text-lg px-9 py-3.5"
+                className="text-base sm:text-lg px-9 py-3.5 w-full sm:w-auto"
               >
                 {isFinishing ? 'Entering Dashboard…' : 'Start tracking'}
               </Button>
-
-              {/* Secondary text link returning to Step 2 */}
               <button
                 type="button"
                 onClick={() => setCurrentStep(2)}
@@ -755,7 +714,7 @@ export const Onboarding: React.FC = () => {
         )}
       </main>
 
-      {/* Spacer to keep full-screen centering balanced */}
+      {/* Bottom spacer */}
       <div className="w-full pb-4 sm:pb-6" aria-hidden="true" />
     </div>
   )

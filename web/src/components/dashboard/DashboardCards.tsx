@@ -73,84 +73,75 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
             <span className="font-semibold text-[#006D6A] dark:text-[#00C4B3]">Total {goals.length || 6} trackers</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {/* Mini Card 1 */}
             <div
               onClick={() => activeGoals[0] && onSelectGoal(activeGoals[0])}
-              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
+              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs">🎯</span>
                 <span className="text-[10px] text-[#071E2D]/40 dark:text-slate-400">⋮</span>
               </div>
-              <span className="text-[11px] font-bold text-[#071E2D] dark:text-white mt-2 truncate">
+              <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight">
                 {activeGoals[0]?.title || 'Deals Target'}
               </span>
-              <span className="text-[9px] text-[#071E2D]/60 dark:text-slate-400">
-                {activeGoals[0]?.target || 5} {activeGoals[0]?.unit || 'deals'}
-              </span>
-              <span className="text-[9px] font-bold text-[#006D6A] dark:text-[#00C4B3] mt-1">Active</span>
+              <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold">Active</span>
             </div>
 
             {/* Mini Card 2 */}
             <div
               onClick={() => activeGoals[1] && onSelectGoal(activeGoals[1])}
-              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
+              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs">📚</span>
                 <span className="text-[10px] text-[#071E2D]/40 dark:text-slate-400">⋮</span>
               </div>
-              <span className="text-[11px] font-bold text-[#071E2D] dark:text-white mt-2 truncate">
+              <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight">
                 {activeGoals[1]?.title || 'Book Reading'}
               </span>
-              <span className="text-[9px] text-[#071E2D]/60 dark:text-slate-400">
-                {activeGoals[1]?.target || 2} {activeGoals[1]?.unit || 'milestones'}
-              </span>
-              <span className="text-[9px] font-bold text-[#006D6A] dark:text-[#00C4B3] mt-1">Active</span>
+              <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold">Active</span>
             </div>
 
             {/* Mini Card 3 */}
             <div
               onClick={() => activeGoals[2] && onSelectGoal(activeGoals[2])}
-              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
+              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs">💪</span>
                 <span className="text-[10px] text-[#071E2D]/40 dark:text-slate-400">⋮</span>
               </div>
-              <span className="text-[11px] font-bold text-[#071E2D] dark:text-white mt-2 truncate">
+              <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight">
                 {activeGoals[2]?.title || 'Pushup Streak'}
               </span>
-              <span className="text-[9px] text-[#071E2D]/60 dark:text-slate-400">
-                {activeGoals[2]?.target || 50} {activeGoals[2]?.unit || 'reps'}
-              </span>
-              <span className="text-[9px] font-bold text-[#006D6A] dark:text-[#00C4B3] mt-1">Active</span>
+              <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold">Active</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* ── 2. Quick Setup Banner ────────────────────────────────────────── */}
-      <div className="bg-[#071E2D] dark:bg-[#0E202D] text-white border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-5 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] flex items-center justify-between gap-4">
-        <div>
+      <div className="bg-[#071E2D] dark:bg-[#0E202D] text-white border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-4 sm:p-5 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <span className="text-xs font-bold uppercase tracking-wider text-[#00C4B3] block">
             Autonomous Tracking
           </span>
           <h4
-            className="text-base sm:text-lg font-bold tracking-tight text-white mt-0.5"
+            className="text-sm sm:text-base font-bold tracking-tight text-white mt-0.5"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
             Voice & Chat Logging
           </h4>
-          <p className="text-xs text-white/70 mt-1 max-w-xs">
+          <p className="text-xs text-white/70 mt-1 max-w-xs hidden sm:block">
             Say what you did — our assistant updates your metrics immediately.
           </p>
         </div>
         <button
           type="button"
           onClick={onOpenQuickLog}
-          className="px-4 py-2 bg-[#00C4B3] hover:bg-[#33D6C5] text-[#071E2D] font-bold text-xs rounded-full border-2 border-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all shrink-0 cursor-pointer"
+          className="px-3 sm:px-4 py-2 bg-[#00C4B3] hover:bg-[#33D6C5] text-[#071E2D] font-bold text-xs rounded-full border-2 border-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all shrink-0 cursor-pointer whitespace-nowrap"
         >
           Open Chat →
         </button>

@@ -68,9 +68,9 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFB] dark:bg-[#07141E] bg-dot-grid font-sans text-[#071E2D] dark:text-slate-100 flex p-3 sm:p-5 lg:p-6 gap-4 sm:gap-6 selection:bg-[#00C4B3] selection:text-[#071E2D] overflow-x-hidden transition-colors">
+    <div className="min-h-screen bg-[#F8FAFB] dark:bg-[#07141E] bg-dot-grid font-sans text-[#071E2D] dark:text-slate-100 flex p-2 sm:p-4 lg:p-6 gap-3 sm:gap-5 lg:gap-6 selection:bg-[#00C4B3] selection:text-[#071E2D] overflow-x-hidden transition-colors">
       {/* ── Left Rail Dock (Sticky & Fixed height on desktop — NEVER scrolls with the page) ── */}
-      <aside className="hidden lg:flex flex-col sticky top-4 sm:top-5 lg:top-6 h-[calc(100vh-2rem)] sm:h-[calc(100vh-2.5rem)] lg:h-[calc(100vh-3rem)] shrink-0 z-30 self-start">
+      <aside className="hidden lg:flex flex-col sticky top-4 lg:top-6 h-[calc(100vh-2rem)] lg:h-[calc(100vh-3rem)] shrink-0 z-30 self-start">
         <DashboardRail
           activeTab={activeTab}
           onSelectTab={(tab) => {
@@ -96,7 +96,7 @@ export const Dashboard: React.FC = () => {
       </aside>
 
       {/* ── Main Dashboard Workspace ───────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 gap-5 sm:gap-6">
+      <div className="flex-1 flex flex-col min-w-0 gap-4 sm:gap-5 lg:gap-6 overflow-x-hidden">
         {/* Top Header Bar: Logo, Pill Nav, Actions, User Profile */}
         <DashboardTopNav
           activePill={activePill}
@@ -135,14 +135,14 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* ── Main Content Grid with OnTrack Tactile Design ───────────── */}
-        <main className="flex flex-col gap-6">
+        <main className="flex flex-col gap-4 sm:gap-6">
           {/* ── OVERVIEW (default) ──────────────────────────── */}
           {activeView === 'overview' && (
             <>
-              {/* Row 1: 3 Main Cards / Sections */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
-                {/* Left Column (Total Execution Hero Card): spans 4 columns on desktop */}
-                <div className="lg:col-span-4 flex flex-col">
+              {/* Row 1: 3 Main Cards / Sections — stack on mobile/tablet, 3-col on lg */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-5 lg:gap-6 items-stretch">
+                {/* Left Column */}
+                <div className="md:col-span-1 lg:col-span-4 flex flex-col">
                   <DashboardCards
                     goals={goals}
                     onOpenQuickLog={() => setIsChatDrawerOpen(true)}
@@ -151,8 +151,8 @@ export const Dashboard: React.FC = () => {
                   />
                 </div>
 
-                {/* Middle Column (2x2 Stat Matrix): spans 4 columns on desktop */}
-                <div className="lg:col-span-4 flex flex-col">
+                {/* Middle Column */}
+                <div className="md:col-span-1 lg:col-span-4 flex flex-col">
                   <DashboardStatGrid
                     completedCount={completedGoalsCount ? completedGoalsCount * 150 : 950}
                     pendingCount={pendingGoalsCount ? pendingGoalsCount * 120 : 700}
@@ -161,14 +161,14 @@ export const Dashboard: React.FC = () => {
                   />
                 </div>
 
-                {/* Right Column (Total Velocity Stacked Bar Chart): spans 4 columns on desktop */}
-                <div className="lg:col-span-4 flex flex-col">
+                {/* Right Column — full width on md (2-col grid), 3rd col on lg */}
+                <div className="md:col-span-2 lg:col-span-4 flex flex-col">
                   <DashboardChart />
                 </div>
               </div>
 
               {/* Row 2: Recent Activities Table */}
-              <div className="w-full">
+              <div className="w-full min-w-0">
                 <DashboardRecentActivity
                   onSelectGoal={(id) => {
                     const g = goals.find((item) => item.id === id)
@@ -215,7 +215,7 @@ export const Dashboard: React.FC = () => {
           />
 
           {/* Drawer container with OnTrack styling */}
-          <div className="relative w-full max-w-md bg-white dark:bg-[#0E202D] border-l-2 border-[#071E2D] dark:border-[#1E3A52] h-full shadow-2xl z-10 flex flex-col">
+          <div className="relative w-full sm:max-w-md bg-white dark:bg-[#0E202D] border-l-2 border-[#071E2D] dark:border-[#1E3A52] h-full shadow-2xl z-10 flex flex-col">
             <div className="p-4 border-b-2 border-[#071E2D] dark:border-white/10 flex items-center justify-between bg-[#F8FAFB] dark:bg-[#091824]">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center text-[#071E2D] text-xs font-black shadow-[1px_1px_0px_#071E2D]">

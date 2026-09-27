@@ -133,7 +133,7 @@ export const Login: React.FC = () => {
       <Navbar />
 
       {/* Main Full-Screen Split Layout */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8 lg:py-12 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-10 lg:py-12 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-8 lg:gap-16">
         {/* ── Left Column: Auth Form ──────────────────────────────────────── */}
         <div className="w-full lg:w-1/2 flex items-center justify-center">
           <div className="w-full max-w-[420px] flex flex-col">

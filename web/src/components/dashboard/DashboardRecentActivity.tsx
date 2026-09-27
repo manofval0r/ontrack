@@ -97,9 +97,9 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* Search Input Box */}
-          <div className="flex items-center gap-2 bg-[#F8FAFB] dark:bg-[#091824] px-3.5 py-1.5 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] text-xs w-48 sm:w-56 focus-within:dark:border-[#00C4B3] transition-all">
+          <div className="flex items-center gap-2 bg-[#F8FAFB] dark:bg-[#091824] px-3.5 py-1.5 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] text-xs w-full sm:w-48 md:w-56 focus-within:dark:border-[#00C4B3] transition-all">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#071E2D] dark:text-white">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -127,18 +127,18 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
       </div>
 
       {/* Table Content */}
-      <div className="overflow-x-auto w-full pt-2">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto w-full pt-2 -mx-1 px-1">
+        <table className="w-full text-left border-collapse min-w-[580px]">
           <thead>
             <tr className="text-[11px] font-bold text-[#071E2D]/60 dark:text-slate-400 uppercase tracking-wider border-b-2 border-[#071E2D]/10 dark:border-white/10">
               <th className="py-3 px-3 w-8">
                 <input type="checkbox" className="rounded accent-[#00C4B3] cursor-pointer" />
               </th>
-              <th className="py-3 px-3">Tracker ID</th>
+              <th className="py-3 px-3 hidden sm:table-cell">Tracker ID</th>
               <th className="py-3 px-3">Goal Objective</th>
-              <th className="py-3 px-3">Logged Delta</th>
+              <th className="py-3 px-3 hidden md:table-cell">Logged Delta</th>
               <th className="py-3 px-3">Status</th>
-              <th className="py-3 px-3">Timestamp</th>
+              <th className="py-3 px-3 hidden lg:table-cell">Timestamp</th>
               <th className="py-3 px-3 text-right">Action</th>
             </tr>
           </thead>
@@ -164,25 +164,25 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                       className="rounded accent-[#00C4B3] cursor-pointer"
                     />
                   </td>
-                  <td className="py-3.5 px-3 font-mono text-[#071E2D]/60 dark:text-slate-400 font-semibold">
+                  <td className="py-3.5 px-3 font-mono text-[#071E2D]/60 dark:text-slate-400 font-semibold hidden sm:table-cell">
                     {act.trackerId}
                   </td>
                   <td className="py-3.5 px-3">
                     <div className="flex items-center gap-2.5">
-                      <div className={`w-7 h-7 rounded-lg ${act.iconBg} border border-[#071E2D]/20 flex items-center justify-center text-xs font-bold shadow-sm`}>
+                      <div className={`w-7 h-7 rounded-lg ${act.iconBg} border border-[#071E2D]/20 flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0`}>
                         <act.icon className="w-3.5 h-3.5" />
                       </div>
-                      <span className="font-bold text-[#071E2D] dark:text-white line-clamp-1">
+                      <span className="font-bold text-[#071E2D] dark:text-white line-clamp-1 min-w-0">
                         {act.title}
                       </span>
                     </div>
                   </td>
-                  <td className="py-3.5 px-3 font-extrabold text-[#071E2D] dark:text-white">
+                  <td className="py-3.5 px-3 font-extrabold text-[#071E2D] dark:text-white hidden md:table-cell">
                     {act.value}
                   </td>
                   <td className="py-3.5 px-3">
                     <span
-                      className={`inline-flex items-center gap-1.5 font-bold text-[11px] px-2.5 py-0.5 rounded-full border ${
+                      className={`inline-flex items-center gap-1.5 font-bold text-[11px] px-2.5 py-0.5 rounded-full border whitespace-nowrap ${
                         act.status === 'Completed'
                           ? 'bg-[#E6F7F5] dark:bg-[#00C4B3]/15 text-[#006D6A] dark:text-[#00C4B3] border-[#00C4B3]/50'
                           : act.status === 'Pending'
@@ -191,7 +191,7 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                       }`}
                     >
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${
+                        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                           act.status === 'Completed'
                             ? 'bg-[#00C4B3]'
                             : act.status === 'Pending'
@@ -199,16 +199,16 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                             : 'bg-amber-500'
                         }`}
                       />
-                      <span>{act.status}</span>
+                      <span className="hidden sm:inline">{act.status}</span>
                     </span>
                   </td>
-                  <td className="py-3.5 px-3 text-[#071E2D]/50 dark:text-slate-400 font-mono text-[11px]">
+                  <td className="py-3.5 px-3 text-[#071E2D]/50 dark:text-slate-400 font-mono text-[11px] hidden lg:table-cell">
                     {act.date}
                   </td>
                   <td className="py-3.5 px-3 text-right">
                     <button
                       type="button"
-                      className="px-2.5 py-1 bg-white dark:bg-[#091824] hover:bg-[#00C4B3] hover:text-[#071E2D] text-[#071E2D] dark:text-white border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full text-[10px] font-bold shadow-[1px_1px_0px_#071E2D] dark:shadow-[1px_1px_0px_#000000] transition-all cursor-pointer"
+                      className="px-2.5 py-1 bg-white dark:bg-[#091824] hover:bg-[#00C4B3] hover:text-[#071E2D] text-[#071E2D] dark:text-white border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full text-[10px] font-bold shadow-[1px_1px_0px_#071E2D] dark:shadow-[1px_1px_0px_#000000] transition-all cursor-pointer whitespace-nowrap"
                     >
                       Inspect
                     </button>
