@@ -47,7 +47,6 @@
 |------|------|------------------|
 | **David (Valor)** | Mobile Lead + AI | React Native (Expo) development, work-block, mobile UX, TTS/ASR integration, coordinate with Evans on backend |
 | **Evans** | Backend Lead + Web Server | Django API (both instances), Nemotron/TTS/ASR integration, Render deployment (web + mobile), error handling, `/api/debug` |
-| **Chioma** | Frontend (Web) | React UI, chat, trackers, dashboard, settings, TTS player, transcription UI |
 | **Eniola** | Frontend (Web) | React UI, chat, trackers, dashboard, settings, TTS player, transcription UI, polish |
 | **Israel** | Mobile Developer | React Native (Expo), UI components, work-block overlay, mobile TTS/ASR UI, collaborate with David |
 
@@ -509,7 +508,6 @@ Backend: Log verdict, update goal status, update dashboard.
 
 **Web Team:**
 - Evans (Backend)
-- Chioma (Frontend)
 - Eniola (Frontend)
 
 **Mobile Team:**
@@ -538,7 +536,7 @@ Backend: Log verdict, update goal status, update dashboard.
 - Plan API endpoints (including `/api/tts`, `/api/asr`)
 - Plan Render deployment strategy (2 instances)
 
-**Chioma & Eniola:**
+**Eniola:**
 - Finalize React wire-frames (Figma)
 - Agree on web design system (colors, typography, spacing)
 - Component list for web: Chat, Tracker, Dashboard, Settings
@@ -567,7 +565,7 @@ Backend: Log verdict, update goal status, update dashboard.
 - Set up error handling pattern
 - Create `/api/debug` skeleton
 
-**Chioma & Eniola:**
+**Eniola:**
 - Build Chat component (text bubbles, input, audio buttons)
 - Build Tracker components (counter, checklist, manual — base styles)
 - Build Dashboard skeleton
@@ -604,7 +602,7 @@ Backend: Log verdict, update goal status, update dashboard.
 - Build `/api/debug` endpoint (show goals, Nemotron calls, audio outputs)
 - Error handling for all endpoints (timeouts, invalid input, etc.)
 
-**Chioma & Eniola:**
+**Eniola:**
 - Wire Chat component to `/api/goals` (text input → API call → Nemotron response)
 - Wire Chat to `/api/asr` (mic button → send audio → get transcription)
 - Wire Chat to `/api/tts` (text → get audio URL → play)
@@ -654,7 +652,7 @@ Backend: Log verdict, update goal status, update dashboard.
 - Prepare deployment: create `.env` for both Render instances
 - Test both backend instances independently
 
-**Chioma & Eniola:**
+**Eniola:**
 - Final UI polish: animations, clarity, mobile responsiveness on web
 - Test all flows: create goal (text or voice) → update → check dashboard
 - Verify TTS player works on all pages
@@ -686,7 +684,7 @@ Backend: Log verdict, update goal status, update dashboard.
 - Test `/api/debug` on both instances
 - Prepare deployment explanation for judges
 
-**Chioma & Eniola:**
+**Eniola:**
 - Deploy React to Vercel (auto-deploy from GitHub)
 - Test web app live: create goal, see tracker, update progress
 - Record final screenshot/video of web flow
@@ -794,7 +792,7 @@ Backend: Log verdict, update goal status, update dashboard.
 
 ---
 
-### Chioma & Eniola (Frontend Web)
+### Eniola (Frontend Web)
 
 **Your detailed plan should cover:**
 
@@ -965,7 +963,7 @@ Instance 2: `ontrack-api-mobile`
 - [ ] Project card submitted
   - Title: "OnTrack"
   - One-line: "Conversational accountability tracker with voice input/output"
-  - Team: David, Evans, Chioma, Eniola, Israel
+  - Team: David, Evans, Eniola, Israel
   - Tech: Django, React, React Native, Supabase, NVIDIA Brev
   - What built: chat-first goal tracker, dynamic trackers, TTS/ASR, work-block, dual backend
 
@@ -1029,9 +1027,9 @@ Instance 2: `ontrack-api-mobile`
 2. **NVIDIA Brev Voucher** — activated? What's the API endpoint? (David)
 3. **GitHub Repo** — created? Anyone with push access? (David)
 4. **Expo Org Account** — created? (Israel)
-5. **Vercel Account** — set up? (Chioma/Eniola or whoever deploys web)
+5. **Vercel Account** — set up? (Eniola or whoever deploys web)
 6. **Heroku/Railway Account** — set up? (Evans or David)
-7. **Figma Design File** — shared? (Chioma/Eniola)
+7. **Figma Design File** — shared? (Eniola)
 
 ---
 

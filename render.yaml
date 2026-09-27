@@ -44,6 +44,10 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS
         sync: false
+      - key: NVIDIA_BASE_URL
+        sync: false
+      - key: NVIDIA_MODEL_NAME
+        sync: false
       - key: NVIDIA_API_KEY
         sync: false
 
@@ -86,6 +90,10 @@ services:
       - key: ALLOWED_HOSTS
         sync: false
       - key: ALLOWED_ORIGINS
+        sync: false
+      - key: NVIDIA_BASE_URL
+        sync: false
+      - key: NVIDIA_MODEL_NAME
         sync: false
       - key: NVIDIA_API_KEY
         sync: false

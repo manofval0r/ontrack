@@ -2,7 +2,7 @@
 
 ## 1. Our Role
 
-**Chioma + Eniola — Frontend Web**
+**Eniola — Frontend Web**
 
 We are responsible for designing and building the web interface in React:
 

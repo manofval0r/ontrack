@@ -3,6 +3,8 @@
 This document records every deliberate design decision made in the Ontrack frontend.
 It is a living reference, not a retrospective — update it when tokens, typefaces, or patterns change.
 
+For screen-by-screen behavior, feature specifications, and unresolved design decisions, see the [web design documentation index](../docs/web-design/index.md). This file describes the shared teal/navy visual language; the dashboard currently diverges and is documented as an open consistency decision there.
+
 ---
 
 ## 1. Color Tokens & The "Color Restraint" Principle
@@ -10,7 +12,7 @@ It is a living reference, not a retrospective — update it when tokens, typefac
 Sourced directly from the core Ontrack brand palette. No hex values are written ad-hoc in component files; every color references one of these tokens via Tailwind's `@theme` block or named CSS classes in `index.css`.
 
 | Token name | Hex | Primary role |
-|---|---|---|
+| --- | --- | --- |
 | `brand-turquoise` | `#00C4B3` | Primary brand accent. Progress bars, active indicators, checkmarks, logo mark background, headline highlight accents. |
 | `brand-navy` | `#071E2D` | Primary ink and structure. Headings, body copy, component borders (`2px solid`), solid tactile offset shadows (`#071E2D`), and high-contrast CTA container. |
 | `brand-teal` | `#006D6A` | Secondary accent. Subtle tags, success ratings ("98% Ready", "+24% Pace", "Pass ✓"), and dark card accents. |
@@ -19,6 +21,7 @@ Sourced directly from the core Ontrack brand palette. No hex values are written 
 | `brand-white` | `#FFFFFF` | Primary card and button surface. Clean, high-legibility crisp background for tactile cards and pill buttons. |
 
 ### Color Restraint Directive ("Do Not Copy Color From References")
+
 - **No Reference Tan/Sand/Brown**: The reference resume-builder screenshots utilize warm beige, sand, and cream hues (`#FAF8F5`, `#F5EDE2`). These colors are strictly excluded in Ontrack. All cards and buttons remain crisp white (`#FFFFFF`) or light slate (`#F8FAFB`).
 - **No Reference Purple/Lavender**: The Growth Genius reference screenshot utilizes a soft purple/lavender palette. This color is NOT used. Ontrack strictly preserves its own high-contrast Navy (`#071E2D`), Turquoise (`#00C4B3`), and Teal (`#006D6A`) palette.
 - **No Saturated Gradient Washes**: Avoid loud full-page neon/cyan gradient washes. The background canvas relies on clean `#F8FAFB` with a subtle, tactile dot grid (`rgba(7, 30, 45, 0.14)` at 24px spacing) and soft ambient backlight (`rgba(0,196,179,0.16)`).
@@ -32,17 +35,19 @@ Ontrack is a **conversational goal and accountability tracker** powered by Nemot
 ### Typeface choices
 
 **DM Sans** — primary UI font (body, labels, nav, buttons, captions, card titles)
+
 - Variable font with optical size axis (9–40pt); used at 400, 500, 600, 700 weights.
 - Chosen because: geometric but warm, exceptionally legible inside dense cards, input fields, and pill buttons.
 
 **Fraunces** — display font (hero headlines, major section headings, key numeric callouts)
+
 - Optical size variable font (9–144pt); used at 600 and 700 weights.
 - Chosen because: editorial personality, inky stroke contrast, and trustworthy presence. Gives section headings substantial weight without feeling corporate.
 
 ### Type scale & Copy Archetypes
 
 | Role | Font | Size | Weight | Contextual Ontrack Copy Example |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Display headline | Fraunces | `text-5xl` / `text-6xl` (48–60px) | 700 | "Track Your Ambitions With Personalized Confidence" |
 | Section subheading | Fraunces | `text-3xl` / `text-4xl` (30–38px) | 700 | "Built for focus. Engineered for execution." |
 | Card heading | DM Sans | `text-lg` / `text-xl` (18–20px) | 700 | "Real-time Progress Engine", "Adaptive Goal Formats" |
@@ -123,6 +128,7 @@ Every interactive button follows the tactile pill structure:
 ### Hero Visual Showcase (Growth Genius Layout + `/mockup.png`)
 
 Mirrors the centered hero cluster from the Growth Genius reference, engineered to keep phone screens 100% visible:
+
 - **Centerpiece Mockup**: `/mockup.png` expanded to large scale (`max-w-[1240px]`, `maxHeight: '760px'` inside a `max-w-[1720px]` showcase) with zero obstruction, showcasing the 3 phone screens (Israel's "Close 5 Enterprise Deals", "3/5 Shipped", and "OnTrack AI Partner") with a deep ambient backlight (`rgba(0,196,179,0.18)`).
 - **Side Card Left ("Goal Velocity" & "Active Target")**:
   - Positioned strictly beside the mockup on the left with zero overlap (`xl:w-[290px]`, flex-row).
@@ -156,7 +162,7 @@ Mirrors the centered hero cluster from the Growth Genius reference, engineered t
 ## 5. Reference Image Mapping
 
 | Decision & Component | Source Reference |
-|---|---|
+| --- | --- |
 | Centered hero layout, credibility pill, headline hierarchy, dual CTA buttons | Growth Genius Reference Image |
 | Phone mockup centerpiece cluster with tilted Stats & Tips cards | Growth Genius Reference Image & `/mockup.png` |
 | Feature cards (squircle icon, dark border, 4px solid shadow, bold title) | Image 1 (Feature Cards) |

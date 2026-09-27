@@ -1,0 +1,10 @@
+{
+  "include": [
+    "backend/ontrack"
+  ],
+  "extraPaths": [
+    "backend/ontrack"
+  ],
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none"
+}

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OnTrack — Mobile Design System Showcase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --turquoise:#00C4B3; --navy:#071E2D; --teal:#006D6A; --aqua:#33D6C5;
+    --gray:#F3F6F8; --canvas:#F8FAFB; --white:#FFFFFF; --slate:#1E293B;
+    --amber-bg:#FFFBEB; --amber-text:#B45309; --amber-border:#F59E0B;
+    --cyan-bg:#ECFEFF;
+    --ink:#071E2D; --surface:#FFFFFF; --border:#071E2D; --shadow:#071E2D;
+    --track:#F3F6F8;
+  }
+  body.dark{
+    --ink:#FFFFFF; --surface:#0B2536; --border:#00C4B3; --shadow:#00C4B3;
+    --canvas:#051520; --track:#0F3146;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"DM Sans",system-ui,sans-serif; background:var(--canvas); color:var(--ink); padding:24px 16px 64px; transition:background .2s,color .2s;}
+  .wrap{max-width:560px; margin:0 auto; display:flex; flex-direction:column; gap:28px;}
+  header.top{display:flex; align-items:center; justify-content:space-between;}
+  .logo{display:flex; align-items:center; gap:8px;}
+  .mark{width:32px;height:32px;border-radius:8px;background:var(--turquoise);display:flex;align-items:center;justify-content:center;border:2px solid var(--border);}
+  .word{font-family:"Fraunces",Georgia,serif; font-weight:700; font-size:22px;}
+  section h2{font-family:"Fraunces",Georgia,serif; font-size:24px; margin-bottom:4px;}
+  section p.sub{font-size:13px; opacity:.65; margin-bottom:12px;}
+  .grid{display:flex; flex-wrap:wrap; gap:10px;}
+  .swatch{border:2px solid var(--border); border-radius:12px; overflow:hidden; width:calc(33.3% - 7px); box-shadow:2px 2px 0 var(--shadow); background:var(--surface);}
+  .swatch .c{height:56px;}
+  .swatch .t{padding:6px 8px; font-size:11px; font-weight:600;}
+  .swatch .t small{display:block; font-weight:400; opacity:.6;}
+  .type-row{border-bottom:1px solid var(--border); padding:10px 0; opacity:1;}
+  .pill{display:inline-flex; align-items:center; gap:10px; padding:10px 12px 10px 22px; border-radius:999px; border:2px solid var(--navy); font-weight:600; font-size:15px; box-shadow:3px 3px 0 var(--navy); cursor:pointer; user-select:none; transition:transform .15s, box-shadow .15s;}
+  .pill:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--navy);}
+  .bubble{width:32px;height:32px;border-radius:999px; display:flex;align-items:center;justify-content:center; flex-shrink:0; border:1.5px solid currentColor; font-weight:700;}
+  .pill-primary{background:var(--navy); color:#fff;}
+  .pill-primary .bubble{background:#fff; color:var(--teal); border-color:#fff;}
+  .pill-secondary{background:var(--surface); color:var(--ink); border-color:var(--border); box-shadow:3px 3px 0 var(--shadow);}
+  .pill-secondary .bubble{background:var(--gray); color:var(--navy); border-color:var(--navy);}
+  body.dark .pill-secondary .bubble{background:var(--turquoise); color:var(--navy); border-color:var(--turquoise);}
+  .pill-ghost{background:transparent; color:var(--ink); border-color:var(--border); box-shadow:2px 2px 0 var(--shadow); padding:8px 20px;}
+  .card{background:var(--surface); border:2px solid var(--border); border-radius:20px; box-shadow:4px 4px 0 var(--shadow); padding:20px;}
+  .squircle{width:48px;height:48px;border-radius:12px;background:var(--slate);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;}
+  .status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;border:2px solid;}
+  .st-done{background:var(--teal);color:#fff;border-color:var(--navy);box-shadow:1px 1px 0 var(--navy);}
+  .st-behind{background:var(--amber-bg);color:var(--amber-text);border-color:var(--amber-border);box-shadow:1px 1px 0 var(--amber-text);}
+  .st-track{background:var(--cyan-bg);color:var(--teal);border-color:var(--turquoise);box-shadow:1px 1px 0 var(--teal);}
+  .dot{width:6px;height:6px;border-radius:99px;background:currentColor;}
+  .bubble-user{background:var(--navy);color:#fff;border:2px solid var(--navy);border-radius:18px;box-shadow:3px 3px 0 var(--turquoise);padding:14px 16px;margin-left:48px;font-size:15px;}
+  .bubble-ai{background:var(--surface);border:2px solid var(--border);border-radius:18px;box-shadow:3px 3px 0 var(--shadow);padding:14px 16px;margin-right:48px;font-size:15px;}
+  .sender{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.6;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+  .aibadge{background:var(--turquoise);color:var(--navy);border:1px solid var(--navy);border-radius:6px;font-size:10px;padding:1px 5px;}
+  .proposal{background:var(--cyan-bg);border:2px solid var(--border);border-radius:18px;box-shadow:4px 4px 0 var(--shadow);padding:16px;margin-right:48px;color:#071E2D;}
+  .bar{height:14px;border:2px solid var(--navy);border-radius:99px;background:#fff;overflow:hidden;}
+  body.dark .bar{background:var(--track);}
+  .bar > div{height:100%;background:var(--turquoise);border-radius:99px;}
+  .plus{width:64px;height:64px;border-radius:999px;background:var(--navy);color:#fff;border:2px solid var(--navy);box-shadow:3px 3px 0 var(--turquoise);font-size:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .plus:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--turquoise);}
+  .check{display:flex;align-items:center;gap:12px;padding:10px 0;font-size:15px;}
+  .box{width:28px;height:28px;border-radius:8px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surface);}
+  .box.done{background:var(--turquoise);color:var(--navy);font-weight:700;}
+  input.field{width:100%;padding:14px 16px;border-radius:12px;border:2px solid rgba(7,30,45,.2);font-family:inherit;font-size:15px;background:var(--surface);color:var(--ink);}
+  input.field:focus{outline:none;border-color:var(--turquoise);}
+  .tabbar{display:flex;background:var(--surface);border:2px solid var(--border);border-radius:20px;box-shadow:4px 4px 0 var(--shadow);overflow:hidden;}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0 10px;font-size:11px;font-weight:600;border-top:4px solid transparent;min-height:64px;justify-content:center;}
+  .tab.active{color:var(--teal);border-top-color:var(--turquoise);}
+  body.dark .tab.active{color:var(--turquoise);}
+  .tab .ic{font-size:20px;}
+  .toggle{position:fixed;top:16px;right:16px;z-index:10;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .timer{font-family:"Fraunces",Georgia,serif;font-size:34px;font-weight:700;}
+  .kbd{font-size:11px;opacity:.55;}
+</style>
+</head>
+<body>
+<div class="toggle"><button class="pill pill-ghost" onclick="document.body.classList.toggle('dark')">◐ Dark</button></div>
+<div class="wrap">
+  <header class="top">
+    <div class="logo"><span class="mark">◉</span><span class="word">Ontrack</span></div>
+    <span class="kbd">mobile/design-showcase.html</span>
+  </header>
+
+  <section><h2>1 · Palette</h2><p class="sub">1:1 with web @theme. Toggle dark (top-right) for dark tokens.</p>
+    <div class="grid" id="palette"></div>
+  </section>
+
+  <section><h2>2 · Typography</h2><p class="sub">DM Sans UI · Fraunces display (expo-font on device).</p>
+    <div class="type-row" style="font-family:Fraunces,Georgia,serif;font-size:34px;font-weight:700;">Display 34 · 2/5 shipped</div>
+    <div class="type-row" style="font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:700;">Title 24 · Good morning</div>
+    <div class="type-row" style="font-size:18px;font-weight:700;">Card heading 18 · Real-time Progress Engine</div>
+    <div class="type-row" style="font-size:15px;">Body 15 · You're at 3 out of 5 deals with 3 days left.</div>
+    <div class="type-row" style="font-size:15px;font-weight:600;">Button 15 · Start Tracking Free</div>
+    <div class="type-row" style="font-size:12px;font-weight:600;">Caption 12 · NEMOTRON ACCOUNTABILITY PARTNER</div>
+  </section>
+
+  <section><h2>3 · Pill buttons</h2><p class="sub">2px navy border · 3px offset shadow · press to feel the tactile press.</p>
+    <div class="row">
+      <span class="pill pill-primary">Start Tracking <span class="bubble">→</span></span>
+      <span class="pill pill-secondary">Explore <span class="bubble">→</span></span>
+      <span class="pill pill-ghost">Skip</span>
+    </div>
+  </section>
+
+  <section><h2>4 · Cards</h2><p class="sub">2px border · 20px radius · 4px offset shadow.</p>
+    <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+      <span class="squircle">◉</span>
+      <span><b style="font-size:18px;">Real-time Progress Engine</b><br/><span style="font-size:14px;opacity:.7;">Watch your trackers update live as you speak or tap.</span></span>
+    </div>
+  </section>
+
+  <section><h2>5 · Status pills</h2><p class="sub">Done teal · Behind amber · On track cyan.</p>
+    <div class="row">
+      <span class="status st-done"><span class="dot"></span>Done</span>
+      <span class="status st-behind"><span class="dot"></span>Behind</span>
+      <span class="status st-track"><span class="dot"></span>On track</span>
+    </div>
+  </section>
+
+  <section><h2>6 · Chat</h2><p class="sub">User navy-right · AI white-left + 🔊 replay row.</p>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><div class="sender"><span class="aibadge">AI</span> Nemotron Accountability Partner</div>
+        <div class="bubble-ai">You're at 3/5. On pace for Friday?<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(7,30,45,.1);font-size:11px;font-weight:600;opacity:.6;">🔊 Voice Response · tap to replay</div></div></div>
+      <div><div class="sender" style="justify-content:flex-end;">You</div>
+        <div class="bubble-user">Closed one more today — 4/5!</div></div>
+      <div class="proposal"><div class="sender" style="color:#006D6A;opacity:1;">◉ AI Goal Confirmation · CHECKLIST</div>
+        <b>Read 3 books this month</b>
+        <div class="bar" style="margin-top:10px;"><div style="width:33%"></div></div></div>
+    </div>
+  </section>
+
+  <section><h2>7 · Trackers</h2><p class="sub">Counter +1 · Checklist · Manual log.</p>
+    <div class="card" style="display:flex;align-items:center;gap:16px;">
+      <span class="plus">+</span>
+      <span><span class="timer">4/5</span><br/><span style="font-size:13px;opacity:.65;">Counter · tap +1 to log</span></span>
+    </div>
+    <div class="card">
+      <div class="check"><span class="box done">✓</span> Atomic Habits</div>
+      <div class="check"><span class="box done">✓</span> Deep Work</div>
+      <div class="check"><span class="box"></span> 1984</div>
+    </div>
+    <div class="card"><input class="field" placeholder="Log today's reflection…" /></div>
+  </section>
+
+  <section><h2>8 · Tab bar</h2><p class="sub">Home · Chat · Goals · Settings. 44pt targets, turquoise active rail.</p>
+    <div class="tabbar">
+      <div class="tab active"><span class="ic">⌂</span>Home</div>
+      <div class="tab"><span class="ic">💬</span>Chat</div>
+      <div class="tab"><span class="ic">✓</span>Goals</div>
+      <div class="tab"><span class="ic">⚙</span>Settings</div>
+    </div>
+  </section>
+
+  <section><h2>9 · Work-block overlay</h2><p class="sub">Dim scrim + centered tactile card + big Fraunces timer.</p>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:12px;font-weight:700;opacity:.6;">YOU ARE WORKING ON</div>
+      <div style="font-size:18px;font-weight:700;margin:4px 0 8px;">Close 5 Enterprise Deals</div>
+      <div class="timer">24:59</div>
+      <div class="row" style="justify-content:center;margin-top:12px;">
+        <span class="pill pill-primary" style="font-size:13px;">Keep working <span class="bubble">→</span></span>
+        <span class="pill pill-ghost" style="font-size:13px;">Close app?</span>
+      </div>
+    </div>
+  </section>
+</div>
+<script>
+  const pal = [
+    ['Turquoise','#00C4B3','accent / progress / active'],
+    ['Navy','#071E2D','ink / borders / shadows'],
+    ['Teal','#006D6A','success / done'],
+    ['Aqua','#33D6C5','highlight / glow'],
+    ['Gray','#F3F6F8','canvas / tracks'],
+    ['White','#FFFFFF','cards / bubbles'],
+    ['Amber','#F59E0B','behind only'],
+    ['Cyan','#ECFEFF','on-track / proposal'],
+    ['Dark bg','#051520','dark canvas'],
+    ['Dark surface','#0B2536','dark cards'],
+  ];
+  document.getElementById('palette').innerHTML = pal.map(([n,h,r]) =>
+    `<div class="swatch"><div class="c" style="background:${h}"></div><div class="t">${n}<small>${h} · ${r}</small></div></div>`).join('');
+</script>
+</body>
+</html>

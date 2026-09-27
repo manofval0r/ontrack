@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { AuthIllustration } from '../components/AuthIllustration'
 
@@ -62,17 +62,69 @@ const FacebookIcon = () => (
 
 // ─── Login Page ───────────────────────────────────────────────────────────────
 
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? ''
+const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? ''
+
 export const Login: React.FC = () => {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleGoogleAuth = () => {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+      const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
+      window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
+    } else {
+      localStorage.setItem('ontrack_token', 'mock_google_oauth_token')
+      navigate('/dashboard')
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setAuthError(null)
+
+    // ── If Supabase is configured, use real auth ───────────────────────
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+      setSubmitting(true)
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ email, password }),
+        })
+        const data = await res.json()
+        if (!res.ok || !data.access_token) {
+          setAuthError(data.error_description ?? data.msg ?? 'Invalid email or password.')
+          return
+        }
+        localStorage.setItem('ontrack_token', data.access_token)
+        // Also store refresh token if present
+        if (data.refresh_token) {
+          localStorage.setItem('ontrack_refresh_token', data.refresh_token)
+        }
+        const alreadyOnboarded = localStorage.getItem('ontrack_onboarded')
+        navigate(alreadyOnboarded ? '/dashboard' : '/onboarding')
+      } catch {
+        setAuthError('Network error. Please try again.')
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
+
+    // ── Dev fallback: skip real auth, go straight to dashboard ────────
+    navigate('/dashboard')
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFB] dark:bg-[#07141E] bg-dot-grid flex flex-col font-sans text-[#071E2D] dark:text-slate-100 transition-colors">
       {/* Sticky Top Navbar */}
       <Navbar />
 
@@ -84,7 +136,7 @@ export const Login: React.FC = () => {
             {/* Heading */}
             <div className="mb-8">
               <h1
-                className="text-[#071E2D] tracking-tight leading-tight"
+                className="text-[#071E2D] dark:text-white tracking-tight leading-tight"
                 style={{
                   fontFamily: "'Fraunces', Georgia, serif",
                   fontWeight: 700,
@@ -101,7 +153,7 @@ export const Login: React.FC = () => {
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="email"
-                  className="text-xs font-bold text-[#071E2D] uppercase tracking-wider pl-1"
+                  className="text-xs font-bold text-[#071E2D] dark:text-slate-200 uppercase tracking-wider pl-1"
                 >
                   Email
                 </label>
@@ -113,7 +165,7 @@ export const Login: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] placeholder:text-[#071E2D]/40 outline-none transition-colors shadow-sm"
+                  className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-sm"
                 />
               </div>
 
@@ -121,7 +173,7 @@ export const Login: React.FC = () => {
               <div className="flex flex-col gap-1.5 mt-1">
                 <label
                   htmlFor="password"
-                  className="text-xs font-bold text-[#071E2D] uppercase tracking-wider pl-1"
+                  className="text-xs font-bold text-[#071E2D] dark:text-slate-200 uppercase tracking-wider pl-1"
                 >
                   Password
                 </label>
@@ -133,13 +185,13 @@ export const Login: React.FC = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    className="w-full px-5 py-3.5 pr-12 rounded-full border-2 border-[#071E2D]/20 focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] placeholder:text-[#071E2D]/40 outline-none transition-colors shadow-sm"
+                    className="w-full px-5 py-3.5 pr-12 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#071E2D]/40 hover:text-[#071E2D] p-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#071E2D]/40 dark:text-slate-400 hover:text-[#071E2D] dark:hover:text-white p-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] transition-colors"
                   >
                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
@@ -149,81 +201,78 @@ export const Login: React.FC = () => {
                 <div className="flex justify-end mt-1 pr-1">
                   <a
                     href="#"
-                    className="font-sans font-medium text-xs text-[#006D6A] hover:text-[#00C4B3] transition-colors focus-visible:outline-none focus-visible:underline decoration-[#00C4B3]"
+                    className="font-sans font-medium text-xs text-[#006D6A] dark:text-[#00C4B3] hover:text-[#00C4B3] transition-colors focus-visible:outline-none focus-visible:underline decoration-[#00C4B3]"
                   >
                     Forgot password?
                   </a>
                 </div>
 
-                {/* Error state example (rendered styled but non-functional, for demo purposes) */}
-                <div
-                  role="alert"
-                  className="flex items-center gap-2 text-xs text-red-600 bg-red-50/80 border border-red-200/80 rounded-xl px-3.5 py-2 mt-1"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    className="flex-shrink-0"
-                    aria-hidden="true"
+                {/* Live auth error */}
+                {authError && (
+                  <div
+                    role="alert"
+                    className="flex items-center gap-2 text-xs text-red-600 bg-red-50/80 dark:bg-red-950/30 border border-red-200/80 dark:border-red-900/50 rounded-xl px-3.5 py-2 mt-1"
                   >
-                    <circle cx="8" cy="8" r="7" stroke="#dc2626" strokeWidth="1.75" />
-                    <path d="M8 4.5v4M8 11v.5" stroke="#dc2626" strokeWidth="1.75" strokeLinecap="round" />
-                  </svg>
-                  <span>That email and password don't match. Try again.</span>
-                </div>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="flex-shrink-0" aria-hidden="true">
+                      <circle cx="8" cy="8" r="7" stroke="#dc2626" strokeWidth="1.75" />
+                      <path d="M8 4.5v4M8 11v.5" stroke="#dc2626" strokeWidth="1.75" strokeLinecap="round" />
+                    </svg>
+                    <span>{authError}</span>
+                  </div>
+                )}
               </div>
 
               {/* Primary button: Log in */}
               <button
                 type="submit"
-                className="w-full mt-3 py-3.5 px-6 rounded-full bg-[#071E2D] text-white font-sans font-semibold text-base transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 shadow-[3px_3px_0px_#071E2D] hover:shadow-[5px_5px_0px_#071E2D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2 flex items-center justify-center cursor-pointer"
+                disabled={submitting}
+                className="w-full mt-3 py-3.5 px-6 rounded-full bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] font-sans font-semibold text-base transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] hover:shadow-[5px_5px_0px_#071E2D] dark:hover:shadow-[5px_5px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2 flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Log in
+                {submitting ? 'Logging in…' : 'Log in'}
               </button>
             </form>
 
             {/* Divider: or continue with */}
             <div className="flex items-center gap-4 my-6">
-              <div className="flex-1 h-px bg-[#071E2D]/12" />
-              <span className="font-sans text-xs text-[#071E2D]/45 font-medium whitespace-nowrap">
+              <div className="flex-1 h-px bg-[#071E2D]/12 dark:bg-white/10" />
+              <span className="font-sans text-xs text-[#071E2D]/45 dark:text-slate-400 font-medium whitespace-nowrap">
                 or continue with
               </span>
-              <div className="flex-1 h-px bg-[#071E2D]/12" />
+              <div className="flex-1 h-px bg-[#071E2D]/12 dark:bg-white/10" />
             </div>
 
             {/* Social Login Buttons (matching reference circular style) */}
             <div className="flex items-center justify-center gap-4 mb-8">
               <button
                 type="button"
+                onClick={handleGoogleAuth}
                 aria-label="Continue with Google"
-                className="w-12 h-12 rounded-full bg-[#071E2D] text-white flex items-center justify-center transition-all duration-150 hover:bg-[#00C4B3] hover:text-[#071E2D] hover:-translate-y-0.5 shadow-[2px_2px_0px_#071E2D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
+                className="w-12 h-12 rounded-full bg-[#071E2D] dark:bg-[#0E202D] text-white border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center transition-all duration-150 hover:bg-[#00C4B3] hover:text-[#071E2D] hover:-translate-y-0.5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
               >
                 <GoogleIcon />
               </button>
               <button
                 type="button"
                 aria-label="Continue with Apple"
-                className="w-12 h-12 rounded-full bg-[#071E2D] text-white flex items-center justify-center transition-all duration-150 hover:bg-[#00C4B3] hover:text-[#071E2D] hover:-translate-y-0.5 shadow-[2px_2px_0px_#071E2D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
+                className="w-12 h-12 rounded-full bg-[#071E2D] dark:bg-[#0E202D] text-white border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center transition-all duration-150 hover:bg-[#00C4B3] hover:text-[#071E2D] hover:-translate-y-0.5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
               >
                 <AppleIcon />
               </button>
               <button
                 type="button"
                 aria-label="Continue with Facebook"
-                className="w-12 h-12 rounded-full bg-[#071E2D] text-white flex items-center justify-center transition-all duration-150 hover:bg-[#00C4B3] hover:text-[#071E2D] hover:-translate-y-0.5 shadow-[2px_2px_0px_#071E2D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
+                className="w-12 h-12 rounded-full bg-[#071E2D] dark:bg-[#0E202D] text-white border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center transition-all duration-150 hover:bg-[#00C4B3] hover:text-[#071E2D] hover:-translate-y-0.5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
               >
                 <FacebookIcon />
               </button>
             </div>
 
             {/* Secondary line below button: Don't have an account? Sign up */}
-            <p className="font-sans text-sm text-center text-[#071E2D]/60">
+            <p className="font-sans text-sm text-center text-[#071E2D]/60 dark:text-slate-400">
               Don't have an account?{' '}
               <Link
                 to="/signup"
-                className="font-semibold text-[#071E2D] hover:text-[#006D6A] transition-colors underline decoration-[#00C4B3] underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] rounded"
+                className="font-semibold text-[#071E2D] dark:text-white hover:text-[#006D6A] dark:hover:text-[#00C4B3] transition-colors underline decoration-[#00C4B3] underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] rounded"
               >
                 Sign up
               </Link>

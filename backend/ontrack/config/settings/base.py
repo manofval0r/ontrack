@@ -38,6 +38,16 @@ SUPABASE_SECRET_KEY = env("SUPABASE_SECRET_KEY", default="")
 SUPABASE_JWKS_URL = env("SUPABASE_JWKS_URL", default="")
 DEBUG_ACCESS_KEY = env("DEBUG_ACCESS_KEY", default="")
 
+# --- AI (David owns the bodies in apps/ai_module.py; backend reads config) ---
+# Defaults point at NVIDIA Build cloud; override per-env (e.g. David's box).
+NVIDIA_BASE_URL = env(
+    "NVIDIA_BASE_URL", default="https://integrate.api.nvidia.com/v1"
+)
+NVIDIA_MODEL_NAME = env(
+    "NVIDIA_MODEL_NAME", default="nvidia/llama-3.1-nemotron-nano-8b-v1"
+)
+NVIDIA_API_KEY = env("NVIDIA_API_KEY", default="")
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
@@ -57,6 +67,16 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
+
+# Minimal templates: no project templates exist, but DRF's browsable API
+# (rest_framework/api.html) needs APP_DIRS to resolve its own templates.
+# Without this, browser hits (Accept: text/html) 500 instead of rendering.
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "APP_DIRS": True,
+    }
+]
 
 # Postgres via DATABASE_URL (Supabase pooler, port 6543) when set;
 # otherwise a local SQLite fallback so check/runserver work pre-Supabase.

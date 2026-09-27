@@ -2,6 +2,7 @@
 
 Happy path + one failure path each. Run: python3 manage.py test
 """
+import json
 import uuid
 from unittest import mock
 
@@ -323,3 +324,120 @@ class HealthDebugTests(TestCase):
                     "recent_checkins", "recent_audio_cache"):
             self.assertIn(key, body)
         self.assertEqual(len(body["recent_goals"]), 1)
+
+
+class _FakeHTTPResponse:
+    """Minimal urlopen stand-in: context manager with .read()."""
+
+    def __init__(self, payload):
+        self._raw = json.dumps(payload).encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def read(self):
+        return self._raw
+
+
+def _chat_payload(content):
+    return {"choices": [{"message": {"content": content}}]}
+
+
+LIVE_AI_SETTINGS = {
+    "NVIDIA_BASE_URL": "https://ai.test/v1",
+    "NVIDIA_MODEL_NAME": "test-model",
+    "NVIDIA_API_KEY": "test-key",
+}
+
+
+@override_settings(**LIVE_AI_SETTINGS)
+class AiModuleLiveTests(TestCase):
+    def _mock_chat(self, content):
+        patcher = mock.patch(
+            "urllib.request.urlopen",
+            return_value=_FakeHTTPResponse(_chat_payload(content)),
+        )
+        return patcher
+
+    def test_parse_goal_happy_path(self):
+        from apps import ai_module
+
+        body = (
+            '{"goal_type": "checklist", "target": 3, '
+            '"items": ["A", "B", "C"], "domain": "school", '
+            '"deadline": null, "summary": "Read 3 books"}'
+        )
+        with self._mock_chat(body):
+            parsed = ai_module.parse_goal("read 3 books: A, B, C")
+        self.assertEqual(parsed["goal_type"], "checklist")
+        self.assertEqual(parsed["items"], ["A", "B", "C"])
+
+    def test_parse_goal_strips_code_fences(self):
+        from apps import ai_module
+
+        body = '```json\n{"goal_type": "counter", "target": 5}\n```'
+        with self._mock_chat(body):
+            parsed = ai_module.parse_goal("sell 5 cars")
+        self.assertEqual(parsed["goal_type"], "counter")
+
+    def test_parse_goal_non_json_raises(self):
+        from apps import ai_module
+
+        with self._mock_chat("Sure! Here is your goal..."):
+            with self.assertRaises(RuntimeError):
+                ai_module.parse_goal("vague rambling")
+
+    def test_checkin_and_verdict_shape(self):
+        from apps import ai_module
+
+        with self._mock_chat("You're at 2/5. On pace for Friday?"):
+            msg = ai_module.generate_checkin("gid", {"title": "sell"}, 2)
+        self.assertIn("2/5", msg)
+        with self._mock_chat("You shipped 4/5. Strong finish."):
+            verdict = ai_module.generate_verdict("gid", {"title": "sell"}, 4)
+        self.assertIn("4/5", verdict)
+
+    def test_request_targets_chat_completions_with_bearer(self):
+        from apps import ai_module
+
+        with mock.patch(
+            "urllib.request.urlopen",
+            return_value=_FakeHTTPResponse(_chat_payload("ok")),
+        ) as m:
+            ai_module.generate_verdict("gid", {}, 0)
+        req = m.call_args[0][0]
+        self.assertTrue(req.full_url.endswith("/chat/completions"))
+        self.assertEqual(req.get_header("Authorization"), "Bearer test-key")
+        sent = json.loads(req.data.decode("utf-8"))
+        self.assertEqual(sent["model"], "test-model")
+
+    @override_settings(SUPABASE_JWT_SECRET=TEST_SECRET, **LIVE_AI_SETTINGS)
+    def test_create_goal_uses_live_parse_end_to_end(self):
+        client = APIClient()
+        user_id = uuid.uuid4()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {mint_token(user_id)}")
+        body = (
+            '{"goal_type": "checklist", "target": 2, "items": ["A", "B"], '
+            '"domain": "school", "deadline": null, "summary": "Read"}'
+        )
+        with self._mock_chat(body):
+            resp = client.post("/api/goals", {"text": "read A and B"}, format="json")
+        self.assertEqual(resp.status_code, 201, resp.content)
+        data = resp.json()
+        self.assertEqual(data["goal_type"], "checklist")
+        self.assertFalse(data["ai_fallback_used"])
+        self.assertEqual(len(data["items"]), 2)
+
+
+@override_settings(NVIDIA_BASE_URL="", NVIDIA_MODEL_NAME="", NVIDIA_API_KEY="")
+class AiModuleUnconfiguredTests(TestCase):
+    def test_missing_config_raises_for_fallback(self):
+        from apps import ai_module
+
+        with self.assertRaises(RuntimeError):
+            ai_module.parse_goal("anything")
+        with self.assertRaises(RuntimeError):
+            ai_module.generate_checkin("gid", {}, 0)

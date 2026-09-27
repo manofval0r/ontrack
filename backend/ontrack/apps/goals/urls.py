@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.goals.views import (
+from .views import (
     ChatParseGoalView,
     CheckinRespondView,
     DashboardView,
