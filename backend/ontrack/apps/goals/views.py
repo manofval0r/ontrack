@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from apps import ai_module
 from apps.accounts.profiles import get_profile_stats
 from apps.accounts.throttles import GoalsBurstThrottle
-from apps.goals.models import Goal, ProgressLog
+from apps.goals.models import CheckIn, Goal, GoalItem, ProgressLog
 from apps.goals.serializers import GoalSerializer, ProgressLogSerializer
 from config.exceptions import ApiError
 
@@ -26,6 +26,9 @@ STATUSES = {Goal.STATUS_ACTIVE, Goal.STATUS_COMPLETED, Goal.STATUS_MISSED}
 GENERIC_VERDICT = (
     "Goal finalized. No detailed verdict is available right now — "
     "consistency beats intensity, keep going."
+)
+GENERIC_CHECKIN = (
+    "Checked in. Log your latest progress — consistency beats intensity."
 )
 
 
@@ -63,15 +66,36 @@ def _parse_deadline(raw):
     return parsed
 
 
+def _clean_items(raw, goal_type):
+    """Lenient checklist items: list[str] -> cleaned titles (max 20 x 255).
+    Anything off -> []. Non-checklist goals always get [] (per contract).
+    Never raises, never sinks an otherwise good parse."""
+    if goal_type != Goal.GOAL_TYPE_CHECKLIST:
+        return []
+    if not isinstance(raw, list):
+        return []
+    cleaned = []
+    for item in raw:
+        if not isinstance(item, str):
+            continue
+        title = CONTROL_CHARS.sub("", item).strip()[:255]
+        if title:
+            cleaned.append(title)
+        if len(cleaned) >= 20:
+            break
+    return cleaned
+
+
 def coerce_parse_result(raw):
-    """Validate ai_module.parse_goal output ({goal_type, target, domain,
-    deadline, summary}).
+    """Validate ai_module.parse_goal output ({goal_type, target, items,
+    domain, deadline, summary}).
 
     Core fields (goal_type/target/domain) are strict: anything off ->
-    ("manual", None, "", None, None, True). Extras (deadline/summary) are
-    lenient: malformed values are dropped, never fatal. Never raises.
+    ("manual", None, [], "", None, None, True). Extras (items/deadline/
+    summary) are lenient: malformed values are dropped, never fatal.
+    Never raises.
     """
-    fallback = (Goal.GOAL_TYPE_MANUAL, None, "", None, None, True)
+    fallback = (Goal.GOAL_TYPE_MANUAL, None, [], "", None, None, True)
     if not isinstance(raw, dict):
         return fallback
     goal_type = raw.get("goal_type")
@@ -90,7 +114,8 @@ def coerce_parse_result(raw):
     if summary is not None:
         summary = CONTROL_CHARS.sub("", summary).strip()[:2000] or None
     deadline = _parse_deadline(raw.get("deadline"))
-    return (goal_type, target, domain, deadline, summary, False)
+    items = _clean_items(raw.get("items"), goal_type)
+    return (goal_type, target, items, domain, deadline, summary, False)
 
 
 def parse_goal_safely(text):
@@ -99,7 +124,7 @@ def parse_goal_safely(text):
         parsed = coerce_parse_result(ai_module.parse_goal(text))
     except Exception:
         logger.warning("ai_module.parse_goal failed; using manual fallback", exc_info=True)
-        return (Goal.GOAL_TYPE_MANUAL, None, "", None, [], True)
+        return (Goal.GOAL_TYPE_MANUAL, None, [], "", None, None, True)
     if parsed[-1]:
         logger.warning("ai_module.parse_goal returned malformed data; using manual fallback")
     return parsed
@@ -122,7 +147,7 @@ class GoalListCreateView(APIView):
     def post(self, request):
         data = request.data if isinstance(request.data, dict) else {}
         text = clean_text(data.get("text"), max_length=500)
-        goal_type, target, domain, deadline, summary, used_fallback = parse_goal_safely(text)
+        goal_type, target, items, domain, deadline, summary, used_fallback = parse_goal_safely(text)
         goal = Goal.objects.create(
             user_id=request.user_id,
             title=text[:255],
@@ -133,11 +158,16 @@ class GoalListCreateView(APIView):
             parse_result={} if used_fallback else {
                 "goal_type": goal_type,
                 "target": target,
+                "items": items,
                 "domain": domain,
                 "deadline": deadline.isoformat() if deadline else None,
                 "summary": summary or "",
             },
         )
+        if goal_type == Goal.GOAL_TYPE_CHECKLIST and items:
+            GoalItem.objects.bulk_create(
+                [GoalItem(goal=goal, title=title) for title in items]
+            )
         payload = GoalSerializer(goal).data
         payload["ai_fallback_used"] = used_fallback
         return Response(payload, status=status.HTTP_201_CREATED)
@@ -269,6 +299,59 @@ class DashboardView(APIView):
                 "profile": get_profile_stats(user_id),
             }
         )
+
+
+class GoalCheckinView(APIView):
+    """On-demand check-in only (Decision 1). No auto-triggers, no background
+    jobs. AI is best-effort: failure stores + returns the generic fallback."""
+
+    throttle_classes = [GoalsBurstThrottle]
+
+    def post(self, request, goal_id):
+        goal = get_object_or_404(Goal, pk=goal_id, user_id=request.user_id)
+        logs = list(goal.progress_logs.all())
+        current_progress = _current_progress(goal, logs)
+        goal_data = {
+            "title": goal.title,
+            "goal_type": goal.goal_type,
+            "target": goal.target,
+            "domain": goal.domain,
+            "status": goal.status,
+        }
+        try:
+            message = ai_module.generate_checkin(
+                str(goal.id), goal_data, current_progress
+            )
+            if not isinstance(message, str) or not message.strip():
+                raise ValueError("empty check-in")
+            message = message.strip()[:5000]
+        except Exception:
+            logger.warning(
+                "ai_module.generate_checkin failed; using generic check-in",
+                exc_info=True,
+            )
+            message = GENERIC_CHECKIN
+        checkin = CheckIn.objects.create(goal=goal, ai_message=message)
+        return Response(
+            {
+                "check_in_message": message,
+                "check_in_id": str(checkin.id),
+                "created_at": checkin.checked_in_at,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+def _current_progress(goal, logs):
+    """Shared progress math for check-in/finalize: counter=sum, checklist=
+    completed count, manual=latest value or 0. Never raises on empty logs."""
+    if goal.goal_type == Goal.GOAL_TYPE_COUNTER:
+        return sum(log.value for log in logs)
+    if goal.goal_type == Goal.GOAL_TYPE_CHECKLIST:
+        return goal.items.filter(completed=True).count()
+    if logs and _is_int(logs[0].value):
+        return logs[0].value
+    return 0
 
 
 class GoalFinalizeView(APIView):
