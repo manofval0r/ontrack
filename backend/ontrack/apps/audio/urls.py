@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.audio.views import AsrView, TtsView
+from .views import AsrView, TtsView
 
 urlpatterns = [
     path("tts", TtsView.as_view(), name="tts"),
