@@ -47,6 +47,10 @@ NVIDIA_MODEL_NAME = env(
     "NVIDIA_MODEL_NAME", default="nvidia/llama-3.1-nemotron-nano-8b-v1"
 )
 NVIDIA_API_KEY = env("NVIDIA_API_KEY", default="")
+# --- Voice (Riva/NIM audio; same key, OpenAI-compatible audio endpoints) ---
+NVIDIA_TTS_MODEL = env("NVIDIA_TTS_MODEL", default="tts-1")
+NVIDIA_TTS_VOICE = env("NVIDIA_TTS_VOICE", default="Aria")
+NVIDIA_ASR_MODEL = env("NVIDIA_ASR_MODEL", default="whisper-1")
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
