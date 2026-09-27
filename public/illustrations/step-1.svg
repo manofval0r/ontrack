@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" fill="none" role="img" aria-label="Say your goal illustration">
+  <!-- Background floor/ambient glow -->
+  <ellipse cx="200" cy="215" rx="160" ry="12" fill="#E2E8F0" opacity="0.6"/>
+  
+  <!-- Soundwave / Speech Bubble -->
+  <g transform="translate(160, 24)">
+    <rect x="0" y="0" width="200" height="74" rx="18" fill="#FFFFFF" stroke="#071E2D" stroke-width="2.5"/>
+    <path d="M20 74 L14 88 L34 74 Z" fill="#FFFFFF" stroke="#071E2D" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Overwrite border overlap -->
+    <path d="M18 73 L33 73" stroke="#FFFFFF" stroke-width="3"/>
+    
+    <!-- Audio wave bars -->
+    <g transform="translate(18, 18)">
+      <rect x="0" y="10" width="3.5" height="18" rx="1.75" fill="#00C4B3"/>
+      <rect x="7" y="4" width="3.5" height="30" rx="1.75" fill="#00C4B3"/>
+      <rect x="14" y="12" width="3.5" height="14" rx="1.75" fill="#00C4B3"/>
+      <rect x="21" y="2" width="3.5" height="34" rx="1.75" fill="#006D6A"/>
+      <rect x="28" y="8" width="3.5" height="22" rx="1.75" fill="#00C4B3"/>
+    </g>
+
+    <!-- Goal text in quote bubble -->
+    <text x="58" y="32" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="12" fill="#071E2D">"Sell 5 cars this week"</text>
+    <text x="58" y="50" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="10.5" fill="#006D6A">Voice or text input</text>
+  </g>
+
+  <!-- Character speaking into microphone -->
+  <g transform="translate(50, 40)">
+    <!-- Body/Torso -->
+    <path d="M60 170 C55 140 70 120 95 120 C120 120 135 140 130 170 Z" fill="#071E2D"/>
+    <!-- Collar / Neck -->
+    <rect x="90" y="106" width="10" height="16" rx="3" fill="#FFE0BD"/>
+    <!-- Head -->
+    <circle cx="95" cy="85" r="22" fill="#FFE0BD"/>
+    <!-- Hair -->
+    <path d="M74 80 C74 60 116 60 116 80 C116 85 110 92 108 92 C100 88 92 88 82 92 C80 90 74 86 74 80 Z" fill="#1E293B"/>
+    <!-- Ear -->
+    <circle cx="74" cy="86" r="3.5" fill="#FFE0BD"/>
+    <!-- Facial profile / smiling -->
+    <circle cx="103" cy="83" r="2" fill="#071E2D"/>
+    <path d="M102 91 C105 93 108 91 110 88" stroke="#071E2D" stroke-width="1.5" stroke-linecap="round"/>
+    
+    <!-- Arm holding smartphone / mic -->
+    <path d="M110 132 C125 132 142 120 148 105" stroke="#071E2D" stroke-width="7" stroke-linecap="round"/>
+    <!-- Hand -->
+    <circle cx="150" cy="102" r="5" fill="#FFE0BD"/>
+    
+    <!-- Smartphone device -->
+    <rect x="146" y="80" width="16" height="30" rx="4" fill="#071E2D" stroke="#071E2D" stroke-width="1.5"/>
+    <rect x="148" y="84" width="12" height="22" rx="2" fill="#00C4B3"/>
+    <circle cx="154" cy="95" r="3.5" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Decorative sparkles -->
+  <path d="M360 130 L362 136 L368 138 L362 140 L360 146 L358 140 L352 138 L358 136 Z" fill="#00C4B3"/>
+  <circle cx="340" cy="160" r="3" fill="#006D6A" opacity="0.6"/>
+  <circle cx="45" cy="110" r="2.5" fill="#00C4B3" opacity="0.6"/>
+</svg>
