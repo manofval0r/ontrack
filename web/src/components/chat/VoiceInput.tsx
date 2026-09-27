@@ -18,10 +18,13 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   const [seconds, setSeconds] = useState(0)
   const timerRef = useRef<any>(null)
   const recognitionRef = useRef<any>(null)
+  // Accumulates the real speech-recognized text so the Done button can send it
+  const liveTranscriptRef = useRef<string>('')
 
   useEffect(() => {
     if (isRecording) {
       setSeconds(0)
+      liveTranscriptRef.current = ''
       timerRef.current = setInterval(() => {
         setSeconds((prev) => prev + 1)
       }, 1000)
@@ -36,17 +39,27 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
           recognition.interimResults = true
           recognition.lang = 'en-US'
 
-          let finalTranscript = ''
           recognition.onresult = (event: any) => {
+            let partial = ''
             for (let i = event.resultIndex; i < event.results.length; ++i) {
+              const t = event.results[i][0].transcript
               if (event.results[i].isFinal) {
-                finalTranscript += event.results[i][0].transcript
+                liveTranscriptRef.current += t
+              } else {
+                partial += t
               }
             }
-            if (finalTranscript) {
-              onTranscriptionComplete(finalTranscript)
+            // Fire immediately for final segments so chat input updates in real-time
+            const combined = liveTranscriptRef.current + (partial ? ` ${partial}` : '')
+            if (combined.trim()) {
+              onTranscriptionComplete(combined.trim())
             }
           }
+
+          recognition.onerror = (e: any) => {
+            console.warn('SpeechRecognition error', e.error)
+          }
+
           recognition.start()
           recognitionRef.current = recognition
         } catch (e) {
@@ -56,18 +69,16 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
     } else {
       if (timerRef.current) clearInterval(timerRef.current)
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop()
-        } catch {}
+        try { recognitionRef.current.stop() } catch {}
+        recognitionRef.current = null
       }
     }
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop()
-        } catch {}
+        try { recognitionRef.current.stop() } catch {}
+        recognitionRef.current = null
       }
     }
   }, [isRecording, onTranscriptionComplete])
@@ -117,8 +128,14 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
         type="button"
         onClick={() => {
           onStopRecording()
-          // Fallback sample transcription if browser speech didn't emit
-          onTranscriptionComplete('I want to close 5 enterprise deals before the end of next week')
+          // Only fall back to a sample when the browser heard nothing
+          // (e.g. mic denied / SpeechRecognition unsupported). Never
+          // overwrite a real transcript — that was the "same text every time" bug.
+          const heard = liveTranscriptRef.current.trim()
+          if (!heard) {
+            onTranscriptionComplete('I want to close 5 enterprise deals before the end of next week')
+          }
+          // else: the real transcript was already streamed via onresult
         }}
         className="px-3 py-1 bg-white text-xs font-bold text-[#071E2D] border border-[#071E2D] rounded-full shadow-sm hover:bg-[#F3F6F8]"
       >

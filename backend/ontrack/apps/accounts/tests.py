@@ -184,3 +184,115 @@ class Es256WithoutCryptoTests(TestCase):
             with override_settings(SUPABASE_JWKS_URL="https://jwks.test/j.json"):
                 resp = client.get("/api/goals")
         self.assertEqual(resp.status_code, 401)
+
+
+@override_settings(SUPABASE_JWT_SECRET=TEST_SECRET)
+class IntegrationEndpointTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user_id = uuid.uuid4()
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {mint_token(self.user_id)}"
+        )
+
+    def test_list_empty_and_connect_github(self):
+        resp = self.client.get("/api/integrations")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json(), [])
+        resp = self.client.post(
+            "/api/integrations",
+            {"provider": "github", "access_token": "gho_x", "meta": {"login": "octo"}},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 201, resp.content)
+        body = resp.json()
+        self.assertEqual(body["provider"], "github")
+        self.assertTrue(body["connected"])
+        self.assertIn("octo", body["status_label"])
+        self.assertNotIn("access_token", body)  # tokens never leak
+
+    def test_connect_rejects_bad_provider(self):
+        resp = self.client.post(
+            "/api/integrations", {"provider": "myspace"}, format="json"
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()["code"], "VALIDATION_ERROR")
+
+    def test_connect_upserts_same_provider(self):
+        for _ in ("one", "two"):
+            resp = self.client.post(
+                "/api/integrations",
+                {"provider": "slack", "meta": {"webhook_url": "https://hooks/x"}},
+                format="json",
+            )
+            self.assertEqual(resp.status_code, 201)
+        rows = self.client.get("/api/integrations").json()
+        self.assertEqual(len([r for r in rows if r["provider"] == "slack"]), 1)
+
+    def test_disconnect_and_foreign_404(self):
+        row_id = self.client.post(
+            "/api/integrations", {"provider": "notion"}, format="json"
+        ).json()["id"]
+        resp = self.client.delete(f"/api/integrations/{row_id}")
+        self.assertEqual(resp.status_code, 200)
+        other_client = APIClient()
+        other_client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {mint_token(uuid.uuid4())}"
+        )
+        resp = other_client.delete(f"/api/integrations/{row_id}")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_slack_notify_unconnected_404_then_ok(self):
+        resp = self.client.post(
+            "/api/integrations/slack/notify", {"text": "hi"}, format="json"
+        )
+        self.assertEqual(resp.status_code, 404)
+        self.client.post(
+            "/api/integrations",
+            {"provider": "slack", "meta": {"webhook_url": "https://hooks/x", "channel": "#g"}},
+            format="json",
+        )
+        import apps.accounts.integrations as integ
+
+        fake = mock.MagicMock()
+        fake.__enter__.return_value = fake
+        fake.__exit__.return_value = False
+        fake.status = 200
+        fake.read.return_value = b"ok"
+        with mock.patch.object(integ.urllib.request, "urlopen", return_value=fake):
+            resp = self.client.post(
+                "/api/integrations/slack/notify", {"text": "ship it"}, format="json"
+            )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertTrue(resp.json()["ok"])
+
+    def test_notion_export_needs_goal_and_creds(self):
+        resp = self.client.post(
+            "/api/integrations/notion/export", {"goal_id": str(uuid.uuid4())}, format="json"
+        )
+        self.assertEqual(resp.status_code, 404)  # not connected
+        self.client.post(
+            "/api/integrations",
+            {"provider": "notion", "meta": {"api_token": "ntn_x", "database_id": "db1"}},
+            format="json",
+        )
+        from apps.goals.models import Goal
+
+        goal = Goal.objects.create(
+            user_id=self.user_id, title="ship", goal_type="counter", target=2, verdict="v"
+        )
+        import apps.accounts.integrations as integ
+
+        fake = mock.MagicMock()
+        fake.__enter__.return_value = fake
+        fake.__exit__.return_value = False
+        fake.status = 200
+        fake.read.return_value = b'{"id": "page-1"}'
+        with mock.patch.object(integ.urllib.request, "urlopen", return_value=fake):
+            resp = self.client.post(
+                "/api/integrations/notion/export",
+                {"goal_id": str(goal.id)},
+                format="json",
+            )
+        self.assertEqual(resp.status_code, 201, resp.content)
+        self.assertEqual(resp.json()["page_id"], "page-1")

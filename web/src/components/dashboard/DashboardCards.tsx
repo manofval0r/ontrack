@@ -15,6 +15,40 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
   onSelectGoal,
 }) => {
   const activeGoals = goals.filter((g) => g.status === 'active')
+  const completedCount = goals.filter((g) => g.status === 'completed').length
+  const executionRate = goals.length
+    ? Math.round((completedCount / goals.length) * 100)
+    : 0
+
+  // ── EMPTY STATE: no goals yet — chat/agent hasn't created anything ──────
+  // This is the screen a fresh user (or fresh Google OAuth login) sees.
+  // Any "tell the agent a goal → card appears here" flow lands here first.
+  if (goals.length === 0) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="bg-white dark:bg-[#0E202D] border-2 border-dashed border-[#071E2D]/30 dark:border-white/20 rounded-3xl p-8 text-center flex flex-col items-center gap-3 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000]">
+          <span className="text-4xl" aria-hidden="true">🎯</span>
+          <h3
+            className="text-lg font-extrabold text-[#071E2D] dark:text-white tracking-tight"
+            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+          >
+            No trackers yet
+          </h3>
+          <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 max-w-xs leading-relaxed">
+            Tell the AI coach a goal — e.g. “I want to sell 5 cars this week” — and your
+            Counter, Checklist or Log tracker will appear here.
+          </p>
+          <button
+            type="button"
+            onClick={onOpenNewGoal}
+            className="mt-1 px-5 py-2.5 bg-[#00C4B3] hover:bg-[#33D6C5] text-[#071E2D] font-bold text-xs rounded-full border-2 border-[#071E2D] shadow-[3px_3px_0px_#071E2D] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
+          >
+            + Tell the coach your goal
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -31,17 +65,16 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
           </div>
         </div>
 
-        {/* Big Balance Number & Delta */}
+        {/* Big Balance Number & Delta — real completion rate, not a static 84.5% */}
         <div className="mt-4">
           <span
             className="text-4xl sm:text-5xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
-            84.5%
+            {executionRate}%
           </span>
           <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] mt-2 ml-3 bg-[#E6F7F5] dark:bg-[#00C4B3]/15 border border-[#00C4B3]/40 px-2.5 py-0.5 rounded-full">
-            <span>↑ 5%</span>
-            <span className="opacity-70 font-normal">than last month</span>
+            <span>{completedCount} of {goals.length} shipped</span>
           </div>
         </div>
 
@@ -66,58 +99,33 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
           </button>
         </div>
 
-        {/* Active Trackers mini cards section */}
+        {/* Active Trackers mini cards section — real goals only, no placeholders */}
         <div className="pt-3 border-t-2 border-[#071E2D]/10 dark:border-white/10">
           <div className="flex items-center justify-between text-xs text-[#071E2D]/70 dark:text-slate-300 mb-3">
             <span className="font-bold uppercase tracking-wider text-[#071E2D] dark:text-white">Active Trackers</span>
-            <span className="font-semibold text-[#006D6A] dark:text-[#00C4B3]">Total {goals.length || 6} trackers</span>
+            <span className="font-semibold text-[#006D6A] dark:text-[#00C4B3]">Total {goals.length} tracker{goals.length === 1 ? '' : 's'}</span>
           </div>
 
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-            {/* Mini Card 1 */}
-            <div
-              onClick={() => activeGoals[0] && onSelectGoal(activeGoals[0])}
-              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs">🎯</span>
-                <span className="text-[10px] text-[#071E2D]/40 dark:text-slate-400">⋮</span>
+            {activeGoals.slice(0, 3).map((goal, idx) => (
+              <div
+                key={goal.id}
+                onClick={() => onSelectGoal(goal)}
+                className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs">{['🎯', '📚', '💪'][idx % 3]}</span>
+                  <span className="text-[10px] text-[#071E2D]/40 dark:text-slate-400">⋮</span>
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight" title={goal.title}>
+                  {goal.title}
+                </span>
+                <span className="text-[9px] text-[#071E2D]/60 dark:text-slate-400">
+                  {goal.current_value ?? 0}/{goal.target || '—'} {goal.unit || ''}
+                </span>
+                <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold capitalize">{goal.status}</span>
               </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight">
-                {activeGoals[0]?.title || 'Deals Target'}
-              </span>
-              <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold">Active</span>
-            </div>
-
-            {/* Mini Card 2 */}
-            <div
-              onClick={() => activeGoals[1] && onSelectGoal(activeGoals[1])}
-              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs">📚</span>
-                <span className="text-[10px] text-[#071E2D]/40 dark:text-slate-400">⋮</span>
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight">
-                {activeGoals[1]?.title || 'Book Reading'}
-              </span>
-              <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold">Active</span>
-            </div>
-
-            {/* Mini Card 3 */}
-            <div
-              onClick={() => activeGoals[2] && onSelectGoal(activeGoals[2])}
-              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs">💪</span>
-                <span className="text-[10px] text-[#071E2D]/40 dark:text-slate-400">⋮</span>
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight">
-                {activeGoals[2]?.title || 'Pushup Streak'}
-              </span>
-              <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold">Active</span>
-            </div>
+            ))}
           </div>
         </div>
       </div>
