@@ -291,49 +291,13 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
       const cleanLower = cleanTitle.toLowerCase()
 
       let goalType: Goal['goal_type'] = 'counter'
-      let target = 5
-      let unit = 'reps'
-      let domain: Goal['domain'] = 'general'
 
       if (cleanLower.includes('book') || cleanLower.includes('ship') || cleanLower.includes('task') || cleanLower.includes('checklist')) {
         goalType = 'checklist'
-        target = 4
-        unit = 'milestones'
-        domain = 'learning'
       } else if (cleanLower.includes('reflect') || cleanLower.includes('journal') || cleanLower.includes('meditat') || cleanLower.includes('habit')) {
         goalType = 'manual'
-        target = 7
-        unit = 'days'
-        domain = 'mindset'
       } else {
         goalType = 'counter'
-        const num = cleanTitle.match(/\d+/)
-        if (num) target = parseInt(num[0], 10)
-        unit = cleanLower.includes('car') ? 'cars' : cleanLower.includes('pushup') ? 'pushups' : cleanLower.includes('km') ? 'km' : 'units'
-        domain = cleanLower.includes('car') || cleanLower.includes('deal') ? 'sales' : cleanLower.includes('pushup') || cleanLower.includes('km') ? 'fitness' : 'general'
-      }
-
-      const newGoalData: Partial<Goal> = {
-        title: cleanTitle,
-        description: `Conversational tracker compiled by Nemotron AI.`,
-        goal_type: goalType,
-        target,
-        current_value: 0,
-        unit,
-        domain,
-        deadline: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
-        status: 'active',
-        created_at: new Date().toISOString().split('T')[0],
-        items:
-          goalType === 'checklist'
-            ? [
-                { id: `chk-1-${Date.now()}`, title: 'Phase 1: Setup and scope definition', completed: false, order: 1 },
-                { id: `chk-2-${Date.now()}`, title: 'Phase 2: Execution benchmark', completed: false, order: 2 },
-                { id: `chk-3-${Date.now()}`, title: 'Phase 3: Quality audit and polish', completed: false, order: 3 },
-                { id: `chk-4-${Date.now()}`, title: 'Phase 4: Final delivery & wrap-up', completed: false, order: 4 },
-              ]
-            : undefined,
-        progress_logs: [],
       }
 
       try {

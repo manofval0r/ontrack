@@ -11,7 +11,6 @@ import { DashboardRecentActivity } from '../components/dashboard/DashboardRecent
 import { DashboardChatPanel } from '../components/dashboard/DashboardChatPanel'
 import { GoalDetailSlideOver } from '../components/dashboard/GoalDetailSlideOver'
 import { ActivityPanel } from '../components/dashboard/panels/ActivityPanel'
-import { CalendarPanel } from '../components/dashboard/panels/CalendarPanel'
 import { ManagePanel } from '../components/dashboard/panels/ManagePanel'
 import { ProgramPanel } from '../components/dashboard/panels/ProgramPanel'
 import { ReportsPanel } from '../components/dashboard/panels/ReportsPanel'
