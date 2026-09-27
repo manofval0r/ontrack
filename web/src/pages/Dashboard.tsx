@@ -42,13 +42,12 @@ export const Dashboard: React.FC = () => {
   // Dynamic greeting based on time of day
   const getGreeting = (name: string) => {
     const hour = new Date().getHours()
-    const cleanName = name ? name.split(' ')[0] : 'Israel'
-    if (hour < 12) return `Good morning, ${cleanName}`
-    if (hour < 17) return `Good afternoon, ${cleanName}`
-    return `Good evening, ${cleanName}`
+    const cleanName = name ? name.split(' ')[0] : ''
+    const hello = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+    return cleanName ? `${hello}, ${cleanName}` : hello
   }
 
-  const streakDays = dashboardData?.stats.streak_days || 14
+  const streakDays = dashboardData?.stats.streak_days || 0
   const completedGoalsCount = goals.filter((g) => g.status === 'completed').length
   const pendingGoalsCount = goals.filter((g) => g.status === 'active').length
 
@@ -183,12 +182,7 @@ export const Dashboard: React.FC = () => {
           {activeView === 'activity' && <ActivityPanel />}
 
           {/* ── MANAGE ────────────────────────────────────── */}
-          {activeView === 'manage' && (
-            <ManagePanel
-              onSelectGoal={handleOpenDetail}
-              onOpenChat={() => setIsChatDrawerOpen(true)}
-            />
-          )}
+          {activeView === 'manage' && <ManagePanel />}
 
           {/* ── PROGRAM ───────────────────────────────────── */}
           {activeView === 'program' && <ProgramPanel />}

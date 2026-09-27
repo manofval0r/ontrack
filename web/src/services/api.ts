@@ -77,11 +77,12 @@ async function request<T>(
 // ─── UI fallback constants (used by GoalContext initial state) ────────────────
 
 export const INITIAL_USER_PROFILE: UserProfile = {
-  name: 'Israel',
-  email: 'israel@ontrack.app',
+  name: '',
+  email: '',
   accountability_persona: 'Nemotron High-Accountability Coach',
-  timezone: 'GMT+1 (West Africa Standard Time)',
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
 }
+
 
 export const INITIAL_AUDIO_SETTINGS: AudioSettings = {
   voice_type: 'nemotron-direct',

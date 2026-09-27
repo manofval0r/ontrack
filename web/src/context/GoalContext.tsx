@@ -10,11 +10,15 @@ import type {
 } from '../types'
 import {
   api,
-  INITIAL_USER_PROFILE,
   INITIAL_AUDIO_SETTINGS,
   INITIAL_NOTIFICATIONS,
   INITIAL_INTEGRATIONS,
 } from '../services/api'
+import {
+  emptyUserProfile,
+  profileFromAccessToken,
+  isStaleMockProfile,
+} from '../utils/auth'
 
 interface GoalContextType {
   goals: Goal[]
@@ -54,13 +58,19 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<StandardError | null>(null)
 
-  // ── User profile: try localStorage first, then fetch from /api/auth/me ──────
+  // ── User profile: real profile from token or localStorage, fallback to empty ──────
   const [user, setUser] = useState<UserProfile>(() => {
     try {
+      const fromJwt = profileFromAccessToken()
+      if (fromJwt && (fromJwt.name || fromJwt.email)) return fromJwt
       const saved = localStorage.getItem('ontrack_user_profile')
-      return saved ? JSON.parse(saved) : INITIAL_USER_PROFILE
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (!isStaleMockProfile(parsed)) return parsed
+      }
+      return emptyUserProfile()
     } catch {
-      return INITIAL_USER_PROFILE
+      return emptyUserProfile()
     }
   })
 
@@ -97,8 +107,6 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearError = () => setError(null)
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-
   /** Returns true when there is a token — the user is authenticated */
   const isAuthenticated = () => !!localStorage.getItem('ontrack_token')
 
@@ -106,17 +114,30 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const bootstrapUser = useCallback(async () => {
     if (!isAuthenticated()) return
     try {
+      const jwtProfile = profileFromAccessToken()
       const [me, settings] = await Promise.all([
-        api.getMe(),
+        api.getMe().catch(() => null),
         api.getSettings().catch(() => null),
       ])
-      // Merge real name/email into profile
+
+      const realName =
+        (me?.name && me.name.trim()) ||
+        (jwtProfile?.name && jwtProfile.name.trim()) ||
+        localStorage.getItem('ontrack_signup_name') ||
+        (jwtProfile?.email ? jwtProfile.email.split('@')[0] : '')
+
+      const realEmail = (me?.email && me.email.trim()) || jwtProfile?.email || ''
+
       const profile: UserProfile = {
-        ...INITIAL_USER_PROFILE,
+        ...emptyUserProfile(),
         ...me,
+        name: realName,
+        email: realEmail,
       }
-      setUser(profile)
-      localStorage.setItem('ontrack_user_profile', JSON.stringify(profile))
+      if (realName || realEmail) {
+        setUser(profile)
+        localStorage.setItem('ontrack_user_profile', JSON.stringify(profile))
+      }
 
       if (settings) {
         if (settings.audio) {
@@ -132,8 +153,12 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('ontrack_integrations', JSON.stringify(settings.integrations))
         }
       }
-    } catch (err) {
-      // Non-fatal: UI falls back to local defaults
+    } catch (err: any) {
+      if (err?.code === 'UNAUTHORIZED') {
+        localStorage.removeItem('ontrack_token')
+        localStorage.removeItem('ontrack_refresh_token')
+        localStorage.removeItem('ontrack_user_profile')
+      }
       console.warn('[GoalContext] Could not bootstrap user from API', err)
     }
   }, [])
@@ -150,6 +175,11 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await api.getGoals()
       setGoals(data)
     } catch (err: any) {
+      if (err?.code === 'UNAUTHORIZED') {
+        localStorage.removeItem('ontrack_token')
+        localStorage.removeItem('ontrack_refresh_token')
+        localStorage.removeItem('ontrack_user_profile')
+      }
       setError(err?.code ? err : { error: 'Failed to load goals', code: 'FETCH_ERROR' })
     } finally {
       setLoading(false)
@@ -164,7 +194,11 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await api.getDashboard()
       setDashboardData(data)
     } catch (err: any) {
-      // Non-fatal: dashboard stats are supplementary
+      if (err?.code === 'UNAUTHORIZED') {
+        localStorage.removeItem('ontrack_token')
+        localStorage.removeItem('ontrack_refresh_token')
+        localStorage.removeItem('ontrack_user_profile')
+      }
       console.warn('[GoalContext] Dashboard fetch failed', err)
     }
   }, [])
@@ -176,6 +210,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchGoals()
     fetchDashboard()
   }, [bootstrapUser, fetchGoals, fetchDashboard])
+
 
   // ── Goal operations ───────────────────────────────────────────────────────────
 

@@ -1,5 +1,6 @@
 import React from 'react'
 import type { Goal } from '../../types'
+import { executionPercent } from '../../utils/goalMetrics'
 
 interface DashboardCardsProps {
   goals: Goal[]
@@ -15,6 +16,18 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
   onSelectGoal,
 }) => {
   const activeGoals = goals.filter((g) => g.status === 'active')
+  const executionRate = executionPercent(goals)
+
+  const getDomainEmoji = (domain?: string) => {
+    switch ((domain || '').toLowerCase()) {
+      case 'sales': return '💼'
+      case 'engineering': return '🚀'
+      case 'fitness': return '💪'
+      case 'learning': return '📚'
+      case 'mindset': return '🧠'
+      default: return '🎯'
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -25,9 +38,8 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
           <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">
             Total Execution
           </span>
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-[#E6F7F5] dark:bg-[#07141E] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full text-xs font-bold text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] cursor-pointer hover:-translate-y-0.5 transition-all">
-            <span>🎯 Active</span>
-            <span className="text-[10px] text-[#00C4B3]">▾</span>
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-[#E6F7F5] dark:bg-[#07141E] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full text-xs font-bold text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]">
+            <span>🎯 {activeGoals.length} Active</span>
           </div>
         </div>
 
@@ -37,11 +49,10 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
             className="text-4xl sm:text-5xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
-            84.5%
+            {executionRate}%
           </span>
           <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] mt-2 ml-3 bg-[#E6F7F5] dark:bg-[#00C4B3]/15 border border-[#00C4B3]/40 px-2.5 py-0.5 rounded-full">
-            <span>↑ 5%</span>
-            <span className="opacity-70 font-normal">than last month</span>
+            <span>{executionRate >= 50 ? '↑ High Velocity' : '● In Progress'}</span>
           </div>
         </div>
 
@@ -70,55 +81,44 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
         <div className="pt-3 border-t-2 border-[#071E2D]/10 dark:border-white/10">
           <div className="flex items-center justify-between text-xs text-[#071E2D]/70 dark:text-slate-300 mb-3">
             <span className="font-bold uppercase tracking-wider text-[#071E2D] dark:text-white">Active Trackers</span>
-            <span className="font-semibold text-[#006D6A] dark:text-[#00C4B3]">Total {goals.length || 6} trackers</span>
+            <span className="font-semibold text-[#006D6A] dark:text-[#00C4B3]">
+              {goals.length} {goals.length === 1 ? 'tracker' : 'trackers'}
+            </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-            {/* Mini Card 1 */}
+          {activeGoals.length === 0 ? (
             <div
-              onClick={() => activeGoals[0] && onSelectGoal(activeGoals[0])}
-              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
+              onClick={onOpenNewGoal}
+              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-dashed border-[#071E2D]/30 dark:border-[#1E3A52] rounded-2xl p-4 text-center cursor-pointer hover:border-[#00C4B3] transition-colors"
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs">🎯</span>
-                <span className="text-[10px] text-[#071E2D]/40 dark:text-slate-400">⋮</span>
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight">
-                {activeGoals[0]?.title || 'Deals Target'}
-              </span>
-              <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold">Active</span>
+              <span className="text-xs font-bold text-[#071E2D] dark:text-white block">+ Create your first tracker</span>
+              <span className="text-[11px] text-[#071E2D]/60 dark:text-slate-400">Speak or type a goal with Nemotron AI</span>
             </div>
-
-            {/* Mini Card 2 */}
-            <div
-              onClick={() => activeGoals[1] && onSelectGoal(activeGoals[1])}
-              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs">📚</span>
-                <span className="text-[10px] text-[#071E2D]/40 dark:text-slate-400">⋮</span>
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight">
-                {activeGoals[1]?.title || 'Book Reading'}
-              </span>
-              <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold">Active</span>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2">
+              {activeGoals.slice(0, 3).map((g) => {
+                const percent = g.target > 0 ? Math.min(100, Math.round((g.current_value / g.target) * 100)) : 0
+                return (
+                  <div
+                    key={g.id}
+                    onClick={() => onSelectGoal(g)}
+                    className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs">{getDomainEmoji(g.domain)}</span>
+                      <span className="text-[10px] font-mono text-[#006D6A] dark:text-[#00C4B3] font-bold">{percent}%</span>
+                    </div>
+                    <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight">
+                      {g.title}
+                    </span>
+                    <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold">
+                      {g.current_value}/{g.target} {g.unit || ''}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
-
-            {/* Mini Card 3 */}
-            <div
-              onClick={() => activeGoals[2] && onSelectGoal(activeGoals[2])}
-              className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 transition-all cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs">💪</span>
-                <span className="text-[10px] text-[#071E2D]/40 dark:text-slate-400">⋮</span>
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-[#071E2D] dark:text-white mt-1.5 line-clamp-2 leading-tight">
-                {activeGoals[2]?.title || 'Pushup Streak'}
-              </span>
-              <span className="text-[9px] text-[#006D6A] dark:text-[#00C4B3] mt-1 font-bold">Active</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
