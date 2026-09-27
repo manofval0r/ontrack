@@ -79,13 +79,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const velocity = dashboardData?.stats.velocity_pace || '+24% Pace'
 
   return (
-    <div className="min-h-screen bg-[#F8FAFB] bg-dot-grid flex flex-col font-sans text-[#071E2D]">
+    <div className="min-h-screen bg-[#F8FAFB] dark:bg-[#051520] bg-dot-grid flex flex-col font-sans text-[#071E2D] dark:text-slate-100 transition-colors">
       {/* ── Top Header Bar ────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-2 border-[#071E2D] px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between shadow-[0_2px_0px_#071E2D]">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0B2536]/95 backdrop-blur-md border-b-2 border-[#071E2D] dark:border-[#00C4B3] px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between shadow-[0_2px_0px_#071E2D] dark:shadow-[0_2px_0px_#00C4B3]">
         <div className="flex items-center gap-4 sm:gap-8">
           <button
             onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            className="lg:hidden p-2 rounded-xl border-2 border-[#071E2D] bg-[#F3F6F8] shadow-[2px_2px_0px_#071E2D] hover:bg-white"
+            className="lg:hidden p-2 rounded-xl border-2 border-[#071E2D] dark:border-[#00C4B3] bg-[#F3F6F8] dark:bg-[#071E2D] text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] hover:bg-white"
             aria-label="Toggle navigation menu"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -99,11 +99,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
           {/* Quick Metrics Badges (Desktop) */}
           <div className="hidden md:flex items-center gap-2.5">
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ECFEFF] border-2 border-[#071E2D] shadow-[2px_2px_0px_#071E2D] text-xs font-bold text-[#006D6A]">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ECFEFF] dark:bg-[#00C4B3]/15 border-2 border-[#071E2D] dark:border-[#00C4B3] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] text-xs font-bold text-[#006D6A] dark:text-[#00C4B3]">
               <span>🔥</span>
               <span>{streak} Day Streak</span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border-2 border-[#071E2D] shadow-[2px_2px_0px_#071E2D] text-xs font-bold text-[#071E2D]">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white dark:bg-[#071E2D] border-2 border-[#071E2D] dark:border-[#00C4B3]/40 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3] text-xs font-bold text-[#071E2D] dark:text-white">
               <span className="w-2 h-2 rounded-full bg-[#00C4B3]" />
               <span>{velocity}</span>
             </div>
@@ -181,7 +181,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       <div className="flex-1 flex max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-8">
         {/* Desktop Sidebar */}
         <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 gap-6">
-          <nav className="flex flex-col gap-2 p-3 bg-white border-2 border-[#071E2D] rounded-2xl shadow-[4px_4px_0px_#071E2D]">
+          <nav className="flex flex-col gap-2 p-3 bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#00C4B3]">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path || (item.path.startsWith('/goal') && location.pathname.startsWith('/goal'))
               return (
@@ -193,13 +193,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     font-semibold text-sm transition-all duration-150
                     border-2
                     ${isActive
-                      ? 'bg-[#071E2D] text-white border-[#071E2D] shadow-[2px_2px_0px_#00C4B3] translate-x-1'
-                      : 'bg-transparent text-[#071E2D] border-transparent hover:bg-[#F3F6F8] hover:border-[#071E2D]/20'
+                      ? 'bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] border-[#071E2D] dark:border-[#00C4B3] shadow-[2px_2px_0px_#00C4B3] dark:shadow-[2px_2px_0px_#071E2D] translate-x-1'
+                      : 'bg-transparent text-[#071E2D] dark:text-slate-200 border-transparent hover:bg-[#F3F6F8] dark:hover:bg-[#00C4B3]/15 hover:border-[#071E2D]/20'
                     }
                   `.trim()}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={isActive ? 'text-[#00C4B3]' : 'text-[#071E2D]/70'}>
+                    <span className={isActive ? 'text-[#00C4B3] dark:text-[#071E2D]' : 'text-[#071E2D]/70 dark:text-slate-400'}>
                       {item.icon}
                     </span>
                     <span>{item.label}</span>
@@ -215,17 +215,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </nav>
 
           {/* AI Partner status mini-card */}
-          <div className="p-4 bg-white border-2 border-[#071E2D] rounded-2xl shadow-[4px_4px_0px_#071E2D] flex flex-col gap-3">
+          <div className="p-4 bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#00C4B3] flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#00C4B3] animate-pulse" />
-              <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A]">Nemotron AI Online</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">Nemotron AI Online</span>
             </div>
-            <p className="text-xs text-[#071E2D]/75 leading-relaxed">
-              Monitoring 4 active goals. Next automated check-in scheduled for tomorrow at 09:00 AM.
+            <p className="text-xs text-[#071E2D]/75 dark:text-slate-300 leading-relaxed">
+              Monitoring active goals. Automated check-ins scheduled to maintain velocity.
             </p>
             <Link
               to="/chat"
-              className="text-xs font-bold text-[#006D6A] hover:text-[#00C4B3] flex items-center gap-1 mt-1 transition-colors"
+              className="text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] hover:underline flex items-center gap-1 mt-1 transition-colors"
             >
               Open conversational partner →
             </Link>
@@ -236,12 +236,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         {mobileNavOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
             <div className="fixed inset-0 bg-[#071E2D]/60 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} />
-            <div className="fixed left-0 top-0 bottom-0 w-72 bg-white border-r-2 border-[#071E2D] shadow-[6px_0px_0px_#071E2D] p-6 flex flex-col gap-6 z-10">
-              <div className="flex items-center justify-between pb-4 border-b-2 border-[#071E2D]/10">
+            <div className="fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-[#0B2536] border-r-2 border-[#071E2D] dark:border-[#00C4B3] shadow-[6px_0px_0px_#071E2D] dark:shadow-[6px_0px_0px_#00C4B3] p-6 flex flex-col gap-6 z-10">
+              <div className="flex items-center justify-between pb-4 border-b-2 border-[#071E2D]/10 dark:border-[#00C4B3]/20">
                 <Logo linkTo="/dashboard" />
                 <button
                   onClick={() => setMobileNavOpen(false)}
-                  className="p-1 rounded-full border border-[#071E2D]/20 text-[#071E2D]"
+                  className="p-1 rounded-full border border-[#071E2D]/20 text-[#071E2D] dark:text-white"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -256,7 +256,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileNavOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-[#071E2D] bg-[#F8FAFB] text-[#071E2D] font-bold text-sm shadow-[2px_2px_0px_#071E2D]"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-[#071E2D] dark:border-[#00C4B3] bg-[#F8FAFB] dark:bg-[#071E2D] text-[#071E2D] dark:text-white font-bold text-sm shadow-[2px_2px_0px_#071E2D]"
                   >
                     <span>{item.icon}</span>
                     <span>{item.label}</span>
@@ -274,13 +274,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               <div>
                 {title && (
                   <h1
-                    className="text-2xl sm:text-3xl font-bold text-[#071E2D] tracking-tight"
+                    className="text-2xl sm:text-3xl font-bold text-[#071E2D] dark:text-white tracking-tight"
                     style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                   >
                     {title}
                   </h1>
                 )}
-                {subtitle && <p className="text-sm text-[#071E2D]/70 mt-1">{subtitle}</p>}
+                {subtitle && <p className="text-sm text-[#071E2D]/70 dark:text-slate-400 mt-1">{subtitle}</p>}
               </div>
               {actions && <div className="flex items-center gap-3">{actions}</div>}
             </div>

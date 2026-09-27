@@ -58,17 +58,19 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F6F8] font-sans text-gray-900 flex p-3 sm:p-5 lg:p-6 gap-4 sm:gap-6 selection:bg-[#FF5C35] selection:text-white overflow-x-hidden">
-      {/* ── Left Rail Dock (Mini vertical floating icon bar matching screenshot) ── */}
-      <DashboardRail
-        activeTab={activeTab}
-        onSelectTab={(tab) => {
-          setActiveTab(tab)
-          if (tab === 'settings') navigate('/settings')
-        }}
-        onToggleChat={() => setIsChatDrawerOpen(!isChatDrawerOpen)}
-        onLogout={handleLogout}
-      />
+    <div className="min-h-screen bg-[#F8FAFB] dark:bg-[#051520] bg-dot-grid font-sans text-[#071E2D] dark:text-slate-100 flex p-3 sm:p-5 lg:p-6 gap-4 sm:gap-6 selection:bg-[#00C4B3] selection:text-[#071E2D] overflow-x-hidden transition-colors">
+      {/* ── Left Rail Dock (Sticky & Fixed height on desktop — NEVER scrolls with the page) ── */}
+      <aside className="hidden lg:flex flex-col sticky top-4 sm:top-5 lg:top-6 h-[calc(100vh-2rem)] sm:h-[calc(100vh-2.5rem)] lg:h-[calc(100vh-3rem)] shrink-0 z-30 self-start">
+        <DashboardRail
+          activeTab={activeTab}
+          onSelectTab={(tab) => {
+            setActiveTab(tab)
+            if (tab === 'settings') navigate('/settings')
+          }}
+          onToggleChat={() => setIsChatDrawerOpen(!isChatDrawerOpen)}
+          onLogout={handleLogout}
+        />
+      </aside>
 
       {/* ── Main Dashboard Workspace ───────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 gap-5 sm:gap-6">
@@ -85,15 +87,18 @@ export const Dashboard: React.FC = () => {
 
         {/* Dynamic Welcome Greeting Section */}
         <section className="flex flex-col gap-1">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight font-sans">
+          <h1
+            className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
+            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+          >
             {getGreeting(user.name)}
           </h1>
-          <p className="text-xs sm:text-sm text-gray-400 font-medium">
-            Stay on top of your tasks, monitor progress, and track status.
+          <p className="text-xs sm:text-sm text-[#071E2D]/70 dark:text-slate-400 font-medium">
+            Stay on top of your objectives, monitor velocity, and log progress effortlessly.
           </p>
         </section>
 
-        {/* ── Main Content Grid matching screenshot layout ───────────── */}
+        {/* ── Main Content Grid with OnTrack Tactile Design ───────────── */}
         <main className="flex flex-col gap-6">
           {/* Row 1: 3 Main Cards / Sections */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
@@ -140,24 +145,29 @@ export const Dashboard: React.FC = () => {
         <div className="fixed inset-0 z-50 overflow-hidden flex justify-end" role="dialog" aria-modal="true">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-[#071E2D]/50 backdrop-blur-sm transition-opacity"
             onClick={() => setIsChatDrawerOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Drawer container */}
-          <div className="relative w-full max-w-md bg-white h-full shadow-2xl z-10 flex flex-col animate-slideInRight">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/80">
+          {/* Drawer container with OnTrack styling */}
+          <div className="relative w-full max-w-md bg-white dark:bg-[#071E2D] border-l-2 border-[#071E2D] dark:border-[#00C4B3] h-full shadow-2xl z-10 flex flex-col">
+            <div className="p-4 border-b-2 border-[#071E2D] dark:border-[#00C4B3]/40 flex items-center justify-between bg-[#F8FAFB] dark:bg-[#0B2536]">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#FF5C35] to-[#FF845E] flex items-center justify-center text-white text-xs font-bold">
+                <div className="w-7 h-7 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center text-[#071E2D] text-xs font-black shadow-[1px_1px_0px_#071E2D]">
                   ⚡
                 </div>
-                <h3 className="font-bold text-sm text-gray-900">Ontrack AI Assistant</h3>
+                <h3
+                  className="font-bold text-sm text-[#071E2D] dark:text-white"
+                  style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                >
+                  Ontrack AI Accountability Coach
+                </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsChatDrawerOpen(false)}
-                className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-white transition-colors"
+                className="w-8 h-8 rounded-full border-2 border-[#071E2D] dark:border-[#00C4B3]/50 flex items-center justify-center text-[#071E2D] dark:text-white hover:bg-[#E6F7F5] dark:hover:bg-[#00C4B3]/20 shadow-[1px_1px_0px_#071E2D] transition-colors cursor-pointer"
                 aria-label="Close assistant"
               >
                 ✕

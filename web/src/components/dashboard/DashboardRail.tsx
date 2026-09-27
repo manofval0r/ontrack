@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React from 'react'
+import { useTheme } from '../../context/ThemeContext'
 
 interface DashboardRailProps {
   activeTab: string
@@ -13,7 +14,7 @@ export const DashboardRail: React.FC<DashboardRailProps> = ({
   onToggleChat,
   onLogout,
 }) => {
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light')
+  const { theme, setTheme } = useTheme()
 
   const navItems = [
     {
@@ -98,87 +99,103 @@ export const DashboardRail: React.FC<DashboardRailProps> = ({
   ]
 
   return (
-    <aside className="hidden lg:flex flex-col items-center justify-between w-14 bg-white/80 backdrop-blur-md border border-gray-200/80 rounded-full py-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex-shrink-0 select-none">
-      {/* Top: Theme Mode Toggle Pill */}
-      <div className="flex flex-col items-center bg-[#F3F4F6] p-1 rounded-full border border-gray-200">
-        <button
-          type="button"
-          onClick={() => setThemeMode('light')}
-          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-            themeMode === 'light'
-              ? 'bg-white text-gray-800 shadow-sm'
-              : 'text-gray-400 hover:text-gray-600'
-          }`}
-          title="Light Mode"
-          aria-label="Light mode"
+    <div className="w-16 h-full bg-white dark:bg-[#0B2536] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-3xl py-4 px-2 shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#00C4B3] flex flex-col justify-between items-center select-none transition-colors">
+      {/* Top: Mini Brand Mark & Theme Mode Toggle */}
+      <div className="flex flex-col items-center gap-3">
+        {/* OnTrack Mini Logo Icon */}
+        <div
+          className="w-10 h-10 rounded-2xl bg-[#00C4B3] border-2 border-[#071E2D] text-[#071E2D] flex items-center justify-center font-extrabold text-sm shadow-[2px_2px_0px_#071E2D]"
+          title="OnTrack"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="5" />
-            <line x1="12" y1="1" x2="12" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="23" />
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-            <line x1="1" y1="12" x2="3" y2="12" />
-            <line x1="21" y1="12" x2="23" y2="12" />
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={() => setThemeMode('dark')}
-          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-            themeMode === 'dark'
-              ? 'bg-white text-gray-800 shadow-sm'
-              : 'text-gray-400 hover:text-gray-600'
-          }`}
-          title="Dark Mode"
-          aria-label="Dark mode"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
-        </button>
+          ⚡
+        </div>
+
+        {/* Theme Mode Toggle Pill */}
+        <div className="flex flex-col items-center bg-[#F3F6F8] dark:bg-[#071E2D] p-1 rounded-full border-2 border-[#071E2D] dark:border-[#00C4B3]/40 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#00C4B3]">
+          <button
+            type="button"
+            onClick={() => setTheme('light')}
+            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+              theme === 'light'
+                ? 'bg-[#071E2D] text-[#00C4B3] shadow-sm font-bold'
+                : 'text-[#071E2D]/50 dark:text-slate-400 hover:text-[#071E2D]'
+            }`}
+            title="Light Mode"
+            aria-label="Light mode"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTheme('dark')}
+            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+              theme === 'dark'
+                ? 'bg-[#00C4B3] text-[#071E2D] shadow-sm font-bold'
+                : 'text-[#071E2D]/50 dark:text-slate-400 hover:text-[#00C4B3]'
+            }`}
+            title="Dark Mode"
+            aria-label="Dark mode"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Center: Main Nav Icons */}
-      <div className="flex flex-col items-center gap-3.5 my-4">
+      {/* Center: Main Nav Icons with OnTrack Tactile Design */}
+      <div className="flex flex-col items-center gap-2.5 my-3">
         {navItems.map((item) => {
           const isActive = activeTab === item.id
           return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                if (item.isChatTrigger) {
-                  onToggleChat()
-                } else {
-                  onSelectTab(item.id)
-                }
-              }}
-              title={item.label}
-              aria-label={item.label}
-              className={`
-                w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer
-                ${
-                  isActive
-                    ? 'bg-[#1C1E21] text-white shadow-md shadow-black/10 scale-105'
-                    : 'text-gray-400 hover:text-gray-800 hover:bg-gray-100/80'
-                }
-              `}
-            >
-              {item.icon}
-            </button>
+            <div key={item.id} className="relative group">
+              <button
+                type="button"
+                onClick={() => {
+                  if (item.isChatTrigger) {
+                    onToggleChat()
+                  } else {
+                    onSelectTab(item.id)
+                  }
+                }}
+                aria-label={item.label}
+                className={`
+                  w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-150 cursor-pointer
+                  ${
+                    isActive
+                      ? 'bg-[#00C4B3] text-[#071E2D] border-2 border-[#071E2D] dark:border-[#071E2D] shadow-[2px_2px_0px_#071E2D] scale-105 font-bold'
+                      : 'text-[#071E2D]/70 dark:text-slate-300 hover:text-[#071E2D] dark:hover:text-[#00C4B3] hover:bg-[#E6F7F5] dark:hover:bg-[#00C4B3]/15'
+                  }
+                `}
+              >
+                {item.icon}
+              </button>
+              {/* Tooltip */}
+              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-[#071E2D] text-white text-[11px] font-bold rounded-lg whitespace-nowrap shadow-[2px_2px_0px_#00C4B3] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                {item.label}
+              </div>
+            </div>
           )
         })}
       </div>
 
       {/* Bottom: Help & Logout */}
-      <div className="flex flex-col items-center gap-2 pt-2 border-t border-gray-100">
+      <div className="flex flex-col items-center gap-2 pt-2 border-t-2 border-[#071E2D]/10 dark:border-[#00C4B3]/20 w-full">
         <button
           type="button"
-          className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-          title="Help & Support"
+          onClick={onToggleChat}
+          className="w-9 h-9 rounded-2xl flex items-center justify-center text-[#071E2D]/70 dark:text-slate-300 hover:text-[#071E2D] dark:hover:text-white hover:bg-[#E6F7F5] dark:hover:bg-[#00C4B3]/15 transition-all cursor-pointer"
+          title="Help & Coach"
           aria-label="Help"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -191,7 +208,7 @@ export const DashboardRail: React.FC<DashboardRailProps> = ({
         <button
           type="button"
           onClick={onLogout}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-[#E64A24] hover:bg-red-50 transition-colors"
+          className="w-9 h-9 rounded-2xl flex items-center justify-center text-[#071E2D]/70 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all cursor-pointer"
           title="Log out"
           aria-label="Log out"
         >
@@ -202,6 +219,6 @@ export const DashboardRail: React.FC<DashboardRailProps> = ({
           </svg>
         </button>
       </div>
-    </aside>
+    </div>
   )
 }

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ── Brand tokens ─────────────────────────────────────────────────── */
 @theme {
   --color-brand-turquoise: #00C4B3;
@@ -201,4 +203,58 @@ body {
   background-color: #F8FAFB;
   background-image: radial-gradient(rgba(7, 30, 45, 0.14) 1.25px, transparent 1.25px);
   background-size: 24px 24px;
+}
+
+/* ── Dark Mode Overrides ─────────────────────────────────────────── */
+.dark body {
+  background-color: #051520;
+  color: #F1F5F9;
+}
+
+.dark .bg-dot-grid {
+  background-color: #051520;
+  background-image: radial-gradient(rgba(0, 196, 179, 0.18) 1.25px, transparent 1.25px);
+  background-size: 24px 24px;
+}
+
+.dark .card-tactile {
+  background-color: #0B2536;
+  border-color: #00C4B3;
+  box-shadow: 4px 4px 0px #00C4B3;
+  color: #FFFFFF;
+}
+.dark .card-tactile:hover {
+  box-shadow: 6px 6px 0px #00C4B3;
+}
+
+.dark .btn-pill-primary {
+  background-color: #00C4B3;
+  color: #071E2D;
+  border-color: #00C4B3;
+  box-shadow: 3px 3px 0px #006D6A;
+}
+.dark .btn-pill-primary .btn-bubble {
+  background-color: #071E2D;
+  color: #00C4B3;
+  border-color: #071E2D;
+}
+.dark .btn-pill-primary:hover {
+  background-color: #33D6C5;
+  box-shadow: 5px 5px 0px #006D6A;
+}
+
+.dark .btn-pill-secondary {
+  background-color: #0B2536;
+  color: #FFFFFF;
+  border-color: #00C4B3;
+  box-shadow: 3px 3px 0px #00C4B3;
+}
+.dark .btn-pill-secondary .btn-bubble {
+  background-color: #00C4B3;
+  color: #071E2D;
+  border-color: #00C4B3;
+}
+.dark .btn-pill-secondary:hover {
+  background-color: #0F3146;
+  box-shadow: 5px 5px 0px #00C4B3;
 }
