@@ -62,8 +62,12 @@ const FacebookIcon = () => (
 
 // ─── Login Page ───────────────────────────────────────────────────────────────
 
-const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? ''
-const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? ''
+// Public defaults (anon key is public by design); Vercel env overrides these.
+const SUPABASE_URL =
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? 'https://destcakvqdzhkzemdugo.supabase.co'
+const SUPABASE_ANON_KEY =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
+  'sb_publishable_kT5JCbb2BFocdW23HIJYfw_jk879gsk'
 
 export const Login: React.FC = () => {
   const navigate = useNavigate()
