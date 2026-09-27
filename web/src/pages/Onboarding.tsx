@@ -8,9 +8,10 @@ import type { Goal, GoalItem } from '../types'
 import { useGoals } from '../context/GoalContext'
 
 const EXAMPLE_CHIPS = [
-  'Sell 5 cars this week',
-  'Read 2 books by Friday',
-  'Do 50 pushups daily',
+  { label: 'Sell 5 cars this week', category: 'Sales', icon: '🚗' },
+  { label: 'Read 2 books by Friday', category: 'Learning', icon: '📚' },
+  { label: 'Do 50 pushups daily', category: 'Fitness', icon: '💪' },
+  { label: 'Ship MVP by Friday', category: 'Dev', icon: '🚀' },
 ]
 
 const LOADING_STATUS_MESSAGES = [
@@ -279,12 +280,12 @@ export const Onboarding: React.FC = () => {
           {[1, 2, 3, 4].map((step) => (
             <div
               key={step}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
+              className={`h-2 rounded-full transition-all duration-300 ${
                 currentStep === step
-                  ? 'w-8 bg-[#00C4B3]'
+                  ? 'w-9 bg-[#00C4B3] border border-[#071E2D]'
                   : currentStep > step
-                  ? 'w-3.5 bg-[#071E2D]'
-                  : 'w-3.5 bg-[#071E2D]/15'
+                  ? 'w-4 bg-[#071E2D]'
+                  : 'w-4 bg-[#071E2D]/15'
               }`}
             />
           ))}
@@ -292,34 +293,50 @@ export const Onboarding: React.FC = () => {
       </header>
 
       {/* ── Main Content Area ─────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12 w-full max-w-3xl mx-auto">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-6 sm:py-10 w-full max-w-4xl mx-auto">
         {/* ======================================================== */}
         {/* STEP 1 — Welcome                                        */}
         {/* ======================================================== */}
         {currentStep === 1 && (
           <div className="w-full flex flex-col items-center text-center max-w-xl mx-auto animate-fadeIn">
+            {/* Illustration Hero Card */}
+            <div className="relative mb-8 group">
+              <div className="absolute -inset-3 bg-[#00C4B3]/20 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity" />
+              <div className="relative p-5 sm:p-6 bg-white border-2 border-[#071E2D] rounded-3xl shadow-[6px_6px_0px_#071E2D] hover:-translate-y-1 transition-all">
+                <img
+                  src="/illustrations/step-1.svg"
+                  alt="Say your goal illustration"
+                  className="w-72 sm:w-88 max-w-full h-auto mx-auto object-contain"
+                />
+              </div>
+            </div>
+
             {/* Heading */}
             <h1
-              className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-[#071E2D] tracking-tight leading-tight"
+              className="text-3xl sm:text-5xl font-extrabold text-[#071E2D] tracking-tight leading-tight"
               style={{ fontFamily: "'Fraunces', Georgia, serif" }}
             >
               You're in. Let's set your first goal.
             </h1>
 
             {/* Subheading */}
-            <p className="text-base sm:text-xl text-[#071E2D]/75 mt-5 leading-relaxed font-sans max-w-lg">
+            <p className="text-base sm:text-lg text-[#071E2D]/75 mt-3 sm:mt-4 leading-relaxed font-sans max-w-md">
               Say it however you'd say it out loud. We'll figure out the rest.
             </p>
 
-            {/* Single button: Let's go (primary pill button, Sieve icon-bubble style) */}
-            <div className="mt-10 sm:mt-12">
+            {/* Single button: Let's go */}
+            <div className="mt-8 flex flex-col items-center gap-3">
               <Button
                 variant="primary"
                 onClick={() => setCurrentStep(2)}
-                className="text-base sm:text-lg px-8 py-3.5"
+                className="text-base sm:text-lg px-9 py-3.5"
               >
                 Let's go
               </Button>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#006D6A] bg-[#E6F7F5] px-3.5 py-1.5 rounded-full border border-[#00C4B3]/40">
+                <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-pulse" />
+                <span>Zero setup required · Voice or text input</span>
+              </div>
             </div>
           </div>
         )}
@@ -328,58 +345,112 @@ export const Onboarding: React.FC = () => {
         {/* STEP 2 — State your goal                                */}
         {/* ======================================================== */}
         {currentStep === 2 && (
-          <div className="w-full flex flex-col items-center max-w-xl mx-auto animate-fadeIn">
-            {/* Heading */}
-            <h2
-              className="text-3xl sm:text-5xl font-extrabold text-[#071E2D] tracking-tight text-center"
-              style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-            >
-              What's your goal?
-            </h2>
+          <div className="w-full max-w-3xl mx-auto animate-fadeIn">
+            {/* Header */}
+            <div className="text-center mb-6 sm:mb-8">
+              <h2
+                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#071E2D] tracking-tight"
+                style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+              >
+                What's your goal?
+              </h2>
+              <p className="text-sm sm:text-base text-[#071E2D]/70 mt-2 font-medium">
+                Type your goal in plain English — our AI compiles it into an adaptive tracker.
+              </p>
+            </div>
 
-            {/* Large Chat-style text input container */}
-            <div className="w-full mt-8 sm:mt-10">
-              <div className="w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border-2 border-[#071E2D] shadow-[5px_5px_0px_#071E2D] focus-within:shadow-[6px_6px_0px_#00C4B3] transition-all">
-                <textarea
-                  rows={3}
-                  value={goalText}
-                  onChange={(e) => setGoalText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      if (goalText.trim()) handleStartBuilding()
-                    }
-                  }}
-                  placeholder='Try "read 2 books by Friday" or "50 pushups a day"'
-                  className="w-full bg-transparent font-sans text-base sm:text-lg text-[#071E2D] placeholder:text-[#071E2D]/40 outline-none resize-none leading-relaxed"
-                  autoFocus
-                />
-              </div>
+            {/* Split layout: Input Column + AI Auto-Builder Illustration */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Left Column: Input Form (7 cols) */}
+              <div className="lg:col-span-7 flex flex-col justify-between">
+                <div>
+                  {/* Large Chat-style text input container */}
+                  <div className="w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border-2 border-[#071E2D] shadow-[5px_5px_0px_#071E2D] focus-within:shadow-[6px_6px_0px_#00C4B3] transition-all">
+                    <label htmlFor="goal-input" className="block text-xs font-bold uppercase tracking-wider text-[#006D6A] mb-2">
+                      Target or Objective
+                    </label>
+                    <textarea
+                      id="goal-input"
+                      rows={3}
+                      value={goalText}
+                      onChange={(e) => setGoalText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          if (goalText.trim()) handleStartBuilding()
+                        }
+                      }}
+                      placeholder='Try "read 2 books by Friday" or "50 pushups a day"'
+                      className="w-full bg-transparent font-sans text-base sm:text-lg text-[#071E2D] placeholder:text-[#071E2D]/40 outline-none resize-none leading-relaxed"
+                      autoFocus
+                    />
+                  </div>
 
-              {/* 3 small example chips */}
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 mt-4">
-                {EXAMPLE_CHIPS.map((chip) => (
-                  <button
-                    key={chip}
-                    type="button"
-                    onClick={() => setGoalText(chip)}
-                    className="text-xs sm:text-sm font-semibold px-3.5 py-1.5 rounded-full border-2 border-[#071E2D] bg-white text-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:bg-[#ECFEFF] hover:border-[#006D6A] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer text-left"
+                  {/* Example chips */}
+                  <div className="mt-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/60 mb-2">
+                      Or select a starter prompt:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {EXAMPLE_CHIPS.map((chip) => (
+                        <button
+                          key={chip.label}
+                          type="button"
+                          onClick={() => setGoalText(chip.label)}
+                          className="text-xs font-semibold px-3 py-2 rounded-xl border-2 border-[#071E2D] bg-white text-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:bg-[#E6F7F5] hover:border-[#006D6A] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer flex items-center gap-2 text-left"
+                        >
+                          <span className="text-base">{chip.icon}</span>
+                          <div className="truncate">
+                            <span className="block font-bold text-[#071E2D] truncate">{chip.label}</span>
+                            <span className="text-[10px] text-[#006D6A] font-semibold">{chip.category}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Primary button: Build my tracker */}
+                <div className="mt-6">
+                  <Button
+                    variant="primary"
+                    disabled={!goalText.trim()}
+                    onClick={handleStartBuilding}
+                    className="text-base sm:text-lg px-8 py-3.5 w-full sm:w-auto"
                   >
-                    {chip}
-                  </button>
-                ))}
+                    Build my tracker
+                  </Button>
+                </div>
               </div>
 
-              {/* Primary button: Build my tracker */}
-              <div className="mt-8 flex justify-center">
-                <Button
-                  variant="primary"
-                  disabled={!goalText.trim()}
-                  onClick={handleStartBuilding}
-                  className="text-base sm:text-lg px-8 py-3.5"
-                >
-                  Build my tracker
-                </Button>
+              {/* Right Column: AI Auto-Builder Blueprint Illustration (5 cols) */}
+              <div className="lg:col-span-5 flex flex-col">
+                <div className="h-full bg-white border-2 border-[#071E2D] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-[5px_5px_0px_#071E2D] flex flex-col items-center justify-between">
+                  <div className="w-full flex items-center justify-between border-b border-[#071E2D]/10 pb-2 mb-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#006D6A] flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#00C4B3]" />
+                      Auto-Builder Blueprint
+                    </span>
+                    <span className="text-[10px] font-semibold text-[#071E2D]/50 bg-[#F3F6F8] px-2 py-0.5 rounded">
+                      Step 2 of 4
+                    </span>
+                  </div>
+
+                  <img
+                    src="/illustrations/step-2.svg"
+                    alt="Auto-Builder AI Blueprint"
+                    className="w-full h-auto object-contain max-w-[260px] my-auto"
+                  />
+
+                  <div className="w-full text-center bg-[#F8FAFB] border border-[#071E2D]/15 rounded-xl p-2.5 mt-3">
+                    <span className="text-xs font-bold text-[#071E2D] block">
+                      Autonomous Logic Compiler
+                    </span>
+                    <p className="text-[11px] text-[#071E2D]/65 mt-0.5 leading-snug">
+                      Extracts deadlines, quotas, and milestone checklists straight from your words.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -389,35 +460,41 @@ export const Onboarding: React.FC = () => {
         {/* STEP 3 — Building (transitional/loading state)           */}
         {/* ======================================================== */}
         {currentStep === 3 && (
-          <div className="w-full flex flex-col items-center justify-center text-center max-w-lg mx-auto animate-fadeIn py-8">
-            {/* Centered animated element: Sieve icon-bubble motif with pulsing micro-animation */}
-            <div className="relative flex items-center justify-center mb-8">
-              <div className="absolute w-24 h-24 rounded-full bg-[#00C4B3]/25 animate-ping" />
-              <div className="w-20 h-20 rounded-full border-2 border-[#071E2D] bg-[#00C4B3] flex items-center justify-center text-[#071E2D] shadow-[4px_4px_0px_#071E2D] relative z-10">
-                <svg
-                  className="w-9 h-9 animate-pulse"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                </svg>
+          <div className="w-full flex flex-col items-center justify-center text-center max-w-lg mx-auto animate-fadeIn py-4">
+            {/* Visual Progress Card with step-3.svg */}
+            <div className="relative mb-6 w-full">
+              <div className="p-5 sm:p-6 bg-white border-2 border-[#071E2D] rounded-3xl shadow-[6px_6px_0px_#071E2D] flex flex-col items-center">
+                <img
+                  src="/illustrations/step-3.svg"
+                  alt="Building Tracker Progress"
+                  className="w-72 sm:w-84 max-w-full h-auto object-contain"
+                />
+
+                {/* Animated Progress Bar */}
+                <div className="w-full max-w-xs bg-[#E2E8F0] h-3.5 rounded-full mt-5 border-2 border-[#071E2D] overflow-hidden p-0.5">
+                  <div
+                    className="h-full bg-[#00C4B3] rounded-full transition-all duration-700 ease-out"
+                    style={{
+                      width: loadingPhase === 0 ? '35%' : loadingPhase === 1 ? '70%' : '98%',
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Rotating status text changing every ~800ms–1s */}
-            <div className="h-12 flex items-center justify-center">
+            <div className="h-10 flex items-center justify-center">
               <p
                 key={loadingPhase}
-                className="text-lg sm:text-xl font-bold text-[#071E2D] tracking-tight animate-fadeIn"
+                className="text-xl sm:text-2xl font-extrabold text-[#071E2D] tracking-tight animate-fadeIn"
                 style={{ fontFamily: "'Fraunces', Georgia, serif" }}
               >
                 {LOADING_STATUS_MESSAGES[loadingPhase]}
               </p>
             </div>
+            <p className="text-xs sm:text-sm text-[#006D6A] font-bold mt-1">
+              Analyzing "{createdGoal.title || goalText}"
+            </p>
           </div>
         )}
 
@@ -425,24 +502,33 @@ export const Onboarding: React.FC = () => {
         {/* STEP 4 — Your tracker is ready (the payoff)             */}
         {/* ======================================================== */}
         {currentStep === 4 && (
-          <div className="w-full flex flex-col gap-6 animate-fadeIn">
-            {/* Header info */}
-            <div className="text-center max-w-xl mx-auto">
-              <h2
-                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#071E2D] tracking-tight"
-                style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-              >
-                Your tracker is ready
-              </h2>
-              {/* Dynamic subheading reflecting exact user goal */}
-              <p className="text-sm sm:text-base text-[#071E2D]/75 mt-2 font-medium">
-                We built a <span className="font-bold text-[#006D6A]">{trackerLabel}</span> for:{' '}
-                <span className="font-semibold text-[#071E2D]">"{createdGoal.title}"</span>
-              </p>
+          <div className="w-full max-w-2xl mx-auto flex flex-col gap-6 animate-fadeIn">
+            {/* Celebratory Payoff Header Card with step-4.svg */}
+            <div className="bg-white border-2 border-[#071E2D] rounded-3xl p-5 sm:p-6 shadow-[6px_6px_0px_#071E2D] flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+              <img
+                src="/illustrations/step-4.svg"
+                alt="Tracker Ready Payoff"
+                className="w-36 sm:w-44 h-auto object-contain shrink-0"
+              />
+              <div className="text-center sm:text-left flex-1">
+                <span className="inline-block text-xs font-bold uppercase tracking-wider text-[#006D6A] bg-[#E6F7F5] px-2.5 py-1 rounded-full border border-[#00C4B3]/40 mb-1.5">
+                  ★ Tracker Configured
+                </span>
+                <h2
+                  className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#071E2D] tracking-tight"
+                  style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                >
+                  Your tracker is ready!
+                </h2>
+                <p className="text-xs sm:text-sm text-[#071E2D]/75 mt-1.5 font-medium leading-relaxed">
+                  We built a customized <span className="font-bold text-[#006D6A]">{trackerLabel}</span> tracker for:{' '}
+                  <span className="font-bold text-[#071E2D]">"{createdGoal.title}"</span>. Give it a test click below!
+                </p>
+              </div>
             </div>
 
             {/* Live Interactive Generated Tracker pre-filled at zero progress */}
-            <div className="w-full max-w-2xl mx-auto">
+            <div className="w-full">
               {createdGoal.goal_type === 'counter' && (
                 <CounterTracker
                   goal={createdGoal}
@@ -481,12 +567,12 @@ export const Onboarding: React.FC = () => {
             </div>
 
             {/* Primary Action & Secondary Redo Link */}
-            <div className="flex flex-col items-center gap-3.5 mt-2">
+            <div className="flex flex-col items-center gap-3.5 mt-1">
               <Button
                 variant="primary"
                 onClick={handleFinishOnboarding}
                 disabled={isFinishing}
-                className="text-base sm:text-lg px-8 py-3.5"
+                className="text-base sm:text-lg px-9 py-3.5"
               >
                 {isFinishing ? 'Entering Dashboard…' : 'Start tracking'}
               </Button>
