@@ -41,6 +41,8 @@ The questionnaire's onboarding confirmation step is presented as the Goal Ready 
 
 ## Feature documents
 
+Mobile specifications are being developed separately in the [mobile design documentation index](../mobile/index.md).
+
 | Feature                    | Document                                       |
 | -------------------------- | ---------------------------------------------- |
 | Voice input                | [Voice input](features/voice-input.md)         |
