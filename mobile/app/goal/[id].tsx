@@ -162,7 +162,7 @@ export default function GoalDetail() {
           <View>
             {celebrating && <ConfettiBurst onDone={() => setCelebrating(false)} />}
             <Card>
-              <Text style={{ fontFamily: FontFamily.expressive, fontSize: 22, color: Brand.navy }}>Verdict</Text>
+              <Text style={{ fontFamily: FontFamily.expressive, fontSize: 26, color: Brand.navy }}>Verdict</Text>
               <Text style={{ marginTop: 4, color: Brand.navy }}>{String(goal.verdict)}</Text>
               <Pressable
                 onPress={() => Share.share({ message: `OnTrack verdict — ${goal.title}: ${String(goal.verdict)}` })}

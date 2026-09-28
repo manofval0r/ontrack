@@ -56,7 +56,7 @@ export default function Home() {
         ListHeaderComponent={
           <View style={{ gap: 12, marginBottom: 4 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 30, color: Brand.navy }}>
+              <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 34, color: Brand.navy }}>
                 {greeting()}
               </Text>
               <Text accessibilityLabel={`${streak} day streak`} style={{ fontWeight: '700', color: Brand.navy }}>
@@ -99,7 +99,7 @@ export default function Home() {
             )}
             {active.length === 0 && !loading && (
               <Card>
-                <Text style={{ fontFamily: FontFamily.expressive, fontSize: 22, color: Brand.navy }}>Start with one goal.</Text>
+                <Text style={{ fontFamily: FontFamily.expressive, fontSize: 24, color: Brand.navy }}>Start with one goal.</Text>
                 <Text style={{ marginTop: 4, fontSize: 14, color: Brand.navy, opacity: 0.7 }}>
                   Tell the coach what you want to achieve and your tracker appears here.
                 </Text>

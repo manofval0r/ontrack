@@ -30,7 +30,7 @@ export default function Goals() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { clearError(); refresh(); }} />}
         ListHeaderComponent={
           <View style={{ gap: 8, marginBottom: 4 }}>
-            <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 30, color: Brand.navy }}>
+            <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 34, color: Brand.navy }}>
               Goals
             </Text>
             <Text style={{ fontSize: 13, color: Brand.navy, opacity: 0.65 }}>
@@ -52,7 +52,7 @@ export default function Goals() {
         ListEmptyComponent={
           !loading ? (
             <Card>
-              <Text style={{ fontFamily: FontFamily.expressive, fontSize: 22, color: Brand.navy }}>Start with one goal.</Text>
+              <Text style={{ fontFamily: FontFamily.expressive, fontSize: 24, color: Brand.navy }}>Start with one goal.</Text>
               <Text style={{ marginTop: 4, fontSize: 14, color: Brand.navy, opacity: 0.7 }}>
                 Tell the coach what you want to achieve in the Chat tab.
               </Text>

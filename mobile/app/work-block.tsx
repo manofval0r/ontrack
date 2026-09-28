@@ -52,7 +52,7 @@ export default function WorkBlock() {
         <Text accessibilityRole="header" style={{ textAlign: 'center', fontWeight: '700', color: Brand.teal }}>FOCUS SESSION</Text>
         <Text
           accessibilityLabel={done ? 'Focus session complete' : spoken(left)}
-          style={{ fontFamily: FontFamily.expressive, fontSize: 60, textAlign: 'center', color: Brand.navy, marginTop: 8 }}
+          style={{ fontFamily: FontFamily.expressive, fontSize: 64, textAlign: 'center', color: Brand.navy, marginTop: 8 }}
         >
           {done ? 'Done' : fmt(left)}
         </Text>

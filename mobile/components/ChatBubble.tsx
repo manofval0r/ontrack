@@ -78,7 +78,7 @@ export function ChatBubble({
           elevation: 3,
         }}
       >
-        <Text style={{ fontSize: 15, color: isUser ? Brand.white : Brand.navy }}>{msg.content}</Text>
+        <Text style={{ fontSize: 16, lineHeight: 23, color: isUser ? Brand.white : Brand.navy }}>{msg.content}</Text>
         {!isUser && msg.source === 'offline' && (
           <Text style={{ fontSize: 10, fontWeight: '700', color: Brand.amberText, marginTop: 6 }}>
             OFFLINE MODE · DEVICE-ONLY

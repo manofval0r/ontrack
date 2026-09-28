@@ -77,7 +77,7 @@ export default function Onboarding() {
           </View>
         </Animated.View>
         <Card>
-          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 26, color: Brand.navy }}>
+          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 28, color: Brand.navy }}>
             {STEPS[step].title}
           </Text>
           <Text style={{ marginTop: 8, fontSize: Typography.body.fontSize, color: Brand.navy, lineHeight: Typography.body.lineHeight }}>

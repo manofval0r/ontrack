@@ -1,7 +1,8 @@
 /**
- * Type scale — DM Sans (UI) + Fraunces (display), ~2px under web.
- * Load via expo-font (@expo-google-fonts/dm-sans, @expo-google-fonts/fraunces).
- * Family names must match the loaded font assets; fallbacks are system.
+ * Type scale — DM Sans (UI) + Fraunces (data/display) + Original Surfer
+ * (expressive headlines). Sized to match the app-mockup art direction:
+ * generous display sizes, 16px body minimum, 12px caption floor.
+ * Load via expo-font; family names must match the loaded font assets.
  */
 
 export const FontFamily = {
@@ -9,9 +10,9 @@ export const FontFamily = {
   sansFallback: 'System',
   display: 'Fraunces',
   displayFallback: 'Georgia',
-  /** Expressive display accents only — headlines, big numbers, empty states.
-   * Never body copy. */
-  expressive: 'Original_Surfer_400Regular',
+  /** Expressive display — headlines, hero numbers, empty states, timers.
+   * Never body copy, never small labels. */
+  expressive: 'OriginalSurfer_400Regular',
   expressiveFallback: 'Georgia',
 } as const;
 
@@ -33,11 +34,11 @@ export const Typography: Record<
   'display' | 'title' | 'cardHeading' | 'body' | 'button' | 'caption' | 'micro',
   TextStyle
 > = {
-  display: { fontFamily: FontFamily.display, fontSize: 34, fontWeight: FontWeight.bold, lineHeight: 40 },
-  title: { fontFamily: FontFamily.display, fontSize: 24, fontWeight: FontWeight.bold, lineHeight: 30 },
-  cardHeading: { fontFamily: FontFamily.sans, fontSize: 18, fontWeight: FontWeight.bold, lineHeight: 24 },
-  body: { fontFamily: FontFamily.sans, fontSize: 15, fontWeight: FontWeight.regular, lineHeight: 22 },
-  button: { fontFamily: FontFamily.sans, fontSize: 15, fontWeight: FontWeight.semiBold, lineHeight: 20 },
+  display: { fontFamily: FontFamily.display, fontSize: 40, fontWeight: FontWeight.bold, lineHeight: 46 },
+  title: { fontFamily: FontFamily.display, fontSize: 28, fontWeight: FontWeight.bold, lineHeight: 34 },
+  cardHeading: { fontFamily: FontFamily.sans, fontSize: 20, fontWeight: FontWeight.bold, lineHeight: 26 },
+  body: { fontFamily: FontFamily.sans, fontSize: 16, fontWeight: FontWeight.regular, lineHeight: 23 },
+  button: { fontFamily: FontFamily.sans, fontSize: 16, fontWeight: FontWeight.semiBold, lineHeight: 22 },
   caption: { fontFamily: FontFamily.sans, fontSize: 12, fontWeight: FontWeight.semiBold, lineHeight: 16 },
-  micro: { fontFamily: FontFamily.sans, fontSize: 10, fontWeight: FontWeight.bold, lineHeight: 14 },
+  micro: { fontFamily: FontFamily.sans, fontSize: 11, fontWeight: FontWeight.bold, lineHeight: 14 },
 };
