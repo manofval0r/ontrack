@@ -48,7 +48,7 @@ Updated: 2026-09-28.
 
 ## Left — Backend (Evans)
 
-- [ ] Serializer enrichment: computed `current_value`, last-20 `progress_logs`, `unit`; `template_context` on goal list (plan §16)
+- [x] Serializer enrichment PARTIAL: `current_value` + `progress_logs` shipped — mobile consumes them (remaining: `unit`, `template_context` on goal list)
 - [ ] FocusSession + BlockedSelection tables/endpoints (after plan approval)
 - [ ] GitHub activity sync beyond connect stub (commits → progress); Calendar event sync scope answer (connect-only today)
 - [ ] Render deploy both instances + `/api/health` + `/api/debug` verification
