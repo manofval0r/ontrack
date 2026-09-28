@@ -64,7 +64,7 @@ export const api = {
     }),
   getDashboard: () => request<any>('/api/dashboard'),
   parseGoal: (prompt: string) =>
-    request<{ ai_response_text: string; goal_proposal: any }>('/api/chat/parse-goal', {
+    request<{ ai_response_text: string; goal_proposal: any | null; is_goal?: boolean }>('/api/chat/parse-goal', {
       method: 'POST',
       body: JSON.stringify({ prompt }),
     }),

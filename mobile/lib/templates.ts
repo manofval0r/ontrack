@@ -72,10 +72,14 @@ export function templateMeta(goal: any): TemplateMeta {
   return META[templateOf(goal)];
 }
 
-/** Display progress derived without a stored current_value (backend has none):
- * counter → pct of target, checklist → completed items, manual → logged entries. */
+/** Display progress, preferring the backend-computed current_value.
+ * Falls back to dashboard progress_pct, then checklist item counts. */
 export function displayProgress(goal: any): { current: number; target: number | null; pct: number } {
   const target = typeof goal?.target === 'number' ? goal.target : null;
+  if (typeof goal?.current_value === 'number') {
+    const pct = target ? Math.min(100, Math.round((goal.current_value / target) * 100)) : 0;
+    return { current: goal.current_value, target, pct };
+  }
   const items: any[] = Array.isArray(goal?.items) ? goal.items : [];
   if (goal?.goal_type === 'checklist' && items.length > 0) {
     const done = items.filter((i) => i.completed).length;
@@ -85,10 +89,6 @@ export function displayProgress(goal: any): { current: number; target: number | 
     const pct = Math.max(0, Math.min(100, goal.progress_pct));
     const current = target ? Math.round((pct / 100) * target) : 0;
     return { current, target, pct };
-  }
-  if (typeof goal?.current_value === 'number') {
-    const pct = target ? Math.min(100, Math.round((goal.current_value / target) * 100)) : 0;
-    return { current: goal.current_value, target, pct };
   }
   return { current: 0, target, pct: 0 };
 }

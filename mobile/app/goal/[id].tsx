@@ -105,8 +105,11 @@ export default function GoalDetail() {
   const ctx = goal.template_context ?? {};
   const left = daysLeft(goal.deadline);
   const history: any[] = dashboard?.history ?? [];
-  const strip = weekStrip(history, goal.id);
-  const goalLogs = history.filter((h) => String(h.goal_id) === String(goal.id)).slice(0, 5);
+  const ownLogs: any[] = Array.isArray(goal.progress_logs) && goal.progress_logs.length > 0
+    ? goal.progress_logs
+    : history.filter((h) => String(h.goal_id) === String(goal.id));
+  const strip = weekStrip(ownLogs.map((l) => ({ ...l, goal_id: l.goal_id ?? goal.id })), goal.id);
+  const goalLogs = ownLogs.slice(0, 5);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>

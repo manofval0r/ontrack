@@ -186,10 +186,16 @@ export default function Chat() {
     setThinking(true);
     try {
       const { ai_response_text, goal_proposal } = await api.parseGoal(raw);
+      if (!goal_proposal) {
+        // Server-side conversational reply (greeting, small talk) — no tracker.
+        ai(ai_response_text);
+        return;
+      }
       ai(ai_response_text, {
         proposal: {
           title: goal_proposal.title || raw,
           goal_type: goal_proposal.goal_type || 'manual',
+          goal_template: goal_proposal.goal_template,
           target: goal_proposal.target ?? 1,
           items: goal_proposal.items,
           domain: goal_proposal.domain || 'general',
