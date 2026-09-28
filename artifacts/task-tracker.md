@@ -36,7 +36,9 @@ Updated: 2026-09-28.
 - [x] Integrations connect (GitHub + Calendar scopes via vault) + full settings map
 - [x] Celebration pass (confetti, streak flicker, TTS equalizer) + Original Surfer display font
 - [x] Round 2: 5-tab dock (Home/Goals/Chat-center/Settings/You), Profile tab, headerless chat, composer dock clearance, expressive type expansion, integration detail screens (repos/commits/PRs, calendar sync, capability toggles, sync-to-goal), staggered lists
+- [x] OAuth separation fix: login-only session swap, warm-path vaulting, exp:// dev URLs, no-hang auth screen
 - [x] Mockup updated (dock, signup, 404, font preview)
+- [x] Absorbed teammate merges (legal pages, voice/integrations overhaul, audio plugin): no conflicts, tsc clean, backend consumes new serializer fields
 
 ## Left — Web (Eniola unless noted)
 
