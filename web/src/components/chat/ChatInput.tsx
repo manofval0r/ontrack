@@ -22,8 +22,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setText('')
   }
 
-  const handleTranscription = (transcript: string) => {
-    setText((prev) => (prev ? `${prev} ${transcript}` : transcript))
+  const handleTranscriptionLive = (interim: string) => {
+    setText(interim)
+  }
+
+  const handleTranscriptionComplete = (transcript: string) => {
+    if (transcript.trim()) {
+      setText(transcript.trim())
+    }
     setIsRecording(false)
   }
 
@@ -37,7 +43,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         isRecording={isRecording}
         onStartRecording={() => setIsRecording(true)}
         onStopRecording={() => setIsRecording(false)}
-        onTranscriptionComplete={handleTranscription}
+        onTranscriptionLive={handleTranscriptionLive}
+        onTranscriptionComplete={handleTranscriptionComplete}
         onCancel={() => setIsRecording(false)}
       />
 
