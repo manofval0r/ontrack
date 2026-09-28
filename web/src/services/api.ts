@@ -30,6 +30,48 @@ function getToken(): string | null {
   return localStorage.getItem('ontrack_token')
 }
 
+// Public defaults (anon key is public by design); Vercel env overrides these.
+// Needed here so expired sessions can silently refresh without a login round-trip.
+const SUPABASE_URL =
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? 'https://destcakvqdzhkzemdugo.supabase.co'
+const SUPABASE_ANON_KEY =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
+  'sb_publishable_kT5JCbb2BFocdW23HIJYfw_jk879gsk'
+
+/** Single-flight refresh so parallel 401s trigger exactly one token call. */
+let refreshPromise: Promise<boolean> | null = null
+
+async function tryRefreshSession(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise
+  refreshPromise = (async () => {
+    try {
+      const refreshToken = localStorage.getItem('ontrack_refresh_token')
+      if (!refreshToken || !SUPABASE_URL || !SUPABASE_ANON_KEY) return false
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.access_token) return false
+      localStorage.setItem('ontrack_token', data.access_token)
+      if (data.refresh_token) localStorage.setItem('ontrack_refresh_token', data.refresh_token)
+      return true
+    } catch {
+      return false
+    } finally {
+      refreshPromise = null
+    }
+  })()
+  return refreshPromise
+}
+
+function clearSession(): void {
+  localStorage.removeItem('ontrack_token')
+  localStorage.removeItem('ontrack_refresh_token')
+  localStorage.removeItem('ontrack_provider_tokens')
+}
+
 function authHeaders(): Record<string, string> {
   const token = getToken()
   return token ? { Authorization: `Bearer ${token}` } : {}
@@ -42,33 +84,43 @@ async function request<T>(
   options: RequestInit = {},
   authenticated = true
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(authenticated ? authHeaders() : {}),
-    ...(options.headers as Record<string, string> | undefined ?? {}),
+  const doFetch = async (): Promise<{ res: Response; body: any }> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(authenticated ? authHeaders() : {}),
+      ...(options.headers as Record<string, string> | undefined ?? {}),
+    }
+    const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+    let body: any
+    const contentType = res.headers.get('content-type') ?? ''
+    if (contentType.includes('application/json')) {
+      body = await res.json()
+    } else {
+      body = await res.text()
+    }
+    return { res, body }
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers,
+  const toError = (res: Response, body: any): StandardError => ({
+    // Backend error shape: { error: string, code: string }
+    error: body?.error ?? `HTTP ${res.status}`,
+    code: body?.code ?? 'API_ERROR',
   })
 
   // Parse body (always JSON from this backend)
-  let body: any
-  const contentType = res.headers.get('content-type') ?? ''
-  if (contentType.includes('application/json')) {
-    body = await res.json()
-  } else {
-    body = await res.text()
+  let { res, body } = await doFetch()
+
+  // Silent refresh: Supabase access tokens expire (~1h). One refresh + retry
+  // before surfacing 401, so reloads don't wipe the session hourly.
+  if (res.status === 401 && authenticated && (await tryRefreshSession())) {
+    ;({ res, body } = await doFetch())
   }
 
   if (!res.ok) {
-    // Backend error shape: { error: string, code: string }
-    const err: StandardError = {
-      error: body?.error ?? `HTTP ${res.status}`,
-      code: body?.code ?? 'API_ERROR',
-    }
-    throw err
+    // Genuinely logged out (bad/expired refresh too): drop the dead session
+    // so the app routes to login instead of 401-looping on empty data.
+    if (res.status === 401 && authenticated) clearSession()
+    throw toError(res, body)
   }
 
   return body as T
