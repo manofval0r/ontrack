@@ -370,6 +370,15 @@ export const Signup: React.FC = () => {
                     Log in
                   </Link>
                 </p>
+                <p className="font-sans text-xs text-center text-[#071E2D]/40 dark:text-slate-500 mt-2">
+                  By joining, you agree to our{' '}
+                  <Link
+                    to="/privacy-policy"
+                    className="text-[#006D6A] dark:text-[#00C4B3] hover:underline font-medium"
+                  >
+                    Privacy Policy
+                  </Link>
+                </p>
               </>
             )}
           </div>
