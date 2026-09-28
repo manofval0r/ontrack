@@ -26,7 +26,7 @@ Thumbs.db
 *.swp
 *.swo
 
-# Python / Django
+# Python / Django (setuptools artifacts — backend only; mobile/lib/ is source)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -39,6 +39,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!mobile/lib/
 lib64/
 parts/
 sdist/

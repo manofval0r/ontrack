@@ -8,11 +8,6 @@
     "icon": "./assets/icon.png",
     "scheme": "ontrack",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#071E2D"
-    },
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/icon.png",
@@ -37,7 +32,19 @@
       "expo-router",
       "expo-secure-store",
       "expo-asset",
-      "expo-splash-screen"
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#071E2D",
+          "dark": {
+            "image": "./assets/icon.png",
+            "backgroundColor": "#071E2D"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
