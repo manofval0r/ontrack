@@ -4,13 +4,15 @@
  * derived (backend stores no current_value): checklist counts items,
  * counters use dashboard progress_pct, manual uses activity. */
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Brand } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
 import { Card, PillButton } from '../../components/ui';
+import { ConfettiBurst } from '../../components/Confetti';
 import { TrackerBody } from '../../components/TrackerBody';
 import { ActivitySection, GoalHeaderCard, GithubHeader } from '../../components/GoalDetailSections';
 import { api } from '../../lib/api';
@@ -26,6 +28,7 @@ export default function GoalDetail() {
   const [checkin, setCheckin] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [celebrating, setCelebrating] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -70,6 +73,8 @@ export default function GoalDetail() {
       setError(null);
       const done = await finalizeGoal(String(id));
       setGoal((prev: any) => ({ ...prev, ...done }));
+      setCelebrating(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: any) {
       setError(e?.error ?? 'Could not finalize. Try again.');
     } finally {
@@ -150,10 +155,22 @@ export default function GoalDetail() {
         <ActivitySection logs={goalLogs} unit={meta.unit} />
 
         {goal.verdict ? (
-          <Card>
-            <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 18, color: Brand.navy }}>Verdict</Text>
-            <Text style={{ marginTop: 4, color: Brand.navy }}>{String(goal.verdict)}</Text>
-          </Card>
+          <View>
+            {celebrating && <ConfettiBurst onDone={() => setCelebrating(false)} />}
+            <Card>
+              <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 18, color: Brand.navy }}>Verdict</Text>
+              <Text style={{ marginTop: 4, color: Brand.navy }}>{String(goal.verdict)}</Text>
+              <Pressable
+                onPress={() => Share.share({ message: `OnTrack verdict — ${goal.title}: ${String(goal.verdict)}` })}
+                accessibilityLabel="Share verdict"
+                accessibilityRole="button"
+                style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44 }}
+              >
+                <Ionicons name="share-outline" size={18} color={Brand.teal} />
+                <Text style={{ color: Brand.teal, fontWeight: '700' }}>Share</Text>
+              </Pressable>
+            </Card>
+          </View>
         ) : (
           <PillButton title="Finalize & get verdict" onPress={onFinalize} disabled={busy} accessibilityHint="Marks the goal complete and asks the coach for a final verdict" />
         )}

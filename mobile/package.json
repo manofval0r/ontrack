@@ -12,6 +12,7 @@
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.2.3",
     "@expo-google-fonts/fraunces": "^0.2.3",
+    "@expo-google-fonts/original-surfer": "^0.4.1",
     "@expo/vector-icons": "^15.0.2",
     "babel-preset-expo": "~57.0.13",
     "expo": "^57.0.25",
@@ -42,7 +43,9 @@
   },
   "expo": {
     "install": {
-      "exclude": ["react"]
+      "exclude": [
+        "react"
+      ]
     }
   }
 }

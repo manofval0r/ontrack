@@ -25,6 +25,7 @@ interface Store {
   refresh: () => Promise<void>;
   createGoal: (text: string) => Promise<any>;
   logProgress: (goalId: string, value: number, note?: string) => Promise<any>;
+  updateGoal: (id: string, updates: Record<string, unknown>) => Promise<any>;
   finalizeGoal: (id: string) => Promise<any>;
   clearError: () => void;
 }
@@ -99,6 +100,15 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
     [refresh]
   );
 
+  const updateGoal = useCallback(
+    async (id: string, updates: Record<string, unknown>) => {
+      const updated = await api.updateGoal(id, updates);
+      await refresh();
+      return updated;
+    },
+    [refresh]
+  );
+
   const finalizeGoal = useCallback(
     async (id: string) => {
       const done = await api.finalizeGoal(id);
@@ -110,7 +120,7 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <Ctx.Provider
-      value={{ goals, dashboard, loading, error, refresh, createGoal, logProgress, finalizeGoal, clearError: () => setError(null) }}
+      value={{ goals, dashboard, loading, error, refresh, createGoal, logProgress, updateGoal, finalizeGoal, clearError: () => setError(null) }}
     >
       {children}
     </Ctx.Provider>

@@ -65,15 +65,21 @@ export async function signUpWithEmail(name: string, email: string, password: str
  * If the redirect is missing from the allowlist, Supabase falls back to the
  * Site URL (the Vercel web app) — that is the "lands on web" symptom.
  */
-export async function signInWithProvider(provider: 'google' | 'github'): Promise<string> {
+export async function signInWithProvider(
+  provider: 'google' | 'github',
+  opts?: { mode?: string; scopes?: string }
+): Promise<string> {
   const redirect = Linking.createURL('auth');
-  const authUrl =
+  await SecureStore.setItemAsync('ontrack_oauth_mode', opts?.mode ?? 'login');
+  let authUrl =
     `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}` +
     `&redirect_to=${encodeURIComponent(redirect)}`;
+  if (opts?.scopes) authUrl += `&scopes=${encodeURIComponent(opts.scopes)}`;
   const result = await WebBrowser.openAuthSessionAsync(authUrl, redirect);
   if (result.type !== 'success' || !result.url) throw new Error(`${provider} sign-in cancelled.`);
   const hash = result.url.split('#')[1] ?? '';
-  const params = new URLSearchParams(hash);
+  const query = result.url.split('?')[1]?.split('#')[0] ?? '';
+  const params = new URLSearchParams(`${query}&${hash}`);
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
   if (!accessToken) throw new Error(`${provider} sign-in returned no token.`);

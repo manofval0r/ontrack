@@ -1,6 +1,7 @@
 /** M5 Home — greeting + streak, Today's Focus, due-soon, goal list, FAB. */
 import { useEffect } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +13,7 @@ import { SkeletonCard } from '../../components/Skeleton';
 import { Card } from '../../components/ui';
 import { useGoals } from '../../lib/store';
 import { displayProgress, templateMeta } from '../../lib/templates';
+import { useReduceMotion } from '../../lib/useReduceMotion';
 
 function greeting(name?: string) {
   const h = new Date().getHours();
@@ -26,6 +28,19 @@ export default function Home() {
   const focus = active[0];
   const focusProg = focus ? displayProgress(focus) : null;
   const focusMeta = focus ? templateMeta(focus) : null;
+  const reduceMotion = useReduceMotion();
+  const flicker = useSharedValue(1);
+
+  useEffect(() => {
+    if (streak > 0 && !reduceMotion) {
+      flicker.value = withRepeat(withSequence(withTiming(0.55, { duration: 900 }), withTiming(1, { duration: 900 })), -1, true);
+    } else {
+      cancelAnimation(flicker);
+      flicker.value = 1;
+    }
+  }, [streak, reduceMotion, flicker]);
+
+  const flickerStyle = useAnimatedStyle(() => ({ opacity: flicker.value }));
 
   useEffect(() => {
     refresh();
@@ -36,7 +51,7 @@ export default function Home() {
       <FlatList
         data={active}
         keyExtractor={(g) => String(g.id)}
-        contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 96 }}
+        contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 130 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
         ListHeaderComponent={
           <View style={{ gap: 12, marginBottom: 4 }}>
@@ -45,7 +60,10 @@ export default function Home() {
                 {greeting()}
               </Text>
               <Text accessibilityLabel={`${streak} day streak`} style={{ fontWeight: '700', color: Brand.navy }}>
-                <Ionicons name="flame" size={16} color={Brand.amberDot} /> {streak}
+                <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' }, flickerStyle]}>
+                  <Ionicons name="flame" size={16} color={Brand.amberDot} />
+                </Animated.View>
+                {' '}{streak}
               </Text>
             </View>
             {focus && (
@@ -104,28 +122,7 @@ export default function Home() {
           <GoalCard goal={item} onOpen={() => router.push(`/goal/${item.id}`)} />
         )}
       />
-      <Pressable
-        onPress={() => router.push('/(tabs)/chat')}
-        accessibilityLabel="Open coach chat to create a goal"
-        accessibilityRole="button"
-        accessibilityHint="Opens the coach chat where new goals are created"
-        style={{
-          position: 'absolute',
-          right: 20,
-          bottom: 104,
-          minWidth: 56,
-          minHeight: 56,
-          borderRadius: 999,
-          backgroundColor: Brand.turquoise,
-          borderWidth: 2,
-          borderColor: Brand.navy,
-          alignItems: 'center',
-          justifyContent: 'center',
-          elevation: 4,
-        }}
-      >
-        <Ionicons name="add" size={30} color={Brand.navy} />
-      </Pressable>
+      {/* Goal creation lives in the dock's center action (joined FAB). */}
       <View accessible={false} style={{ height: Touch.min }} />
     </SafeAreaView>
   );

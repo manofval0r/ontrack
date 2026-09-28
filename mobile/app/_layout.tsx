@@ -1,8 +1,9 @@
 /** Root layout: fonts → session → navigation graph (spec M1–M14). */
 import { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Linking from 'expo-linking';
 import {
   useFonts,
   DMSans_400Regular,
@@ -10,6 +11,7 @@ import {
   DMSans_700Bold,
 } from '@expo-google-fonts/dm-sans';
 import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
+import { OriginalSurfer_400Regular } from '@expo-google-fonts/original-surfer';
 import { GoalsProvider } from '../lib/store';
 
 export default function RootLayout() {
@@ -18,14 +20,23 @@ export default function RootLayout() {
     DMSans_500Medium,
     DMSans_700Bold,
     Fraunces_700Bold,
+    OriginalSurfer_400Regular,
   });
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     SplashScreen.preventAutoHideAsync().catch(() => {});
+    // Deferred OAuth intents (cold start / Custom Tab handoff) arrive as
+    // navigation — forward them to the auth receiver instead of 404ing.
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      if (url.startsWith('ontrack://auth')) router.replace('/auth' as any);
+    });
     // Never trap the user on a blank splash: system fonts after 4s.
     const fallback = setTimeout(() => setReady(true), 4000);
-    return () => clearTimeout(fallback);
+    return () => {
+      clearTimeout(fallback);
+      sub.remove();
+    };
   }, []);
 
   useEffect(() => {

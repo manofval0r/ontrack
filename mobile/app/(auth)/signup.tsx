@@ -1,15 +1,61 @@
-/** M3 Sign up — full-screen; consumes pendingGoal from goal-first onboarding. */
-import { useState } from 'react';
-import { ActivityIndicator, Text, TextInput, View } from 'react-native';
+/** M3 Sign up — hero header, social-first, pending-goal chip, staggered motion. */
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  FadeInDown,
+  cancelAnimation,
+  createAnimatedComponent,
+  useAnimatedProps,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 import { Brand, Colors } from '../../constants/colors';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
-import { Typography } from '../../constants/typography';
+import { FontFamily, Typography } from '../../constants/typography';
 import { Card, PillButton } from '../../components/ui';
 import { signInWithProvider, signUpWithEmail } from '../../lib/auth';
 import { api } from '../../lib/api';
 import { useGoals } from '../../lib/store';
+import { useReduceMotion } from '../../lib/useReduceMotion';
+
+function DrawnMark() {
+  const reduce = useReduceMotion();
+  const draw = useSharedValue(0);
+  useEffect(() => {
+    if (reduce) {
+      draw.value = 1;
+      return;
+    }
+    draw.value = withRepeat(withSequence(withTiming(1, { duration: 1400 }), withTiming(1, { duration: 1800 }), withTiming(0, { duration: 1 })), -1, false);
+    return () => cancelAnimation(draw);
+  }, [reduce, draw]);
+  const props = useAnimatedProps(() => ({
+    strokeDashoffset: 220 * (1 - draw.value),
+  }));
+  const AnimatedPath = createAnimatedComponent(Path);
+  return (
+    <View style={{ width: 72, height: 72, borderRadius: 20, backgroundColor: Brand.turquoise, borderWidth: 2, borderColor: Brand.navy, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={46} height={46} viewBox="0 0 100 100">
+        <AnimatedPath
+          d="M22 62 C 40 62, 55 52, 78 32 M78 32 l-11 3 M78 32 l-1 11"
+          fill="none"
+          stroke={Brand.navy}
+          strokeWidth={11}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray={220}
+          animatedProps={props}
+        />
+      </Svg>
+    </View>
+  );
+}
 
 export default function Signup() {
   const { pendingGoal } = useLocalSearchParams<{ pendingGoal?: string }>();
@@ -22,7 +68,6 @@ export default function Signup() {
   const [busy, setBusy] = useState(false);
 
   const afterAuth = async () => {
-    // Pending-goal handoff: create the onboarding draft on the shared backend.
     if (typeof pendingGoal === 'string' && pendingGoal.trim()) {
       try {
         await api.createGoal(pendingGoal.trim());
@@ -69,33 +114,86 @@ export default function Signup() {
     }
   };
 
+  const hasPending = typeof pendingGoal === 'string' && !!pendingGoal.trim();
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl, justifyContent: 'center' }}>
-      <Card>
-        <Text style={{ fontFamily: Typography.title.fontFamily, fontSize: Typography.title.fontSize, color: Brand.navy }}>Create your account</Text>
-        {typeof pendingGoal === 'string' && !!pendingGoal && (
-          <Text style={{ marginTop: 6, fontSize: 13, color: Brand.teal }}>First goal queued: “{pendingGoal}”</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
+      <View style={{ flex: 1, padding: Spacing.xl, justifyContent: 'center', gap: 14 }}>
+        <Animated.View entering={FadeInDown.duration(350)} style={{ alignItems: 'center', gap: 8 }}>
+          <DrawnMark />
+          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 32, color: Brand.navy, textAlign: 'center' }}>
+            Join the shipped-it club
+          </Text>
+          <Text style={{ fontSize: 14, color: Brand.navy, opacity: 0.65, textAlign: 'center' }}>
+            Say a goal. Get a tracker. Prove it daily.
+          </Text>
+        </Animated.View>
+
+        {hasPending && (
+          <Animated.View entering={FadeInDown.duration(350).delay(120)}>
+            <View style={{ backgroundColor: Brand.cyanBg, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.card, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Ionicons name="flag" size={20} color={Brand.teal} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.teal }}>FIRST UP</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.navy }} numberOfLines={2}>
+                  {pendingGoal}
+                </Text>
+              </View>
+            </View>
+          </Animated.View>
         )}
-        <View style={{ marginTop: Spacing.md, gap: 10 }}>
-          <TextInput value={name} onChangeText={setName} placeholder="Your name" accessibilityLabel="Full name" autoComplete="name" returnKeyType="next" style={input} />
-          <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" accessibilityLabel="Email address" autoCapitalize="none" autoComplete="email" keyboardType="email-address" returnKeyType="next" style={input} />
-          <TextInput value={password} onChangeText={setPassword} placeholder="Password (8+ characters)" accessibilityLabel="Password, 8 or more characters" autoComplete="new-password" secureTextEntry returnKeyType="done" onSubmitEditing={onSignup} style={input} />
-          {password.length > 0 && password.length < 8 && (
-            <Text style={{ color: Brand.amberText, fontSize: 12 }}>Password needs 8 or more characters.</Text>
-          )}
-          {error && <Text accessibilityLiveRegion="polite" style={{ color: Brand.error, fontSize: 13 }}>{error}</Text>}
-          {goalWarning && (
-            <Text style={{ color: Brand.amberText, fontSize: 12 }}>Signed in, but your first goal was not queued — recreate it in Chat.</Text>
-          )}
-          <PillButton title={busy ? 'Creating…' : 'Create account'} primary onPress={onSignup} disabled={busy || !valid} />
-          {busy && <ActivityIndicator color={Brand.turquoise} />}
-          <PillButton title="Continue with Google" onPress={() => onProvider('google')} disabled={busy} />
-          <PillButton title="Continue with GitHub" onPress={() => onProvider('github')} disabled={busy} />
-        </View>
-      </Card>
-      <Link href="/(auth)/login" accessibilityLabel="Go to log in" style={{ marginTop: Spacing.lg, textAlign: 'center', color: Brand.teal, fontWeight: '600', minHeight: Touch.min }}>
-        Already have an account? Log in
-      </Link>
+
+        <Animated.View entering={FadeInDown.duration(350).delay(200)} style={{ flexDirection: 'row', gap: 10 }}>
+          <Pressable
+            onPress={() => onProvider('google')}
+            disabled={busy}
+            accessibilityLabel="Continue with Google"
+            accessibilityRole="button"
+            style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: Touch.min, backgroundColor: Brand.white, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.pill, opacity: busy ? 0.5 : 1 }}
+          >
+            <Ionicons name="logo-google" size={20} color={Brand.navy} />
+            <Text style={{ fontWeight: '700', color: Brand.navy }}>Google</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => onProvider('github')}
+            disabled={busy}
+            accessibilityLabel="Continue with GitHub"
+            accessibilityRole="button"
+            style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: Touch.min, backgroundColor: Brand.navy, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.pill, opacity: busy ? 0.5 : 1 }}
+          >
+            <Ionicons name="logo-github" size={20} color={Brand.white} />
+            <Text style={{ fontWeight: '700', color: Brand.white }}>GitHub</Text>
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(350).delay(280)}>
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <View style={{ flex: 1, height: 2, backgroundColor: Colors.light.inputBorder }} />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.navy, opacity: 0.6 }}>OR CONTINUE WITH EMAIL</Text>
+              <View style={{ flex: 1, height: 2, backgroundColor: Colors.light.inputBorder }} />
+            </View>
+            <View style={{ gap: 10 }}>
+              <TextInput value={name} onChangeText={setName} placeholder="Your name" accessibilityLabel="Full name" autoComplete="name" returnKeyType="next" style={input} />
+              <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" accessibilityLabel="Email address" autoCapitalize="none" autoComplete="email" keyboardType="email-address" returnKeyType="next" style={input} />
+              <TextInput value={password} onChangeText={setPassword} placeholder="Password (8+ characters)" accessibilityLabel="Password, 8 or more characters" autoComplete="new-password" secureTextEntry returnKeyType="done" onSubmitEditing={onSignup} style={input} />
+              {password.length > 0 && password.length < 8 && (
+                <Text style={{ color: Brand.amberText, fontSize: 12 }}>Password needs 8 or more characters.</Text>
+              )}
+              {error && <Text accessibilityLiveRegion="polite" style={{ color: Brand.error, fontSize: 13 }}>{error}</Text>}
+              {goalWarning && (
+                <Text style={{ color: Brand.amberText, fontSize: 12 }}>Signed in, but your first goal was not queued — recreate it in Chat.</Text>
+              )}
+              <PillButton title={busy ? 'Creating…' : 'Create account'} primary onPress={onSignup} disabled={busy || !valid} />
+              {busy && <ActivityIndicator color={Brand.turquoise} />}
+            </View>
+          </Card>
+        </Animated.View>
+
+        <Link href="/(auth)/login" accessibilityLabel="Go to log in" style={{ textAlign: 'center', color: Brand.teal, fontWeight: '600', minHeight: Touch.min }}>
+          Already have an account? Log in
+        </Link>
+      </View>
     </SafeAreaView>
   );
 }

@@ -22,7 +22,19 @@ Updated: 2026-09-28.
 ## In progress
 
 - [ ] Supabase redirect allowlist: `ontrack://auth` + Expo dev URL (Owner — dashboard, 5 min; without this, mobile OAuth lands on web)
-- [ ] EAS preview APK build + install test (Owner runs `eas build --platform android --profile preview`)
+- [ ] EAS preview APK rebuild with bundle fix (Owner runs `eas build --platform android --profile preview`)
+- [ ] Fresh Qwen tunnel URL from owner Brev env (Owner) → verify live parse → chat lights up
+
+## Done — revival build (mobile)
+
+- [x] OAuth receiver `app/auth.tsx` + global URL listener (cold/deferred deep links)
+- [x] Custom `+not-found` ("You are off track" + sitemap) + web NotFound upgrade
+- [x] Floating dock tab bar with joined center action (Duolingo-style)
+- [x] Signup redesign (hero, social-first, pending-goal chip, Original Surfer)
+- [x] Chat intent router (greeting/clarify/status/progress/goal), honesty badges, busy guards, starters, daily brief, TTS autoplay, timestamps
+- [x] Integrations connect (GitHub + Calendar scopes via vault) + full settings map
+- [x] Celebration pass (confetti, streak flicker, TTS equalizer) + Original Surfer display font
+- [x] Mockup updated (dock, signup, 404, font preview)
 
 ## Left — Web (Eniola unless noted)
 

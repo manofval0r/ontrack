@@ -9,6 +9,10 @@ export const FontFamily = {
   sansFallback: 'System',
   display: 'Fraunces',
   displayFallback: 'Georgia',
+  /** Expressive display accents only — headlines, big numbers, empty states.
+   * Never body copy. */
+  expressive: 'Original_Surfer_400Regular',
+  expressiveFallback: 'Georgia',
 } as const;
 
 export const FontWeight = {

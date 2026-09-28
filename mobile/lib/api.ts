@@ -9,7 +9,7 @@ export interface StandardError {
 
 const REQUEST_TIMEOUT_MS = 20000;
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = await getToken();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -55,6 +55,8 @@ export const api = {
   updateGoal: (id: string, updates: Record<string, unknown>) =>
     request<any>(`/api/goals/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
   deleteGoal: (id: string) => request(`/api/goals/${id}`, { method: 'DELETE' }),
+  deleteIntegration: (id: string) =>
+    request(`/api/integrations/${id}`, { method: 'DELETE' }),
   logProgress: (goal_id: string, value: number, note?: string) =>
     request('/api/progress', {
       method: 'POST',
