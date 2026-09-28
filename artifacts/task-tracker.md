@@ -63,3 +63,5 @@ billing issue"** — no code fix possible. Clear billing, then re-run failed job
   needed for `/models`) — viable if Evans sets `NVIDIA_API_KEY` on Render.
 - Unknown: what `NVIDIA_BASE_URL` the Render mobile instance currently holds.
   Chat revival is ON HOLD until a live model endpoint is confirmed.
+- 2026-09-28: tunnel revival runbook delivered to owner (Brev terminal → vLLM →
+  cloudflared → URL to Evans). Awaiting fresh URL, then verify + build.
