@@ -54,16 +54,6 @@ const Hero: React.FC = () => {
   return (
     <section className="relative overflow-hidden bg-dot-grid pt-10 pb-16 sm:pt-12 sm:pb-20 md:pt-16 md:pb-28 border-b-2 border-[#071E2D]/8 dark:border-white/10">
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
-        {/* Credibility pill */}
-        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2.5px_2.5px_0px_#071E2D] dark:shadow-[2.5px_2.5px_0px_#000000] mb-6 sm:mb-8 transition-transform hover:-translate-y-0.5 cursor-pointer">
-          <span className="flex items-center justify-center w-4 h-4 rounded-full bg-[#006D6A] text-white flex-shrink-0">
-            <CheckIcon />
-          </span>
-          <span className="font-sans font-semibold text-xs text-[#071E2D] dark:text-white">
-            Verified AI Accountability · Designed for Follow-Through
-          </span>
-          <span className="text-[#071E2D]/60 dark:text-slate-400 text-xs font-bold">›</span>
-        </div>
 
         {/* Display Headline */}
         <h1
