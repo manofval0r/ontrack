@@ -243,6 +243,7 @@ function mapGoal(raw: any): Goal {
         : raw.verdict
       : undefined,
     created_at: raw.start_at ?? raw.created_at ?? '',
+    finished_at: raw.finished_at ? String(raw.finished_at).split('T')[0] : undefined,
   }
 }
 

@@ -1,8 +1,11 @@
 import React, { useState, useMemo } from 'react'
-import type { Goal } from '../../types'
+import type { Goal, ProgressLog } from '../../types'
 
 interface DashboardChartProps {
   goals?: Goal[]
+  /** Dashboard history (backend `history`, newest first). When present it is
+   * the source for activity bars; otherwise embedded goal logs are used. */
+  logs?: ProgressLog[]
 }
 
 interface MetricPoint {
@@ -19,8 +22,23 @@ function parseStamp(raw: unknown): Date | null {
   return isNaN(+t) ? null : t
 }
 
-export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [] }) => {
+export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [], logs = [] }) => {
   const [selectedRange, setSelectedRange] = useState<'1W' | '1M' | '1Y'>('1M')
+
+  // Activity source: explicit history prop wins (it covers all goals even
+  // though /api/goals list items carry no logs); else embedded goal logs.
+  const allLogs: ProgressLog[] = useMemo(() => {
+    if (logs.length > 0) return logs
+    return goals.flatMap((g) => g.progress_logs ?? [])
+  }, [goals, logs])
+
+  /** Completion date: finished_at when known, else deadline. Null = unknown. */
+  const completionDate = (g: Goal): Date | null => {
+    const raw = g.finished_at || g.deadline
+    if (!raw) return null
+    const d = new Date(raw)
+    return isNaN(+d) ? null : d
+  }
 
   const chartData: MetricPoint[] = useMemo(() => {
     const now = new Date()
@@ -36,15 +54,17 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [] }) =>
         let completed = 0
         let inProgress = 0
 
-        goals.forEach((g) => {
-          const logsToday = (g.progress_logs || []).filter(
-            (l) => l.timestamp && l.timestamp.startsWith(dateStr)
-          )
-          if (logsToday.length > 0) {
-            inProgress += logsToday.length
+        allLogs.forEach((l) => {
+          if (l.timestamp && l.timestamp.startsWith(dateStr)) {
+            inProgress += 1
           }
-          if (g.status === 'completed' && g.deadline && g.deadline.startsWith(dateStr)) {
-            completed += 1
+        })
+        goals.forEach((g) => {
+          if (g.status === 'completed') {
+            const done = completionDate(g)
+            if (done && done.toISOString().split('T')[0] === dateStr) {
+              completed += 1
+            }
           }
         })
 
@@ -68,14 +88,14 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [] }) =>
         let completed = 0
         let inProgress = 0
 
+        allLogs.forEach((l) => {
+          const t = parseStamp(l.timestamp)
+          if (t && t >= start && t <= end) inProgress += 1
+        })
         goals.forEach((g) => {
-          ;(g.progress_logs || []).forEach((l) => {
-            const t = parseStamp(l.timestamp)
-            if (t && t >= start && t <= end) inProgress += 1
-          })
-          if (g.status === 'completed' && g.deadline) {
-            const d = new Date(g.deadline)
-            if (!isNaN(+d) && d >= start && d <= end) completed += 1
+          if (g.status === 'completed') {
+            const done = completionDate(g)
+            if (done && done >= start && done <= end) completed += 1
           }
         })
 
@@ -97,20 +117,20 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [] }) =>
       let completed = 0
       let inProgress = 0
 
+      allLogs.forEach((l) => {
+        const t = parseStamp(l.timestamp)
+        if (t && t >= mStart && t <= mEnd) inProgress += 1
+      })
       goals.forEach((g) => {
-        ;(g.progress_logs || []).forEach((l) => {
-          const t = parseStamp(l.timestamp)
-          if (t && t >= mStart && t <= mEnd) inProgress += 1
-        })
-        if (g.status === 'completed' && g.deadline) {
-          const d = new Date(g.deadline)
-          if (!isNaN(+d) && d >= mStart && d <= mEnd) completed += 1
+        if (g.status === 'completed') {
+          const done = completionDate(g)
+          if (done && done >= mStart && done <= mEnd) completed += 1
         }
       })
 
       return { label: m, completed, inProgress }
     })
-  }, [goals, selectedRange])
+  }, [goals, allLogs, selectedRange])
 
   const maxVal = useMemo(() => {
     const highest = Math.max(

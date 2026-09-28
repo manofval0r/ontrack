@@ -165,7 +165,7 @@ export const Dashboard: React.FC = () => {
 
                 {/* Right Column — full width on md (2-col grid), 3rd col on lg */}
                 <div className="md:col-span-2 lg:col-span-4 flex flex-col">
-                  <DashboardChart />
+                  <DashboardChart goals={goals} logs={dashboardData?.recent_activity ?? []} />
                 </div>
               </div>
 
