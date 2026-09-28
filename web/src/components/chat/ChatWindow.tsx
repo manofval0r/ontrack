@@ -48,29 +48,48 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     const activeGoals = goals.filter((g) => g.status === 'active')
     const intent = classifyUserMessage(content, activeGoals)
 
-    // If it's NOT an explicit goal creation request, respond conversationally without proposing a bogus goal!
+    // If it's NOT an explicit goal creation request, engage the RAG-powered AI Coach!
     if (intent.type !== 'goal_creation') {
-      setTimeout(() => {
-        let reply: string
-        if (intent.type === 'status_query') {
-          reply = `You currently have ${activeGoals.length} active tracker(s) in motion.${
-            activeGoals.length > 0 ? ` Your lead target is "${activeGoals[0].title}".` : ' Ready to set a new goal?'
-          }`
-        } else if ('responseText' in intent && intent.responseText) {
-          reply = intent.responseText
-        } else {
-          reply = `I hear you. Tell me what target you'd like to achieve (e.g., "Sell 4 books today" or "Run 5km weekly"), or let me know what progress you've made!`
-        }
+      const targetGoal = 'matchedGoal' in intent && (intent as any).matchedGoal ? (intent as any).matchedGoal : activeGoals[0]
+      const goalId = targetGoal?.id
 
-        const aiMsg: ChatMessage = {
-          id: `msg-ai-${Date.now()}`,
-          sender: 'ai',
-          content: reply,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        }
-        setMessages((prev) => [...prev, aiMsg])
-        setIsThinking(false)
-      }, 400)
+      api.sendChatMessage(content, goalId)
+        .then((res) => {
+          const reply = res.reply || res.message || res.ai_response_text || 'I am tracking your progress.'
+          const aiMsg: ChatMessage = {
+            id: `msg-ai-${Date.now()}`,
+            sender: 'ai',
+            content: reply,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            retrieved_context: res.retrieved_context || [],
+            rag_active: Boolean(res.rag_active || (res.retrieved_context && res.retrieved_context.length > 0)),
+          }
+          setMessages((prev) => [...prev, aiMsg])
+        })
+        .catch((err) => {
+          console.warn('[ChatWindow] RAG Chat endpoint fallback:', err)
+          let reply: string
+          if (intent.type === 'status_query') {
+            reply = `You currently have ${activeGoals.length} active tracker(s) in motion.${
+              activeGoals.length > 0 ? ` Your lead target is "${activeGoals[0].title}".` : ' Ready to set a new goal?'
+            }`
+          } else if ('responseText' in intent && intent.responseText) {
+            reply = intent.responseText
+          } else {
+            reply = `I'm keeping track of your goals and progress. Tell me what target you'd like to achieve (e.g., "Sell 4 books today" or "Run 5km weekly"), or let me know what progress you've made!`
+          }
+
+          const aiMsg: ChatMessage = {
+            id: `msg-ai-${Date.now()}`,
+            sender: 'ai',
+            content: reply,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          }
+          setMessages((prev) => [...prev, aiMsg])
+        })
+        .finally(() => {
+          setIsThinking(false)
+        })
       return
     }
 
@@ -180,7 +199,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
 
         {isThinking && (
           <div className="max-w-md">
-            <Loader aiThinking label="Nemotron is analyzing target, timeline, and tracker architecture..." />
+            <Loader aiThinking label="Nemotron AI Coach is analyzing context & retrieving your past progress..." />
           </div>
         )}
 

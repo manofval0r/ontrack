@@ -61,6 +61,8 @@ export interface ChatMessage {
   timestamp: string
   goal_proposal?: Partial<Goal>
   isAudioPlaying?: boolean
+  retrieved_context?: string[]
+  rag_active?: boolean
 }
 
 export interface DashboardStats {

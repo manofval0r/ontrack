@@ -56,9 +56,11 @@ class ChatView(APIView):
 
         return Response(
             {
+                "reply": ai_response,
                 "message": ai_response,
                 "ai_response_text": ai_response,
                 "retrieved_context": retrieved_context,
+                "rag_active": len(retrieved_context) > 0,
                 "ai_fallback_used": used_fallback,
             },
             status=status.HTTP_200_OK,
