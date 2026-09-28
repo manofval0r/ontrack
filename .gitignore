@@ -1,3 +1,6 @@
+# Local-only reference notes (never committed)
+artifacts/local/
+
 # Logs
 logs
 *.log
