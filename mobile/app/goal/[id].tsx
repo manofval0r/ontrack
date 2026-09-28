@@ -9,54 +9,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '../../constants/colors';
-import { Radii, Spacing } from '../../constants/spacing';
-import { Card, PillButton, StatusPill } from '../../components/ui';
+import { Spacing } from '../../constants/spacing';
+import { Card, PillButton } from '../../components/ui';
 import { TrackerBody } from '../../components/TrackerBody';
+import { ActivitySection, GoalHeaderCard, GithubHeader } from '../../components/GoalDetailSections';
 import { api } from '../../lib/api';
 import { useGoals } from '../../lib/store';
 import { displayProgress, templateMeta } from '../../lib/templates';
-
-function daysLeft(deadline: any): string | null {
-  if (!deadline) return null;
-  const ms = new Date(deadline).getTime() - Date.now();
-  if (Number.isNaN(ms)) return null;
-  if (ms < 0) return 'past due';
-  const d = Math.floor(ms / 86400000);
-  if (d > 1) return `${d} days left`;
-  const h = Math.floor(ms / 3600000);
-  if (h > 1) return `${h}h left`;
-  return 'due soon';
-}
-
-/** Honest 7-day strip from dashboard history (no fabricated per-day data). */
-function weekStrip(history: any[], goalId: string): number[] {
-  const counts = [0, 0, 0, 0, 0, 0, 0];
-  const now = new Date();
-  for (const h of history ?? []) {
-    if (String(h.goal_id) !== String(goalId)) continue;
-    const t = new Date(h.logged_at).getTime();
-    if (Number.isNaN(t)) continue;
-    const dayDiff = Math.floor((now.getTime() - t) / 86400000);
-    if (dayDiff >= 0 && dayDiff < 7) counts[6 - dayDiff] += 1;
-  }
-  return counts;
-}
-
-function stripColor(n: number): string {
-  if (n <= 0) return Brand.gray;
-  if (n === 1) return '#99F6E4';
-  if (n <= 3) return Brand.turquoise;
-  return Brand.teal;
-}
-
-function StatTile({ value, label }: { value: string; label: string }) {
-  return (
-    <View style={{ flex: 1, backgroundColor: Brand.grayCanvas, borderWidth: 2, borderColor: Brand.navy, borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
-      <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 20, color: Brand.navy }}>{value}</Text>
-      <Text style={{ fontSize: 11, fontWeight: '600', color: Brand.teal, marginTop: 2 }}>{label}</Text>
-    </View>
-  );
-}
+import { daysLeft, stripColor, weekStrip } from '../../lib/goalStats';
 
 export default function GoalDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -65,10 +25,21 @@ export default function GoalDetail() {
   const [github, setGithub] = useState<any | null>(null);
   const [checkin, setCheckin] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    if (!id) return;
+    setError(null);
+    try {
+      const g = await api.getGoal(String(id));
+      setGoal(g);
+    } catch (e: any) {
+      setError(e?.error ?? 'Could not load this goal.');
+    }
+  };
 
   useEffect(() => {
-    if (!id) return;
-    api.getGoal(String(id)).then(setGoal).catch(() => {});
+    load().catch(() => {});
     api
       .getSettings()
       .then((s) => {
@@ -76,10 +47,11 @@ export default function GoalDetail() {
         if (gh) setGithub(gh);
       })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const onCheckin = async () => {
-    if (!id) return;
+    if (!id || busy) return;
     try {
       setBusy(true);
       const res = await api.checkin(String(id));
@@ -92,11 +64,14 @@ export default function GoalDetail() {
   };
 
   const onFinalize = async () => {
-    if (!id) return;
+    if (!id || busy) return;
     try {
       setBusy(true);
+      setError(null);
       const done = await finalizeGoal(String(id));
       setGoal((prev: any) => ({ ...prev, ...done }));
+    } catch (e: any) {
+      setError(e?.error ?? 'Could not finalize. Try again.');
     } finally {
       setBusy(false);
     }
@@ -104,8 +79,18 @@ export default function GoalDetail() {
 
   if (!goal) {
     return (
-      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.grayCanvas }}>
-        <ActivityIndicator color={Brand.turquoise} />
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.grayCanvas, gap: 12 }}>
+        {error ? (
+          <>
+            <Text style={{ color: Brand.error, textAlign: 'center', paddingHorizontal: 32 }}>{error}</Text>
+            <PillButton title="Retry" onPress={load} />
+            <PillButton title="Back" onPress={() => router.back()} />
+          </>
+        ) : (
+          <View accessibilityRole="progressbar" accessibilityLabel="Loading goal">
+            <ActivityIndicator color={Brand.turquoise} />
+          </View>
+        )}
       </SafeAreaView>
     );
   }
@@ -121,76 +106,21 @@ export default function GoalDetail() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: Spacing.lg, gap: 12 }}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 44 }}
+        >
           <Ionicons name="chevron-back" size={20} color={Brand.navy} />
           <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.navy }}>Back</Text>
         </Pressable>
 
-        {/* ── Template-personalized header ─────────────────────────── */}
         {meta.github ? (
-          <View style={{ backgroundColor: Brand.navy, borderWidth: 2, borderColor: Brand.navy, borderRadius: 20, padding: Spacing.lg, gap: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Brand.turquoise, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="logo-github" size={26} color={Brand.navy} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 17, fontWeight: '700', color: '#fff' }} numberOfLines={2}>
-                  {goal.title}
-                </Text>
-                <Text style={{ fontSize: 12, color: Brand.turquoise, fontWeight: '600', marginTop: 2 }}>
-                  {github?.connected ? `${github.repo ?? 'ontrack'} · ${github.branch ?? 'main'}` : 'GitHub not connected'}
-                  {left ? ` · ${left}` : ''}
-                </Text>
-              </View>
-              <StatusPill status={goal.status} />
-            </View>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 20, color: '#fff' }}>{ctx.streak_days ?? 0}</Text>
-                <Text style={{ fontSize: 11, fontWeight: '600', color: Brand.turquoise }}>day streak</Text>
-              </View>
-              <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 20, color: '#fff' }}>{ctx.commits_this_week ?? 0}</Text>
-                <Text style={{ fontSize: 11, fontWeight: '600', color: Brand.turquoise }}>logs this week</Text>
-              </View>
-              <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 20, color: '#fff' }}>{prog.pct}%</Text>
-                <Text style={{ fontSize: 11, fontWeight: '600', color: Brand.turquoise }}>shipped</Text>
-              </View>
-            </View>
-            <View>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>
-                ACTIVITY · LAST 7 DAYS
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                {strip.map((n, i) => (
-                  <View key={i} style={{ flex: 1, height: 26, borderRadius: 6, backgroundColor: stripColor(n), borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }} />
-                ))}
-              </View>
-            </View>
-          </View>
+          <GithubHeader goal={goal} prog={prog} ctx={ctx} left={left} strip={strip} stripColor={stripColor} github={github} />
         ) : (
-          <Card>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <Ionicons name={meta.icon} size={24} color={Brand.teal} />
-              <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 20, color: Brand.navy, flex: 1 }} numberOfLines={2}>
-                {goal.title}
-              </Text>
-              <StatusPill status={goal.status} />
-            </View>
-            <Text style={{ marginTop: 6, fontSize: 13, fontWeight: '600', color: Brand.teal }}>
-              {meta.label} · {meta.tagline}
-            </Text>
-            <Text style={{ marginTop: 4, color: Brand.navy, opacity: 0.7, fontSize: 13 }}>
-              {prog.current}/{prog.target ?? '—'} {meta.unit}
-              {left ? ` · ${left}` : ''}
-            </Text>
-            <View style={{ marginTop: 10, flexDirection: 'row', gap: 8 }}>
-              <StatTile value={String(ctx.streak_days ?? 0)} label="day streak" />
-              <StatTile value={String(ctx.commits_this_week ?? 0)} label="logs this week" />
-              <StatTile value={`${prog.pct}%`} label="shipped" />
-            </View>
-          </Card>
+          <GoalHeaderCard goal={goal} prog={prog} meta={meta} ctx={ctx} left={left} />
         )}
 
         <Card>
@@ -199,12 +129,16 @@ export default function GoalDetail() {
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <PillButton title={busy ? '…' : 'Check in'} onPress={onCheckin} disabled={busy} />
+            <PillButton title={busy ? '…' : 'Check in'} onPress={onCheckin} disabled={busy} accessibilityHint="Asks the coach for a status check-in" />
           </View>
           <View style={{ flex: 1 }}>
-            <PillButton title="Work-block" primary onPress={() => router.push({ pathname: '/work-block', params: { id: String(goal.id), title: goal.title } })} />
+            <PillButton title="Work-block" primary onPress={() => router.push({ pathname: '/work-block', params: { id: String(goal.id), title: goal.title } })} disabled={busy} accessibilityHint="Opens a focused 25-minute work timer" />
           </View>
         </View>
+
+        {error && (
+          <Text accessibilityLiveRegion="polite" style={{ color: Brand.error, fontSize: 13 }}>{error}</Text>
+        )}
 
         {checkin && (
           <Card>
@@ -213,29 +147,7 @@ export default function GoalDetail() {
           </Card>
         )}
 
-        {goalLogs.length > 0 && (
-          <Card>
-            <Text style={{ fontWeight: '700', color: Brand.navy, marginBottom: 8 }}>Recent activity</Text>
-            {goalLogs.map((log: any) => (
-              <View key={String(log.id)} style={{ flexDirection: 'row', gap: 10, paddingVertical: 6, borderTopWidth: 1, borderTopColor: 'rgba(7,30,45,0.08)' }}>
-                <Ionicons name="ellipse" size={10} color={Brand.turquoise} style={{ marginTop: 5 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, color: Brand.navy, fontWeight: '600' }}>
-                    +{log.value} {meta.unit}
-                  </Text>
-                  {!!log.note && (
-                    <Text style={{ fontSize: 12, color: Brand.navy, opacity: 0.65 }} numberOfLines={2}>
-                      {log.note}
-                    </Text>
-                  )}
-                  <Text style={{ fontSize: 11, color: Brand.navy, opacity: 0.45 }}>
-                    {String(log.logged_at).slice(0, 16).replace('T', ' ')}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </Card>
-        )}
+        <ActivitySection logs={goalLogs} unit={meta.unit} />
 
         {goal.verdict ? (
           <Card>
@@ -243,7 +155,7 @@ export default function GoalDetail() {
             <Text style={{ marginTop: 4, color: Brand.navy }}>{String(goal.verdict)}</Text>
           </Card>
         ) : (
-          <PillButton title="Finalize & get verdict" onPress={onFinalize} disabled={busy} />
+          <PillButton title="Finalize & get verdict" onPress={onFinalize} disabled={busy} accessibilityHint="Marks the goal complete and asks the coach for a final verdict" />
         )}
       </ScrollView>
     </SafeAreaView>

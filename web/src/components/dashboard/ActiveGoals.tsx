@@ -76,7 +76,20 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGoals.map((g) => (
-            <div key={g.id} onClick={() => onSelectGoal?.(g)} className="cursor-pointer">
+            <div
+              key={g.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Open goal ${g.title}`}
+              onClick={() => onSelectGoal?.(g)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onSelectGoal?.(g)
+                }
+              }}
+              className="cursor-pointer"
+            >
               <GoalCard goal={g} />
             </div>
           ))}

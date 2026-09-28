@@ -90,12 +90,12 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     <aside className="hidden lg:flex flex-col w-60 flex-shrink-0 bg-white border-2 border-[#071E2D] rounded-3xl shadow-[4px_4px_0px_#071E2D] p-5 justify-between">
       {/* Top: Logo & Navigation */}
       <div className="flex flex-col gap-6">
-        {/* Ontrack wordmark: links to /dashboard home, NOT marketing site */}
+        {/* OnTrack wordmark: links to /dashboard home, NOT marketing site */}
         <button
           type="button"
           onClick={() => onSelectView('dashboard')}
           className="flex items-center gap-2.5 text-left group cursor-pointer px-1"
-          aria-label="Ontrack Dashboard Home"
+          aria-label="OnTrack Dashboard Home"
         >
           <img
             src={logoImg}
@@ -109,7 +109,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             className="text-xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
-            Ontrack
+            OnTrack
           </span>
         </button>
 

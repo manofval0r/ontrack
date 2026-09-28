@@ -105,7 +105,7 @@ const SECTIONS: DocSection[] = [
     bullets: [
       'Step 1 — GitHub OAuth App at github.com/settings/developers: callback = https://<project-ref>.supabase.co/auth/v1/callback.',
       'Step 2 — Supabase Dashboard → Authentication → Providers → GitHub → Enable, paste Client ID + Secret. See backend/ontrack/.env.example.',
-      'Step 3 — web buttons already call /auth/v1/authorize?provider=github (Login.tsx:90, Signup.tsx:91). Test in an incognito window.',
+      'Step 3 — web buttons already call /auth/v1/authorize?provider=github (see Login and Signup pages). Test in an incognito window.',
       'Roadmap: per-user GitHub token vault + GET /api/integrations/github/* to auto-log commits, merges and streaks.',
     ],
     links: [
@@ -341,7 +341,7 @@ export const Docs: React.FC = () => {
             <a href="#api" className="hover:opacity-100">API</a>
             <a href="#github" className="hover:opacity-100">GitHub</a>
           </nav>
-          <p className="font-sans text-xs opacity-50">© 2026 Ontrack Docs</p>
+          <p className="font-sans text-xs opacity-50">© 2026 OnTrack Docs</p>
         </div>
       </footer>
     </div>

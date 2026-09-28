@@ -27,10 +27,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       badgeStyle = 'bg-[#ECFEFF] text-[#006D6A] border-[#006D6A]'
     } else if (trackerType === 'checklist') {
       text = text || 'Milestone Checklist'
-      badgeStyle = 'bg-[#F0FDF4] text-[#166534] border-[#166534]'
+      badgeStyle = 'bg-[#ECFEFF] text-[#006D6A] border-[#006D6A]'
     } else {
       text = text || 'Daily Reflection'
-      badgeStyle = 'bg-[#FAF5FF] text-[#6B21A8] border-[#6B21A8]'
+      badgeStyle = 'bg-[#F8FAFB] text-[#071E2D] border-[#071E2D]'
     }
   } else if (status) {
     if (status === 'active') {
@@ -38,13 +38,13 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       badgeStyle = 'bg-[#00C4B3]/15 text-[#006D6A] border-[#00C4B3]'
     } else if (status === 'completed') {
       text = text || 'Target Met ✓'
-      badgeStyle = 'bg-[#10B981]/20 text-[#065F46] border-[#10B981]'
+      badgeStyle = 'bg-[#006D6A] text-white border-[#071E2D]'
     } else if (status === 'paused') {
       text = text || 'Paused'
-      badgeStyle = 'bg-[#FEF3C7] text-[#92400E] border-[#F59E0B]'
+      badgeStyle = 'bg-[#FFFBEB] text-[#B45309] border-[#F59E0B]'
     } else {
       text = text || 'Below Target'
-      badgeStyle = 'bg-[#FEE2E2] text-[#991B1B] border-[#EF4444]'
+      badgeStyle = 'bg-white text-[#dc2626] border-[#071E2D]'
     }
   } else if (domain) {
     const domainNames: Record<GoalDomain, string> = {
@@ -65,7 +65,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
         inline-flex items-center gap-1.5 px-3 py-1 rounded-full
         text-xs font-semibold tracking-wide
         border border-current
-        shadow-[1.5px_1.5px_0px_currentColor]
+        shadow-[2px_2px_0px_#071E2D]
         transition-all duration-150
         ${badgeStyle}
         ${className}

@@ -1,10 +1,11 @@
-/** M4 Login — email + Google (Supabase), biometric prompt hook left for device. */
+/** M4 Log in — email + Google/GitHub (Supabase). */
 import { useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Brand } from '../../constants/colors';
-import { Radii, Spacing } from '../../constants/spacing';
+import { Brand, Colors } from '../../constants/colors';
+import { Radii, Spacing, Touch } from '../../constants/spacing';
+import { Typography } from '../../constants/typography';
 import { Card, PillButton } from '../../components/ui';
 import { signInWithEmail, signInWithProvider } from '../../lib/auth';
 import { useGoals } from '../../lib/store';
@@ -15,33 +16,42 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [syncWarning, setSyncWarning] = useState(false);
 
   const afterAuth = async () => {
-    await refresh().catch(() => {});
+    try {
+      await refresh();
+    } catch {
+      setSyncWarning(true);
+    }
     router.replace('/(tabs)');
   };
 
+  const valid = email.trim().length > 3 && email.includes('@') && password.length > 0;
+
   const onEmail = async () => {
+    if (!valid || busy) return;
     try {
       setBusy(true);
       setError(null);
       await signInWithEmail(email.trim(), password);
       await afterAuth();
     } catch (e: any) {
-      setError(e.message ?? 'Login failed.');
+      setError(e.message ?? 'Log in failed. Check your email and password.');
     } finally {
       setBusy(false);
     }
   };
 
   const onProvider = async (provider: 'google' | 'github') => {
+    if (busy) return;
     try {
       setBusy(true);
       setError(null);
       await signInWithProvider(provider);
       await afterAuth();
     } catch (e: any) {
-      setError(e.message ?? `${provider} sign-in failed.`);
+      setError(e.message ?? `${provider === 'google' ? 'Google' : 'GitHub'} sign-in failed.`);
     } finally {
       setBusy(false);
     }
@@ -50,17 +60,41 @@ export default function Login() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl, justifyContent: 'center' }}>
       <Card>
-        <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 24, color: Brand.navy }}>Log in</Text>
-        <View style={{ marginTop: 12, gap: 10 }}>
-          <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" autoCapitalize="none" keyboardType="email-address" style={input} />
-          <TextInput value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry style={input} />
-          {error && <Text style={{ color: '#dc2626', fontSize: 13 }}>{error}</Text>}
-          <PillButton title={busy ? 'Logging in…' : 'Log in'} primary onPress={onEmail} disabled={busy} />
+        <Text style={{ fontFamily: Typography.title.fontFamily, fontSize: Typography.title.fontSize, color: Brand.navy }}>Log in</Text>
+        <View style={{ marginTop: Spacing.md, gap: 10 }}>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            accessibilityLabel="Email address"
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            returnKeyType="next"
+            style={input}
+          />
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password"
+            accessibilityLabel="Password"
+            autoComplete="password"
+            secureTextEntry
+            returnKeyType="done"
+            onSubmitEditing={onEmail}
+            style={input}
+          />
+          {error && <Text accessibilityLiveRegion="polite" style={{ color: Brand.error, fontSize: 13 }}>{error}</Text>}
+          {syncWarning && (
+            <Text style={{ color: Brand.amberText, fontSize: 12 }}>Signed in, but goals did not sync — pull to refresh on Home.</Text>
+          )}
+          <PillButton title={busy ? 'Logging in…' : 'Log in'} primary onPress={onEmail} disabled={busy || !valid} />
+          {busy && <ActivityIndicator color={Brand.turquoise} />}
           <PillButton title="Continue with Google" onPress={() => onProvider('google')} disabled={busy} />
           <PillButton title="Continue with GitHub" onPress={() => onProvider('github')} disabled={busy} />
         </View>
       </Card>
-      <Link href="/(auth)/signup" style={{ marginTop: 16, textAlign: 'center', color: Brand.teal, fontWeight: '600' }}>
+      <Link href="/(auth)/signup" accessibilityLabel="Go to sign up" style={{ marginTop: Spacing.lg, textAlign: 'center', color: Brand.teal, fontWeight: '600', minHeight: Touch.min }}>
         No account? Sign up
       </Link>
     </SafeAreaView>
@@ -69,9 +103,11 @@ export default function Login() {
 
 const input = {
   borderWidth: 2,
-  borderColor: 'rgba(7,30,45,0.2)',
+  borderColor: Colors.light.inputBorder,
   borderRadius: Radii.input,
   padding: Spacing.md,
-  fontSize: 15,
-  backgroundColor: '#fff',
+  fontSize: Typography.body.fontSize,
+  backgroundColor: Brand.white,
+  color: Brand.navy,
+  minHeight: Touch.min,
 } as const;

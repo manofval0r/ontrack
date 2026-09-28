@@ -16,7 +16,7 @@ export const Verdict: React.FC<VerdictProps> = ({ goal }) => {
       className={`
         p-6 sm:p-8 rounded-2xl border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000]
         flex flex-col gap-4 transition-colors
-        ${passed ? 'bg-gradient-to-br from-[#ECFEFF] to-white dark:from-[#0E202D] dark:to-[#091824]' : 'bg-gradient-to-br from-[#FFF1F2] to-white dark:from-[#200E13] dark:to-[#0E202D]'}
+        ${passed ? 'bg-[#ECFEFF] dark:bg-[#0E202D]' : 'bg-white dark:bg-[#0E202D]'}
       `.trim()}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b-2 border-[#071E2D]/10 dark:border-white/10">
@@ -24,7 +24,7 @@ export const Verdict: React.FC<VerdictProps> = ({ goal }) => {
           <div
             className={`
               w-10 h-10 rounded-xl border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center font-bold text-lg shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]
-              ${passed ? 'bg-[#00C4B3] text-[#071E2D]' : 'bg-[#F43F5E] text-white'}
+              ${passed ? 'bg-[#00C4B3] text-[#071E2D]' : 'bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D]'}
             `.trim()}
           >
             {passed ? <Check className="w-5 h-5 text-[#071E2D]" /> : <AlertTriangle className="w-5 h-5 text-white" />}
@@ -52,7 +52,7 @@ export const Verdict: React.FC<VerdictProps> = ({ goal }) => {
           <span
             className={`
               px-3.5 py-1 rounded-full text-xs font-extrabold border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]
-              ${passed ? 'bg-[#00C4B3] text-[#071E2D]' : 'bg-red-200 dark:bg-rose-950/50 text-red-900 dark:text-rose-300'}
+              ${passed ? 'bg-[#00C4B3] text-[#071E2D]' : 'bg-white dark:bg-[#091824] text-red-700 dark:text-red-400'}
             `.trim()}
           >
             {passed ? (

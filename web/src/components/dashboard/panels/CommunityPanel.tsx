@@ -197,7 +197,7 @@ export const CommunityPanel: React.FC = () => {
                   <span className="text-xs font-mono font-bold text-[#071E2D]/40 dark:text-slate-500 w-4">
                     #{idx + 1}
                   </span>
-                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 border border-[#071E2D]/30 flex items-center justify-center font-bold text-xs text-[#071E2D] dark:text-white">
+                  <div className="w-7 h-7 rounded-full bg-[#071E2D] dark:bg-[#00C4B3] border border-[#071E2D] dark:border-[#00C4B3] flex items-center justify-center font-bold text-xs text-white dark:text-[#071E2D]">
                     {m.initial}
                   </div>
                   <div className="min-w-0">
@@ -214,18 +214,20 @@ export const CommunityPanel: React.FC = () => {
                       {m.completionRate}%
                     </span>
                     <span className="text-[10px] text-[#006D6A] dark:text-[#00C4B3] font-bold">
-                      🔥 {m.streak}d streak
+                      {m.streak}d streak
                     </span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => handleCheer(m.id)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full border-2 text-[11px] font-bold transition-all cursor-pointer ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full border-2 text-[11px] font-bold transition-all cursor-pointer min-h-[44px] ${
                       cheeredMembers[m.id]
-                        ? 'bg-rose-500 text-white border-rose-600'
-                        : 'bg-white dark:bg-[#091824] text-[#071E2D] dark:text-white border-[#071E2D] dark:border-[#1E3A52] hover:bg-rose-50'
+                        ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D]'
+                        : 'bg-white dark:bg-[#091824] text-[#071E2D] dark:text-white border-[#071E2D] dark:border-[#1E3A52] hover:bg-[#E6F7F5]'
                     }`}
+                    aria-pressed={!!cheeredMembers[m.id]}
+                    aria-label={`Cheer for ${m.name}`}
                   >
                     <Heart className="w-3 h-3 fill-current" />
                     <span>{m.cheers}</span>

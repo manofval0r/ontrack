@@ -12,12 +12,14 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { AudioModule, RecordingPresets, setAudioModeAsync, requestRecordingPermissionsAsync, useAudioRecorder } from 'expo-audio';
+import { RecordingPresets, setAudioModeAsync, requestRecordingPermissionsAsync, useAudioRecorder } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
-import { Brand } from '../constants/colors';
+import { Brand, Colors } from '../constants/colors';
 import { Radii, Spacing, Touch } from '../constants/spacing';
+import { Typography } from '../constants/typography';
 import { Card, PillButton } from '../components/ui';
 import { api } from '../lib/api';
+import { uriToBase64 } from '../lib/audioFile';
 import { useGoals } from '../lib/store';
 
 export default function VoiceModal() {
@@ -73,16 +75,9 @@ export default function VoiceModal() {
         setBusy(false);
         return;
       }
-      // Read file as base64 without expo-file-system (fetch blob → FileReader).
-      const blob = await (await fetch(uri)).blob();
-      const base64: string = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      const base64 = await uriToBase64(uri);
       const { transcript: text } = await api.asr(base64);
-      setTranscript(text);
+      setTranscript(text.slice(0, 500));
     } catch (e: any) {
       setError(e?.error ?? "Couldn't transcribe. Type instead.");
     } finally {
@@ -104,7 +99,13 @@ export default function VoiceModal() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl }} edges={['top']}>
-      <Pressable onPress={() => router.back()} hitSlop={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <Pressable
+        onPress={() => router.back()}
+        hitSlop={12}
+        accessibilityLabel="Close voice input"
+        accessibilityRole="button"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44 }}
+      >
         <Ionicons name="close" size={20} color={Brand.navy} />
         <Text style={{ fontWeight: '700', color: Brand.navy }}>Close</Text>
       </Pressable>
@@ -113,12 +114,16 @@ export default function VoiceModal() {
           <Animated.View style={pulseStyle}>
           <Pressable
             onPress={() => (isRecording ? stop() : start())}
+            disabled={busy}
             accessibilityLabel={isRecording ? 'Stop recording' : 'Start recording'}
+            accessibilityRole="button"
+            accessibilityHint="Records your voice, then transcribes it into the editable field"
+            accessibilityState={{ disabled: busy, busy: isRecording }}
             style={{
               width: Touch.micHero,
               height: Touch.micHero,
-              borderRadius: 999,
-              backgroundColor: isRecording ? '#dc2626' : Brand.turquoise,
+              borderRadius: Radii.pill,
+              backgroundColor: isRecording ? Brand.error : Brand.turquoise,
               borderWidth: 2,
               borderColor: Brand.navy,
               alignItems: 'center',
@@ -126,10 +131,10 @@ export default function VoiceModal() {
               opacity: busy ? 0.6 : 1,
             }}
           >
-            <Ionicons name="mic" size={36} color={isRecording ? '#fff' : Brand.navy} />
+            <Ionicons name="mic" size={36} color={isRecording ? Brand.white : Brand.navy} />
           </Pressable>
           </Animated.View>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>
+          <Text accessibilityLiveRegion="polite" style={{ fontWeight: '700', color: Brand.navy }}>
             {isRecording ? 'Listening…' : busy ? 'Working…' : 'Tap to speak your goal'}
           </Text>
           {busy && <ActivityIndicator color={Brand.turquoise} />}
@@ -138,23 +143,25 @@ export default function VoiceModal() {
           <Text style={{ fontWeight: '700', color: Brand.teal }}>Transcript (editable)</Text>
           <TextInput
             value={transcript}
-            onChangeText={setTranscript}
+            onChangeText={(t) => setTranscript(t.slice(0, 500))}
             placeholder="Your words appear here…"
+            accessibilityLabel="Voice transcript, editable"
             multiline
+            maxLength={500}
             style={{
               marginTop: 8,
               minHeight: 88,
               borderWidth: 2,
-              borderColor: 'rgba(7,30,45,0.2)',
+              borderColor: Colors.light.inputBorder,
               borderRadius: Radii.input,
               padding: Spacing.md,
-              fontSize: 15,
-              backgroundColor: '#fff',
+              fontSize: Typography.body.fontSize,
+              backgroundColor: Brand.white,
               textAlignVertical: 'top',
             }}
           />
         </Card>
-        {error && <Text style={{ color: '#dc2626' }}>{error}</Text>}
+        {error && <Text accessibilityLiveRegion="polite" style={{ color: Brand.error }}>{error}</Text>}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}>
             <PillButton title="Re-record" onPress={() => { setTranscript(''); start(); }} disabled={isRecording || busy} />

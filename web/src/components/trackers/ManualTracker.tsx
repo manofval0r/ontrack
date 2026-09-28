@@ -9,24 +9,28 @@ interface ManualTrackerProps {
 }
 
 const SENTIMENTS = [
-  { id: 'focused', label: 'Laser Focused', icon: Target, color: 'bg-emerald-50 text-emerald-800 border-emerald-500' },
-  { id: 'on-track', label: 'On Track', icon: Zap, color: 'bg-cyan-50 text-cyan-800 border-cyan-500' },
-  { id: 'pushed', label: 'Pushed Hard', icon: Flame, color: 'bg-amber-50 text-amber-800 border-amber-500' },
-  { id: 'obstacle', label: 'Encountered Blocker', icon: AlertTriangle, color: 'bg-rose-50 text-rose-800 border-rose-500' },
+  { id: 'focused', label: 'Laser Focused', icon: Target, color: 'bg-[#ECFEFF] text-[#006D6A] border-[#006D6A]' },
+  { id: 'on-track', label: 'On Track', icon: Zap, color: 'bg-[#ECFEFF] text-[#006D6A] border-[#00C4B3]' },
+  { id: 'pushed', label: 'Pushed Hard', icon: Flame, color: 'bg-[#FFFBEB] text-[#B45309] border-[#F59E0B]' },
+  { id: 'obstacle', label: 'Encountered Blocker', icon: AlertTriangle, color: 'bg-white text-[#dc2626] border-[#071E2D]' },
 ]
 
 export const ManualTracker: React.FC<ManualTrackerProps> = ({ goal, onLogReflection }) => {
   const [reflection, setReflection] = useState('')
   const [selectedSentiment, setSelectedSentiment] = useState('focused')
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!reflection.trim()) return
+    if (!reflection.trim() || submitting) return
     setSubmitting(true)
+    setSubmitError(null)
     try {
       await onLogReflection(reflection, selectedSentiment)
       setReflection('')
+    } catch {
+      setSubmitError('Could not save this entry. Try again.')
     } finally {
       setSubmitting(false)
     }
@@ -39,13 +43,13 @@ export const ManualTracker: React.FC<ManualTrackerProps> = ({ goal, onLogReflect
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b-2 border-[#071E2D]/10 dark:border-white/10">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[#6B21A8] dark:text-purple-400">AI-Determined Format</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">AI-Determined Format</span>
           <h3 className="text-xl sm:text-2xl font-bold text-[#071E2D] dark:text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
             Daily Reflection & Manual Log
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-[#FAF5FF] dark:bg-purple-950/40 border-2 border-[#071E2D] dark:border-purple-800 text-xs font-bold text-[#6B21A8] dark:text-purple-300">
+          <span className="px-3 py-1 rounded-full bg-[#ECFEFF] dark:bg-[#00C4B3]/15 border-2 border-[#071E2D] dark:border-[#00C4B3]/60 text-xs font-bold text-[#006D6A] dark:text-[#00C4B3]">
             {logs.length} Entries Logged
           </span>
         </div>
@@ -66,6 +70,8 @@ export const ManualTracker: React.FC<ManualTrackerProps> = ({ goal, onLogReflect
                 key={s.id}
                 type="button"
                 onClick={() => setSelectedSentiment(s.id)}
+                aria-pressed={selectedSentiment === s.id}
+                aria-label={`Mood: ${s.label}`}
                 className={`
                   flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold
                   border-2 transition-all cursor-pointer
@@ -87,12 +93,16 @@ export const ManualTracker: React.FC<ManualTrackerProps> = ({ goal, onLogReflect
           value={reflection}
           onChange={(e) => setReflection(e.target.value)}
           placeholder="Record key breakthroughs, insights, completed items, or friction encountered..."
-          className="w-full p-3.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors bg-white dark:bg-[#0E202D] resize-none"
+          aria-label="Reflection entry"
+          className="w-full p-3 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] focus-visible:ring-2 focus-visible:ring-[#00C4B3] text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors bg-white dark:bg-[#0E202D] resize-none"
         />
+        {submitError && (
+          <p role="alert" className="text-xs font-semibold text-red-700 dark:text-red-400">{submitError}</p>
+        )}
 
         <div className="flex justify-end">
           <Button type="submit" variant="primary" disabled={!reflection.trim() || submitting}>
-            Log Reflection Entry
+            {submitting ? 'Logging…' : 'Log Reflection Entry'}
           </Button>
         </div>
       </form>

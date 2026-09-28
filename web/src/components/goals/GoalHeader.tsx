@@ -35,7 +35,7 @@ export const GoalHeader: React.FC<GoalHeaderProps> = ({ goal, onFinalize }) => {
             className={`
               flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border-2
               ${daysInfo.isLate
-                ? 'bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-rose-400 border-red-700 dark:border-rose-700 shadow-[2px_2px_0px_#dc2626] dark:shadow-[2px_2px_0px_#000000]'
+                ? 'bg-white dark:bg-[#0E202D] text-red-700 dark:text-red-400 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]'
                 : 'bg-[#ECFEFF] dark:bg-[#00C4B3]/15 text-[#006D6A] dark:text-[#00C4B3] border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]'
               }
             `.trim()}

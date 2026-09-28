@@ -24,6 +24,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     },
   ])
   const [isThinking, setIsThinking] = useState(false)
+  const [activateError, setActivateError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -103,11 +104,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
 
   const handleActivateGoal = async (proposed: Partial<Goal>) => {
     try {
+      setActivateError(null)
       // POST /api/goals { text } — send the goal title as the text
       const created = await createGoal({ text: proposed.title ?? '' } as any)
       navigate(`/goal/${created.id}`)
-    } catch (e) {
-      console.error(e)
+    } catch (e: any) {
+      setActivateError(e?.error ?? 'Could not create this tracker. Try again.')
     }
   }
 
@@ -123,6 +125,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
           <div className="max-w-md">
             <Loader aiThinking label="Nemotron is analyzing target, timeline, and tracker architecture..." />
           </div>
+        )}
+
+        {activateError && (
+          <p role="alert" className="text-xs font-semibold text-red-700 dark:text-red-400 px-1">
+            {activateError}
+          </p>
         )}
 
         <div ref={bottomRef} />

@@ -34,7 +34,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal }) => {
           className={`
             text-[11px] font-bold px-2.5 py-0.5 rounded-full border
             ${daysInfo.isLate
-              ? 'bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-rose-400 border-red-700 dark:border-rose-700'
+              ? 'bg-white dark:bg-[#0E202D] text-red-700 dark:text-red-400 border-[#071E2D] dark:border-[#1E3A52]'
               : 'bg-[#F3F6F8] dark:bg-[#091824] text-[#071E2D] dark:text-slate-200 border-[#071E2D] dark:border-[#1E3A52]'
             }
           `.trim()}

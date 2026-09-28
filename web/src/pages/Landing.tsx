@@ -54,7 +54,7 @@ const Hero: React.FC = () => {
     <section className="relative overflow-hidden bg-dot-grid pt-10 pb-16 sm:pt-12 sm:pb-20 md:pt-16 md:pb-28 border-b-2 border-[#071E2D]/8 dark:border-white/10">
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
         {/* Credibility pill */}
-        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2.5px_2.5px_0px_#071E2D] dark:shadow-[2.5px_2.5px_0px_#000000] mb-6 sm:mb-8 transition-transform hover:-translate-y-0.5 cursor-pointer">
+        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[3px_3px_0px_#071E2D] dark:shadow-[2.5px_2.5px_0px_#000000] mb-6 sm:mb-8 transition-transform hover:-translate-y-0.5 cursor-pointer">
           <span className="flex items-center justify-center w-4 h-4 rounded-full bg-[#006D6A] text-white flex-shrink-0">
             <CheckIcon />
           </span>
@@ -86,7 +86,7 @@ const Hero: React.FC = () => {
           style={{ maxWidth: '680px' }}
         >
           Eliminate the guesswork from goal achievement with personalized, conversational
-          accountability. Ontrack transforms your plain English goals into adaptive trackers,
+          accountability. OnTrack transforms your plain English goals into adaptive trackers,
           keeps you focused on every milestone, and gives you honest verdicts when it counts.
         </p>
 
@@ -107,7 +107,7 @@ const Hero: React.FC = () => {
         </div>
 
         <p className="font-sans text-xs text-[#071E2D]/55 dark:text-slate-400 mb-10 sm:mb-12">
-          No setup required · Your progress data stays strictly in your browser
+          No setup required · Your goals sync securely to your account
         </p>
       </div>
 
@@ -160,7 +160,7 @@ const Hero: React.FC = () => {
           <div className="w-full flex-1 max-w-[1240px] flex justify-center items-center order-1 xl:order-2 px-1">
             <img
               src="/mockup.png"
-              alt="Ontrack phone app preview — goal entered, tracker built automatically"
+              alt="OnTrack phone app preview — goal entered, tracker built automatically"
               className="w-full h-auto object-contain block mx-auto drop-shadow-[0_20px_50px_rgba(7,30,45,0.2)]"
               style={{ maxHeight: '600px' }}
             />
@@ -184,7 +184,7 @@ const Hero: React.FC = () => {
                 <div className="flex items-start gap-2 bg-[#F8FAFB] dark:bg-[#081723] p-2.5 rounded-xl border border-[#071E2D]/15 dark:border-white/10">
                   <span className="text-[#006D6A] dark:text-[#00C4B3] font-bold mt-0.5 flex-shrink-0">✦</span>
                   <div>
-                    <p className="font-bold text-[#071E2D] dark:text-white text-xs">Midpoint Check-In</p>
+                    <p className="font-bold text-[#071E2D] dark:text-white text-xs">Midpoint Check-in</p>
                     <p className="text-[11px] text-[#071E2D]/65 dark:text-slate-400 leading-tight mt-0.5">Nemotron verifies milestone 2 on Wednesday.</p>
                   </div>
                 </div>
@@ -241,7 +241,7 @@ const steps = [
   {
     n: '04',
     title: 'Get checked on',
-    body: 'Ontrack checks in before your deadline and gives you a straight verdict when it arrives — on track, behind, or done.',
+    body: 'OnTrack checks in before your deadline and gives you a straight verdict when it arrives — on track, behind, or done.',
     illustration: '/illustrations/step-4.svg',
   },
 ]
@@ -350,7 +350,7 @@ const TrackerTypes: React.FC = () => {
           {/* Card 1 — Counter */}
           <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
             <div>
-              <div className="w-12 h-12 rounded-xl bg-[#1E293B] dark:bg-[#152B3C] text-white flex items-center justify-center font-bold text-lg mb-5 shadow-sm border border-white/10">
+              <div className="w-12 h-12 rounded-xl bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] flex items-center justify-center font-bold text-lg mb-5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] border-2 border-[#071E2D] dark:border-[#00C4B3]">
                 #
               </div>
               <h3 className="font-sans font-bold text-[#071E2D] dark:text-white text-xl mb-3">Counter</h3>
@@ -404,7 +404,7 @@ const TrackerTypes: React.FC = () => {
           {/* Card 2 — Checklist */}
           <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
             <div>
-              <div className="w-12 h-12 rounded-xl bg-[#1E293B] dark:bg-[#152B3C] text-white flex items-center justify-center font-bold text-lg mb-5 shadow-sm border border-white/10">
+              <div className="w-12 h-12 rounded-xl bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] flex items-center justify-center font-bold text-lg mb-5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] border-2 border-[#071E2D] dark:border-[#00C4B3]">
                 ✓
               </div>
               <h3 className="font-sans font-bold text-[#071E2D] dark:text-white text-xl mb-3">Checklist</h3>
@@ -449,7 +449,7 @@ const TrackerTypes: React.FC = () => {
           {/* Card 3 — Log */}
           <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
             <div>
-              <div className="w-12 h-12 rounded-xl bg-[#1E293B] dark:bg-[#152B3C] text-white flex items-center justify-center font-bold text-lg mb-5 shadow-sm border border-white/10">
+              <div className="w-12 h-12 rounded-xl bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] flex items-center justify-center font-bold text-lg mb-5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] border-2 border-[#071E2D] dark:border-[#00C4B3]">
                 ✎
               </div>
               <h3 className="font-sans font-bold text-[#071E2D] dark:text-white text-xl mb-3">Log</h3>
@@ -540,7 +540,7 @@ const WhoItsFor: React.FC = () => {
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <h3 className="font-sans font-bold text-lg text-[#071E2D] dark:text-white">{item.title}</h3>
                   {item.badge && (
-                    <span className="inline-block px-2.5 py-0.5 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-[#F8FAFB] dark:bg-[#142B3C] font-sans text-[11px] font-semibold text-[#071E2D] dark:text-white shadow-[1.5px_1.5px_0px_#071E2D] dark:shadow-[1.5px_1.5px_0px_#000000]">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-[#F8FAFB] dark:bg-[#142B3C] font-sans text-[11px] font-semibold text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[1.5px_1.5px_0px_#000000]">
                       {item.badge}
                     </span>
                   )}
@@ -590,17 +590,17 @@ const FinalCTA: React.FC = () => (
           </div>
 
           <p className="font-sans text-xs text-white/50 pt-1">
-            Free forever tier · No credit card required · Data saved in browser
+            Free forever tier · No credit card required · Data saved to your account
           </p>
         </div>
 
         {/* Right Column */}
         <div className="lg:col-span-5 w-full flex justify-center">
-          <div className="w-full max-w-[360px] sm:max-w-[380px] bg-[#0E2C3D] dark:bg-[#081723] border-2 border-white/15 rounded-2xl p-4 sm:p-5 shadow-[4px_4px_0px_#000000] flex flex-col items-center">
+          <div className="w-full max-w-[360px] sm:max-w-[380px] bg-[#071E2D] dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl p-4 sm:p-5 shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] flex flex-col items-center">
             <div className="w-full h-40 sm:h-52 flex items-center justify-center overflow-hidden">
               <img
                 src="/undraw_organizing-work_gmo9.svg"
-                alt="Ontrack goal organizing illustration"
+                alt="OnTrack goal organizing illustration"
                 className="w-full h-full object-contain select-none"
                 loading="lazy"
               />
@@ -647,15 +647,15 @@ const Footer: React.FC = () => (
           Company
         </span>
         <ul className="flex flex-col gap-2 list-none p-0 m-0 font-sans text-sm text-[#071E2D]/65 dark:text-slate-300">
-          <li><a href="#" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">About</a></li>
-          <li><a href="#" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Contact</a></li>
+          <li><Link to="/docs" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">About</Link></li>
+          <li><Link to="/docs" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Contact</Link></li>
         </ul>
       </div>
     </div>
 
     <div className="max-w-6xl mx-auto mt-8 sm:mt-12 pt-6 border-t border-[#071E2D]/10 dark:border-white/10 text-center">
       <p className="font-sans text-xs text-[#071E2D]/40 dark:text-slate-400">
-        © 2026 Ontrack. All rights reserved.
+        © 2026 OnTrack. All rights reserved.
       </p>
     </div>
   </footer>

@@ -11,13 +11,18 @@ interface CounterTrackerProps {
 export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }) => {
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const percent = Math.min(100, Math.round((goal.current_value / goal.target) * 100))
 
   const handleIncrement = async (delta: number) => {
+    if (submitting) return
     const nextVal = Math.max(0, goal.current_value + delta)
     setSubmitting(true)
+    setSubmitError(null)
     try {
       await onUpdate(nextVal, delta > 0 ? `Incremented target count by +${delta}` : `Decremented target count by ${delta}`)
+    } catch {
+      setSubmitError('Could not save. Try again.')
     } finally {
       setSubmitting(false)
     }
@@ -25,11 +30,14 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
 
   const handleCustomLog = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!note.trim()) return
+    if (!note.trim() || submitting) return
     setSubmitting(true)
+    setSubmitError(null)
     try {
       await onUpdate(goal.current_value, note)
       setNote('')
+    } catch {
+      setSubmitError('Could not save note. Try again.')
     } finally {
       setSubmitting(false)
     }
@@ -72,7 +80,7 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
         <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#006D6A] dark:text-[#00C4B3] mb-6">
           <span>{percent}% of target accomplished</span>
           {isCompleted && (
-            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold ml-1">
+            <span className="inline-flex items-center gap-1 text-[#B45309] dark:text-[#00C4B3] font-bold ml-1">
               <Trophy className="w-4 h-4" />
               <span>Goal Reached!</span>
             </span>
@@ -122,10 +130,15 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
           <span>Velocity Meter</span>
           <span>{percent}% Completed</span>
         </div>
-        <div className="w-full h-4 rounded-full bg-[#E5E7EB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] overflow-hidden p-0.5 shadow-inner">
+        <div className="w-full h-4 rounded-full bg-[#F3F6F8] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] overflow-hidden p-0.5 shadow-inner">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-[#00C4B3] to-[#006D6A] transition-all duration-300"
+            className="h-full rounded-full bg-[#00C4B3] transition-all duration-300"
             style={{ width: `${percent}%` }}
+            role="progressbar"
+            aria-valuenow={percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${percent} percent of target accomplished`}
           />
         </div>
       </div>
@@ -137,12 +150,16 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Attach a context note (e.g. 'Signed Apex agreement, $18k ARR')..."
-          className="flex-1 px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors"
+          aria-label="Progress note"
+          className="flex-1 px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] focus-visible:ring-2 focus-visible:ring-[#00C4B3] text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors"
         />
         <Button type="submit" variant="secondary" noBubble disabled={!note.trim() || submitting} className="text-xs py-2 px-5">
-          Record Note
+          {submitting ? 'Saving…' : 'Record Note'}
         </Button>
       </form>
+      {submitError && (
+        <p role="alert" className="text-xs font-semibold text-red-700 dark:text-red-400">{submitError}</p>
+      )}
     </div>
   )
 }

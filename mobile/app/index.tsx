@@ -1,5 +1,5 @@
 /** M1 Splash: brand logo + tagline + looping progress bar, then route by session. */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Image, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import Animated, {
@@ -11,12 +11,15 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Brand } from '../constants/colors';
+import { Radii, Spacing } from '../constants/spacing';
+import { Typography } from '../constants/typography';
 import { getToken } from '../lib/auth';
 import { useReduceMotion } from '../lib/useReduceMotion';
 
 export default function Splash() {
   const reduce = useReduceMotion();
   const bar = useSharedValue(0.1);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!reduce) {
@@ -25,30 +28,43 @@ export default function Splash() {
       bar.value = 1;
     }
     (async () => {
-      const token = await getToken();
-      setTimeout(() => {
-        router.replace(token ? '/(tabs)' : '/onboarding');
-      }, 1400);
+      try {
+        const token = await getToken();
+        timer.current = setTimeout(() => {
+          router.replace(token ? '/(tabs)' : '/onboarding');
+        }, 1400);
+      } catch {
+        timer.current = setTimeout(() => router.replace('/onboarding'), 1400);
+      }
     })();
-    return () => cancelAnimation(bar);
+    return () => {
+      cancelAnimation(bar);
+      if (timer.current) clearTimeout(timer.current);
+    };
   }, [reduce, bar]);
 
   const barStyle = useAnimatedStyle(() => ({ width: `${Math.round(bar.value * 100)}%` }));
 
   return (
-    <View style={{ flex: 1, backgroundColor: Brand.navy, alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 48 }}>
+    <View style={{ flex: 1, backgroundColor: Brand.navy, alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: Spacing.huge }}>
       <Image
         source={require('../assets/icon.png')}
-        style={{ width: 120, height: 120, borderRadius: 28 }}
+        style={{ width: 120, height: 120, borderRadius: Radii.squircle }}
         resizeMode="contain"
+        accessible
+        accessibilityRole="image"
         accessibilityLabel="OnTrack logo"
       />
-      <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 34, color: '#fff' }}>OnTrack</Text>
-      <Text style={{ fontSize: 14, color: Brand.turquoise, fontWeight: '600' }}>
+      <Text style={{ fontFamily: Typography.display.fontFamily, fontSize: Typography.display.fontSize, color: Brand.white }}>OnTrack</Text>
+      <Text style={{ fontSize: Typography.body.fontSize, color: Brand.turquoise, fontWeight: '600' }}>
         Say your goal. Get your tracker.
       </Text>
-      <View style={{ marginTop: 12, width: '100%', height: 8, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' }}>
-        <Animated.View style={[{ height: '100%', backgroundColor: Brand.turquoise, borderRadius: 999 }, barStyle]} />
+      <View
+        accessibilityRole="progressbar"
+        accessibilityLabel="Loading OnTrack"
+        style={{ marginTop: Spacing.md, width: '100%', height: 8, borderRadius: Radii.pill, backgroundColor: Brand.trackOnNavy, overflow: 'hidden' }}
+      >
+        <Animated.View style={[{ height: '100%', backgroundColor: Brand.turquoise, borderRadius: Radii.pill }, barStyle]} />
       </View>
     </View>
   );

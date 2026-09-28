@@ -13,7 +13,7 @@ import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
 import { GoalsProvider } from '../lib/store';
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     DMSans_400Regular,
     DMSans_500Medium,
     DMSans_700Bold,
@@ -23,11 +23,14 @@ export default function RootLayout() {
 
   useEffect(() => {
     SplashScreen.preventAutoHideAsync().catch(() => {});
+    // Never trap the user on a blank splash: system fonts after 4s.
+    const fallback = setTimeout(() => setReady(true), 4000);
+    return () => clearTimeout(fallback);
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded) setReady(true);
-  }, [fontsLoaded]);
+    if (fontsLoaded || fontError) setReady(true);
+  }, [fontsLoaded, fontError]);
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
@@ -37,7 +40,7 @@ export default function RootLayout() {
 
   return (
     <GoalsProvider>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="onboarding" />

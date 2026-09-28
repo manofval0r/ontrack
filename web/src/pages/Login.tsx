@@ -172,7 +172,7 @@ export const Login: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-sm"
+                  className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]"
                 />
               </div>
 
@@ -192,7 +192,7 @@ export const Login: React.FC = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    className="w-full px-5 py-3.5 pr-12 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-sm"
+                    className="w-full px-5 py-3.5 pr-12 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]"
                   />
                   <button
                     type="button"
@@ -204,14 +204,11 @@ export const Login: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Right-aligned Forgot Password link */}
+                {/* Right-aligned password hint */}
                 <div className="flex justify-end mt-1 pr-1">
-                  <a
-                    href="#"
-                    className="font-sans font-medium text-xs text-[#006D6A] dark:text-[#00C4B3] hover:text-[#00C4B3] transition-colors focus-visible:outline-none focus-visible:underline decoration-[#00C4B3]"
-                  >
-                    Forgot password?
-                  </a>
+                  <span className="font-sans font-medium text-xs text-[#071E2D]/50 dark:text-slate-400">
+                    Password reset lives in your Supabase inbox
+                  </span>
                 </div>
 
                 {/* Live auth error */}
@@ -233,9 +230,15 @@ export const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={submitting}
+                aria-busy={submitting}
                 className="w-full mt-3 py-3.5 px-6 rounded-full bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] font-sans font-semibold text-base transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] hover:shadow-[5px_5px_0px_#071E2D] dark:hover:shadow-[5px_5px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2 flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Logging in…' : 'Log in'}
+                {submitting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white dark:border-[#071E2D]/40 dark:border-t-[#071E2D] animate-spin" aria-hidden="true" />
+                    Logging in…
+                  </span>
+                ) : 'Log in'}
               </button>
             </form>
 

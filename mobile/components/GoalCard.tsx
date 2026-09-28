@@ -1,5 +1,5 @@
 /** Goal card — tactile card + progress bar + status + TTS replay. */
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -35,7 +35,7 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
       return;
     }
     setSpeaking(true);
-    const text = `${goal.title}. Progress ${prog.current} of ${prog.target ?? '—'} ${meta.unit}.`;
+    const text = `${goal.title}. Progress ${prog.current} of ${prog.target ?? 'unknown'} ${meta.unit}.`;
     try {
       await speakText(text, () => setSpeaking(false));
     } catch {
@@ -49,8 +49,11 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
         Haptics.selectionAsync().catch(() => {});
         onOpen();
       }}
+      accessibilityLabel={`Open goal ${goal.title}, ${prog.pct} percent complete, ${goal.status ?? 'active'}`}
+      accessibilityRole="button"
+      accessibilityHint="Opens the goal detail screen"
       style={({ pressed }) => ({
-        backgroundColor: '#fff',
+        backgroundColor: Brand.white,
         borderWidth: 2,
         borderColor: Brand.navy,
         borderRadius: Radii.card,
@@ -64,7 +67,7 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
       })}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-        <Ionicons name={meta.icon} size={20} color={Brand.teal} style={{ marginTop: 2 }} />
+        <Ionicons name={meta.icon} size={20} color={Brand.teal} style={{ marginTop: 2 }} accessibilityElementsHidden />
         <Text style={{ fontSize: Typography.cardHeading.fontSize, fontWeight: '700', color: Brand.navy, flex: 1 }} numberOfLines={2}>
           {goal.title}
         </Text>
@@ -74,10 +77,12 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
         {meta.label}
       </Text>
       <View
+        accessibilityRole="progressbar"
+        accessibilityValue={{ now: prog.pct, min: 0, max: 100 }}
         style={{
           marginTop: 12,
           height: 10,
-          borderRadius: 999,
+          borderRadius: Radii.pill,
           backgroundColor: Brand.gray,
           borderWidth: 2,
           borderColor: Brand.navy,
@@ -88,12 +93,17 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
       </View>
       <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.teal }}>
-          {prog.current}/{prog.target ?? '—'} {meta.unit} · {prog.pct}%
+          {prog.current} of {prog.target ?? '—'} {meta.unit} · {prog.pct} pct
         </Text>
         <Pressable
-          onPress={playSummary}
+          onPress={(e) => {
+            e.stopPropagation();
+            playSummary();
+          }}
           hitSlop={12}
           accessibilityLabel={speaking ? 'Stop summary' : 'Hear goal summary'}
+          accessibilityRole="button"
+          accessibilityState={{ busy: speaking }}
           style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
         >
           <Ionicons name={speaking ? 'pause' : 'volume-high'} size={22} color={Brand.navy} />

@@ -7,21 +7,38 @@ export interface StandardError {
   code: string;
 }
 
+const REQUEST_TIMEOUT_MS = 20000;
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = await getToken();
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...((options.headers as Record<string, string> | undefined) ?? {}),
-    },
-  });
-  const body = await res.json().catch(() => ({}));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...((options.headers as Record<string, string> | undefined) ?? {}),
+      },
+    });
+  } catch (e: any) {
+    throw {
+      error: e?.name === 'AbortError' ? 'Request timed out. Check your connection.' : 'Network error. Check your connection.',
+      code: 'NETWORK_ERROR',
+    } as StandardError;
+  } finally {
+    clearTimeout(timer);
+  }
+  const body: Partial<StandardError> & Record<string, unknown> = await res
+    .json()
+    .catch(() => ({}));
   if (!res.ok) {
     const err: StandardError = {
-      error: (body as any)?.error ?? `HTTP ${res.status}`,
-      code: (body as any)?.code ?? 'API_ERROR',
+      error: typeof body.error === 'string' ? body.error : `HTTP ${res.status}`,
+      code: typeof body.code === 'string' ? body.code : 'API_ERROR',
     };
     throw err;
   }

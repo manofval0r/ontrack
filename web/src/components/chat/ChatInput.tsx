@@ -48,6 +48,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onChange={(e) => setText(e.target.value)}
         disabled={disabled || isRecording}
         placeholder={isRecording ? 'Listening to your voice...' : placeholder}
+        aria-label="Message the accountability coach"
         className="flex-1 font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none bg-transparent py-2"
       />
 

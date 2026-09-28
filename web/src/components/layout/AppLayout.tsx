@@ -237,7 +237,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         {/* Mobile Navigation Drawer */}
         {mobileNavOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
-            <div className="fixed inset-0 bg-[#071E2D]/60 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} />
+            <div
+              className="fixed inset-0 bg-[#071E2D]/60 backdrop-blur-sm"
+              onClick={() => setMobileNavOpen(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setMobileNavOpen(false)
+              }}
+              aria-hidden="true"
+            />
             <div className="fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-[#0E202D] border-r-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[6px_0px_0px_#071E2D] dark:shadow-[6px_0px_0px_#000000] p-6 flex flex-col gap-6 z-10">
               <div className="flex items-center justify-between pb-4 border-b-2 border-[#071E2D]/10 dark:border-white/10">
                 <Logo linkTo="/dashboard" />

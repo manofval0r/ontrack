@@ -288,7 +288,7 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            {n.type === 'streak' && <Flame className="w-4 h-4 text-amber-500 shrink-0" />}
+                            {n.type === 'streak' && <Flame className="w-4 h-4 text-[#B45309] shrink-0" />}
                             {n.type === 'goal' && <Zap className="w-4 h-4 text-[#00C4B3] shrink-0" />}
                             {n.type === 'system' && <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />}
                             <span className="text-xs font-bold text-[#071E2D] dark:text-white">

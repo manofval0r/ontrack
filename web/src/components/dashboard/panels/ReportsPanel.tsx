@@ -136,7 +136,7 @@ export const ReportsPanel: React.FC = () => {
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]">
           <div className="flex items-center justify-between text-xs font-bold text-[#071E2D]/60 dark:text-slate-400">
             <span>COMPLETION RATE</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            <CheckCircle2 className="w-4 h-4 text-[#006D6A]" />
           </div>
           <div
             className="text-2xl sm:text-3xl font-black text-[#071E2D] dark:text-white mt-2"
@@ -168,7 +168,7 @@ export const ReportsPanel: React.FC = () => {
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]">
           <div className="flex items-center justify-between text-xs font-bold text-[#071E2D]/60 dark:text-slate-400">
             <span>ACTIVE TRACKERS</span>
-            <Clock className="w-4 h-4 text-amber-500" />
+            <Clock className="w-4 h-4 text-[#B45309]" />
           </div>
           <div
             className="text-2xl sm:text-3xl font-black text-[#071E2D] dark:text-white mt-2"
@@ -184,7 +184,7 @@ export const ReportsPanel: React.FC = () => {
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]">
           <div className="flex items-center justify-between text-xs font-bold text-[#071E2D]/60 dark:text-slate-400">
             <span>AUDIT LOGS</span>
-            <Flame className="w-4 h-4 text-orange-500" />
+            <Flame className="w-4 h-4 text-[#B45309]" />
           </div>
           <div
             className="text-2xl sm:text-3xl font-black text-[#071E2D] dark:text-white mt-2"
@@ -227,7 +227,7 @@ export const ReportsPanel: React.FC = () => {
                     </span>
                     <span className="text-[11px] font-bold text-[#00C4B3]">{pct}% Done</span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden mt-2">
+                  <div className="w-full h-2 rounded-full bg-[#F3F6F8] dark:bg-[#091824] border border-[#071E2D]/20 dark:border-[#1E3A52] overflow-hidden mt-2">
                     <div
                       className="h-full bg-[#00C4B3] rounded-full transition-all duration-300"
                       style={{ width: `${pct}%` }}
@@ -275,7 +275,7 @@ export const ReportsPanel: React.FC = () => {
 
         {filteredGoals.length === 0 ? (
           <div className="text-center py-10">
-            <FileSpreadsheet className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+            <FileSpreadsheet className="w-10 h-10 text-[#00C4B3] mx-auto mb-2" aria-hidden="true" />
             <p className="text-sm font-bold text-[#071E2D] dark:text-white">No trackers in this category</p>
             <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 mt-0.5">
               Add goals to view live audit and velocity telemetry.
@@ -284,14 +284,15 @@ export const ReportsPanel: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
+              <caption className="sr-only">Goal performance by tracker, with progress and verdict</caption>
               <thead>
                 <tr className="border-b-2 border-[#071E2D]/10 dark:border-white/10 text-[11px] font-black text-[#071E2D]/60 dark:text-slate-400 uppercase tracking-wider">
-                  <th className="pb-2.5">Goal / Target</th>
-                  <th className="pb-2.5">Category</th>
-                  <th className="pb-2.5">Current vs Target</th>
-                  <th className="pb-2.5">Progress</th>
-                  <th className="pb-2.5">Status</th>
-                  <th className="pb-2.5 text-right">Verdict</th>
+                  <th scope="col" className="pb-2.5">Goal / Target</th>
+                  <th scope="col" className="pb-2.5">Category</th>
+                  <th scope="col" className="pb-2.5">Current vs Target</th>
+                  <th scope="col" className="pb-2.5">Progress</th>
+                  <th scope="col" className="pb-2.5">Status</th>
+                  <th scope="col" className="pb-2.5 text-right">Verdict</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#071E2D]/5 dark:divide-white/5 text-xs">
@@ -306,7 +307,7 @@ export const ReportsPanel: React.FC = () => {
                   }
 
                   return (
-                    <tr key={g.id} className="hover:bg-slate-50 dark:hover:bg-[#162C3D]/40 transition-colors">
+                    <tr key={g.id} className="hover:bg-[#E6F7F5]/50 dark:hover:bg-white/5 transition-colors">
                       <td className="py-3 pr-3">
                         <div className="font-extrabold text-[#071E2D] dark:text-white line-clamp-1">{g.title}</div>
                         <div className="text-[10px] text-[#071E2D]/50 dark:text-slate-400 font-mono mt-0.5">
@@ -314,7 +315,7 @@ export const ReportsPanel: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-3 pr-3">
-                        <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full capitalize bg-slate-100 dark:bg-slate-800 text-[#071E2D] dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                        <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full capitalize bg-[#F3F6F8] dark:bg-[#091824] text-[#071E2D] dark:text-slate-200 border border-[#071E2D]/30 dark:border-white/20">
                           {g.domain || 'general'}
                         </span>
                       </td>
@@ -338,10 +339,10 @@ export const ReportsPanel: React.FC = () => {
                         <span
                           className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
                             g.status === 'completed'
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400'
+                              ? 'bg-[#ECFEFF] text-[#006D6A] dark:bg-[#00C4B3]/15 dark:text-[#00C4B3]'
                               : g.status === 'active'
                               ? 'bg-[#00C4B3]/15 text-[#008A7E] dark:bg-[#00C4B3]/20 dark:text-[#00C4B3]'
-                              : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400'
+                              : 'bg-[#FFFBEB] text-[#B45309] dark:bg-[#FFFBEB] dark:text-[#B45309]'
                           }`}
                         >
                           {g.status}
@@ -351,7 +352,7 @@ export const ReportsPanel: React.FC = () => {
                         {g.verdict ? (
                           <span
                             className={`inline-flex items-center gap-1 font-bold text-[11px] ${
-                              g.verdict.passed ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
+                              g.verdict.passed ? 'text-[#006D6A] dark:text-[#00C4B3]' : 'text-red-700 dark:text-red-400'
                             }`}
                           >
                             {g.verdict.passed ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}

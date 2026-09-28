@@ -18,7 +18,7 @@ export const Notifications: React.FC = () => {
     },
     {
       key: 'check_ins' as const,
-      label: 'Nemotron AI Check-Ins',
+      label: 'Nemotron AI Check-ins',
       description: 'Proactive accountability inquiries when execution pace slows down',
     },
     {

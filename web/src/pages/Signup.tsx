@@ -174,7 +174,7 @@ export const Signup: React.FC = () => {
                   onChange={(e) => setName(e.target.value)}
                   required
                   autoComplete="name"
-                  className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-sm"
+                  className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]"
                 />
               </div>
 
@@ -194,7 +194,7 @@ export const Signup: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-sm"
+                  className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]"
                 />
               </div>
 
@@ -214,7 +214,7 @@ export const Signup: React.FC = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="new-password"
-                    className="w-full px-5 py-3.5 pr-12 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-sm"
+                    className="w-full px-5 py-3.5 pr-12 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]"
                   />
                   <button
                     type="button"
@@ -298,7 +298,7 @@ export const Signup: React.FC = () => {
         {/* ── Right Column: Full-Screen Illustration Showcase ─────────────── */}
         <div className="hidden lg:flex w-full lg:w-1/2 justify-center items-center">
           <AuthIllustration
-            headline="Type or speak in plain language. Ontrack builds the tracker."
+            headline="Type or speak in plain language. OnTrack builds the tracker."
             taskTitle="Morning Routine"
             taskSubtitle="50 Pushups & Reading"
             progressPercent={84}

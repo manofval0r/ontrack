@@ -74,7 +74,7 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
     >
       {/* Icon squircle */}
       <div
-        className="w-12 h-12 rounded-xl bg-[#1E293B] text-white flex items-center justify-center flex-shrink-0 shadow-sm"
+        className="w-12 h-12 rounded-xl bg-[#071E2D] text-white flex items-center justify-center flex-shrink-0 shadow-sm"
         aria-hidden="true"
       >
         {icon}
@@ -85,7 +85,7 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
         <h3 className="font-sans font-bold text-lg sm:text-xl text-[#071E2D] leading-snug tracking-tight">
           {title}
         </h3>
-        <p className="font-sans text-sm sm:text-[0.9375rem] text-[#071E2D]/70 leading-relaxed">
+        <p className="font-sans text-sm text-[#071E2D]/70 leading-relaxed">
           {description}
         </p>
       </div>

@@ -1,5 +1,5 @@
 /** Shimmer skeleton — tactile placeholder while dashboard loads. */
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -25,9 +25,12 @@ export function SkeletonCard() {
 
   return (
     <Animated.View
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading goals"
+      accessibilityState={{ busy: true }}
       style={[
         {
-          backgroundColor: '#fff',
+          backgroundColor: Brand.white,
           borderWidth: 2,
           borderColor: Brand.navy,
           borderRadius: Radii.card,
@@ -36,7 +39,6 @@ export function SkeletonCard() {
         },
         style,
       ]}
-      accessibilityLabel="Loading goals"
     >
       <View style={{ width: '70%', height: 18, borderRadius: 6, backgroundColor: Brand.gray }} />
       <View style={{ height: 10, borderRadius: 999, backgroundColor: Brand.gray }} />

@@ -4,8 +4,9 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
-import { Brand } from '../constants/colors';
+import { Brand, Colors } from '../constants/colors';
 import { Radii, Spacing } from '../constants/spacing';
+import { Typography } from '../constants/typography';
 import { OnboardingArt } from '../components/OnboardingArt';
 import { Card, PillButton } from '../components/ui';
 
@@ -13,14 +14,17 @@ const STEPS = [
   {
     title: 'Welcome to OnTrack',
     body: 'Chat-first accountability. Say a goal, get a tracker, prove progress.',
+    artLabel: 'Illustration: the OnTrack arrow mark drawing itself',
   },
   {
     title: 'Trackers that build themselves',
     body: 'Counters, checklists and logs appear from plain words — then update live.',
+    artLabel: 'Illustration: a tracker card filling with progress and checklist ticks',
   },
   {
     title: 'Try your first goal',
     body: 'Type it below to preview — no account needed yet.',
+    artLabel: 'Illustration: coach and user trading chat messages',
   },
 ];
 
@@ -28,69 +32,87 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState('');
 
-  const goAuth = (login: boolean) =>
-    router.replace({
-      pathname: login ? '/(auth)/login' : '/(auth)/signup',
-      params: !login && draft.trim() ? { pendingGoal: draft.trim() } : {},
-    } as any);
+  const goAuth = (login: boolean) => {
+    const params = !login && draft.trim() ? { pendingGoal: draft.trim().slice(0, 500) } : {};
+    router.replace({ pathname: login ? '/(auth)/login' : '/(auth)/signup', params });
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View style={{ flexDirection: 'row', gap: 6 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44 }}>
+        <View
+          accessibilityLabel={`Step ${step + 1} of ${STEPS.length}`}
+          accessibilityRole="text"
+          style={{ flexDirection: 'row', gap: 6 }}
+        >
           {STEPS.map((_, i) => (
             <View
               key={i}
+              accessibilityElementsHidden
               style={{
                 width: i === step ? 24 : 8,
                 height: 8,
                 borderRadius: 4,
-                backgroundColor: i === step ? Brand.turquoise : 'rgba(7,30,45,0.2)',
+                backgroundColor: i === step ? Brand.turquoise : Colors.light.inputBorder,
               }}
             />
           ))}
         </View>
-        <Pressable onPress={() => goAuth(false)} hitSlop={12} accessibilityLabel="Skip onboarding">
+        <Pressable
+          onPress={() => goAuth(false)}
+          hitSlop={12}
+          accessibilityLabel="Skip onboarding"
+          accessibilityRole="button"
+          accessibilityHint="Goes straight to account creation"
+          style={{ minHeight: 44, justifyContent: 'center' }}
+        >
           <Text style={{ fontWeight: '700', color: Brand.teal }}>Skip</Text>
         </Pressable>
       </View>
 
       <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
         <Animated.View key={step} entering={FadeInRight.duration(300)} exiting={FadeOutLeft.duration(200)}>
-          <OnboardingArt step={step} />
+          <View accessibilityLabel={STEPS[step].artLabel} accessibilityRole="image">
+            <OnboardingArt step={step} />
+          </View>
         </Animated.View>
         <Card>
-          <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 24, color: Brand.navy }}>
+          <Text style={{ fontFamily: Typography.title.fontFamily, fontSize: Typography.title.fontSize, color: Brand.navy }}>
             {STEPS[step].title}
           </Text>
-          <Text style={{ marginTop: 8, fontSize: 15, color: Brand.navy, lineHeight: 22 }}>
+          <Text style={{ marginTop: 8, fontSize: Typography.body.fontSize, color: Brand.navy, lineHeight: Typography.body.lineHeight }}>
             {STEPS[step].body}
           </Text>
           {step === 2 && (
             <TextInput
               value={draft}
-              onChangeText={setDraft}
-              placeholder="I want to sell 5 cars this week"
+              onChangeText={(t) => setDraft(t.slice(0, 500))}
+              placeholder="e.g. Run 3 mornings a week"
+              accessibilityLabel="Your first goal"
+              accessibilityHint="Typed goal is queued and created after signup"
+              returnKeyType="done"
+              maxLength={500}
               style={{
-                marginTop: 12,
+                marginTop: Spacing.md,
                 borderWidth: 2,
-                borderColor: 'rgba(7,30,45,0.2)',
+                borderColor: Colors.light.inputBorder,
                 borderRadius: Radii.input,
                 padding: Spacing.md,
-                fontSize: 15,
-                backgroundColor: '#fff',
+                fontSize: Typography.body.fontSize,
+                backgroundColor: Brand.white,
               }}
             />
           )}
         </Card>
         {step < 2 ? (
-          <PillButton title="Continue" primary onPress={() => setStep(step + 1)} />
+          <PillButton title="Continue" primary onPress={() => setStep(step + 1)} accessibilityHint={`Goes to step ${step + 2}: ${STEPS[step + 1].title}`} />
         ) : (
           <View style={{ gap: 12 }}>
             <PillButton
               title={draft.trim() ? 'Preview my tracker' : 'Create account'}
               primary
               onPress={() => goAuth(false)}
+              accessibilityHint="Queues your typed goal, then creates your account"
             />
             <PillButton title="I already have an account" onPress={() => goAuth(true)} />
           </View>

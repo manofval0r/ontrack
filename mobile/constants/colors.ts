@@ -15,6 +15,16 @@ export const Brand = {
   amberBorder: '#F59E0B',
   amberDot: '#F59E0B',
   cyanBg: '#ECFEFF', // on-track pill + AI proposal card
+  mint: '#99F6E4', // mid-intensity activity strip only
+  // Error red — text/icons only, never shadows or fills.
+  error: '#dc2626',
+  // Overlays
+  scrim: 'rgba(7,30,45,0.92)', // work-block scrim
+  trackOnNavy: 'rgba(255,255,255,0.15)', // progress track on dark surfaces
+  cardOnNavy: 'rgba(255,255,255,0.08)', // stat tiles on dark panels
+  faintOnNavy: 'rgba(255,255,255,0.6)', // secondary labels on dark panels
+  hairOnNavy: 'rgba(255,255,255,0.25)', // hairline borders on dark panels
+  hairline: 'rgba(7,30,45,0.08)', // hairline dividers on light surfaces
   // Dark surfaces (web .dark overrides)
   darkBg: '#051520',
   darkSurface: '#0B2536',

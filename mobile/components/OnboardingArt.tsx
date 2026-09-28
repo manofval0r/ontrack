@@ -3,8 +3,8 @@
  * Built on react-native-svg + Reanimated (Expo Go safe; no Skia dev-build needed).
  * Loops are disabled when the OS requests reduced motion.
  */
-import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import { useEffect } from 'react';
+import { Text, View } from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
@@ -17,6 +17,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '../constants/colors';
 import { Radii } from '../constants/spacing';
 import { useReduceMotion } from '../lib/useReduceMotion';
@@ -118,16 +119,16 @@ function TrackerScene({ reduce }: { reduce: boolean }) {
   const o3 = useAnimatedStyle(() => ({ opacity: tick3.value }));
 
   const Row = ({ label, style }: { label: string; style: any }) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+    <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }, style]}>
       <View style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: Brand.navy, backgroundColor: Brand.turquoise, alignItems: 'center', justifyContent: 'center' }}>
-        <Animated.Text style={[{ color: Brand.navy, fontWeight: '700', fontSize: 13 }, style]}>✓</Animated.Text>
+        <Ionicons name="checkmark" size={14} color={Brand.navy} />
       </View>
-      <Animated.Text style={[{ fontSize: 13, color: Brand.navy, fontWeight: '600' }, style]}>{label}</Animated.Text>
-    </View>
+      <Text style={{ fontSize: 13, color: Brand.navy, fontWeight: '600' }}>{label}</Text>
+    </Animated.View>
   );
 
   return (
-    <View style={{ width: 220, backgroundColor: '#fff', borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.card, padding: 16 }}>
+    <View style={{ width: 220, backgroundColor: Brand.white, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.card, padding: 16 }}>
       <View style={{ height: 12, borderRadius: 999, borderWidth: 2, borderColor: Brand.navy, backgroundColor: Brand.gray, overflow: 'hidden' }}>
         <Animated.View style={[{ height: '100%', backgroundColor: Brand.turquoise }, barStyle]} />
       </View>
@@ -169,11 +170,11 @@ function ChatScene({ reduce }: { reduce: boolean }) {
 
   return (
     <View style={{ width: 240, gap: 10 }}>
-      <Animated.View style={[{ alignSelf: 'flex-start', maxWidth: '90%', backgroundColor: '#fff', borderWidth: 2, borderColor: Brand.navy, borderRadius: 16, padding: 12 }, aiStyle]}>
-        <Animated.Text style={{ fontSize: 13, color: Brand.navy }}>You're at 3 of 5. On pace for Friday?</Animated.Text>
+      <Animated.View style={[{ alignSelf: 'flex-start', maxWidth: '90%', backgroundColor: Brand.white, borderWidth: 2, borderColor: Brand.navy, borderRadius: 16, padding: 12 }, aiStyle]}>
+        <Text style={{ fontSize: 13, color: Brand.navy }}>You're at 3 of 5. On pace for Friday?</Text>
       </Animated.View>
       <Animated.View style={[{ alignSelf: 'flex-end', maxWidth: '90%', backgroundColor: Brand.navy, borderWidth: 2, borderColor: Brand.navy, borderRadius: 16, padding: 12 }, userStyle]}>
-        <Animated.Text style={{ fontSize: 13, color: '#fff', fontWeight: '600' }}>Closed one more — 4 of 5!</Animated.Text>
+        <Text style={{ fontSize: 13, color: Brand.white, fontWeight: '600' }}>Closed one more — 4 of 5!</Text>
       </Animated.View>
       <View style={{ alignSelf: 'center', flexDirection: 'row', gap: 5 }}>
         {[0, 1, 2].map((i) => (

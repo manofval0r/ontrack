@@ -24,8 +24,8 @@ export const Stats: React.FC<StatsProps> = ({ stats }) => {
       label: 'Daily Streak',
       value: `${stats.streak_days} Days`,
       subtext: 'Consistency record',
-      icon: <Flame className="w-5 h-5 text-amber-600" />,
-      color: 'bg-amber-50 text-amber-800',
+      icon: <Flame className="w-5 h-5 text-[#B45309]" />,
+      color: 'bg-[#FFFBEB] text-[#B45309]',
     },
     {
       label: 'Completed Goals',
@@ -37,7 +37,7 @@ export const Stats: React.FC<StatsProps> = ({ stats }) => {
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
       ),
-      color: 'bg-emerald-50 text-emerald-800',
+      color: 'bg-[#ECFEFF] text-[#006D6A]',
     },
     {
       label: 'Accountability Score',

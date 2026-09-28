@@ -133,8 +133,9 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
           stored[pendingProvider] = providerToken
           localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
-        } catch (err) {
-          console.warn('[GoalContext] Could not persist OAuth integration', err)
+        } catch {
+          // Non-fatal: OAuth token stays usable for API calls even if the
+          // integration row did not persist.
         }
       }
     } finally {
@@ -193,7 +194,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('ontrack_refresh_token')
         localStorage.removeItem('ontrack_user_profile')
       }
-      console.warn('[GoalContext] Could not bootstrap user from API', err)
+      // Non-fatal otherwise: UI falls back to local defaults.
     }
   }, [consumeOAuthCallback])
 
@@ -233,7 +234,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('ontrack_refresh_token')
         localStorage.removeItem('ontrack_user_profile')
       }
-      console.warn('[GoalContext] Dashboard fetch failed', err)
+      // Non-fatal: dashboard stats are supplementary.
     }
   }, [])
 

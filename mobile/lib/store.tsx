@@ -1,9 +1,24 @@
 /** Goals store — mirrors web GoalContext (goals, dashboard, CRUD, progress). */
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 import { api } from './api';
 
+export interface Goal {
+  id: string;
+  title: string;
+  goal_type?: string;
+  goal_template?: string;
+  target?: number | null;
+  status?: string;
+  deadline?: string | null;
+  items?: Array<{ id: string; title: string; completed: boolean }>;
+  progress_pct?: number;
+  template_context?: { streak_days?: number; commits_this_week?: number; last_activity?: string | null };
+  verdict?: string;
+  [key: string]: unknown;
+}
+
 interface Store {
-  goals: any[];
+  goals: Goal[];
   dashboard: any | null;
   loading: boolean;
   error: string | null;
@@ -17,7 +32,7 @@ interface Store {
 const Ctx = createContext<Store | null>(null);
 
 export function GoalsProvider({ children }: { children: React.ReactNode }) {
-  const [goals, setGoals] = useState<any[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [dashboard, setDashboard] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,10 +41,18 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const [g, d] = await Promise.all([
-        api.getGoals().catch(() => []),
-        api.getDashboard().catch(() => null),
+      const [goalsResult, dashResult] = await Promise.allSettled([
+        api.getGoals(),
+        api.getDashboard(),
       ]);
+      const g: Goal[] = goalsResult.status === 'fulfilled' ? goalsResult.value : [];
+      const d = dashResult.status === 'fulfilled' ? dashResult.value : null;
+      if (goalsResult.status === 'rejected' && dashResult.status === 'rejected') {
+        throw goalsResult.reason;
+      }
+      if (goalsResult.status === 'rejected' || dashResult.status === 'rejected') {
+        setError('Some data did not sync. Pull to retry.');
+      }
       // Enrich bare goal rows with dashboard progress (backend stores no
       // current_value — progress_pct per goal is the source of truth).
       const pctById = new Map<string, number>();
@@ -41,7 +64,7 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
         }
       }
       setGoals(
-        (g as any[]).map((goal) => ({
+        g.map((goal) => ({
           ...goal,
           progress_pct: pctById.get(String(goal.id)) ?? goal.progress_pct,
           goal_template: goal.goal_template ?? tplById.get(String(goal.id)) ?? 'generic',

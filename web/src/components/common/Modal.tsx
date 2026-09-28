@@ -69,7 +69,7 @@ export const Modal: React.FC<ModalProps> = ({
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full border border-[#071E2D]/30 dark:border-white/20 flex items-center justify-center text-[#071E2D] dark:text-white hover:bg-[#F3F6F8] dark:hover:bg-[#152E42] hover:border-[#071E2D] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
+            className="w-11 h-11 rounded-full border border-[#071E2D]/30 dark:border-white/20 flex items-center justify-center text-[#071E2D] dark:text-white hover:bg-[#F3F6F8] dark:hover:bg-[#152E42] hover:border-[#071E2D] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] cursor-pointer"
             aria-label="Close dialog"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

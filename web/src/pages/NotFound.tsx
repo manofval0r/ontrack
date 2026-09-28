@@ -73,7 +73,7 @@ export const NotFound: React.FC = () => {
               </Link>
               <span className="text-[#071E2D]/20 dark:text-white/20">•</span>
               <Link to="/onboarding" className="hover:text-[#006D6A] dark:hover:text-[#00C4B3] underline underline-offset-2 inline-flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <Sparkles className="w-3.5 h-3.5 text-[#B45309]" />
                 <span>New Goal Flow</span>
               </Link>
               <span className="text-[#071E2D]/20 dark:text-white/20">•</span>

@@ -1,6 +1,13 @@
 /** Tactile primitives — 2px navy borders + solid offset shadows (no gradients). */
 import React from 'react';
-import { Pressable, StyleProp, Text, TextStyle, View, ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleProp,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { Brand, Colors } from '../constants/colors';
 import { Radii, Spacing, Touch } from '../constants/spacing';
 import { Typography } from '../constants/typography';
@@ -8,6 +15,7 @@ import { Typography } from '../constants/typography';
 export function Card({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   return (
     <View
+      accessible
       style={[
         {
           backgroundColor: Colors.light.surface,
@@ -34,16 +42,24 @@ export function PillButton({
   onPress,
   primary,
   disabled,
+  accessibilityLabel,
+  accessibilityHint,
 }: {
   title: string;
   onPress: () => void;
   primary?: boolean;
   disabled?: boolean;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityHint={accessibilityHint}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
       style={({ pressed }) => [
         {
           minHeight: Touch.min,
@@ -78,10 +94,20 @@ export function PillButton({
   );
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  active: 'On track',
+  completed: 'Done',
+  missed: 'Behind',
+  behind: 'Behind',
+};
+
 export function StatusPill({ status }: { status: string }) {
   const behind = status === 'missed' || status === 'behind';
+  const label = STATUS_LABEL[status] ?? status;
   return (
     <View
+      accessibilityLabel={`Status: ${label}`}
+      accessibilityRole="text"
       style={{
         paddingVertical: 4,
         paddingHorizontal: 12,
@@ -99,7 +125,7 @@ export function StatusPill({ status }: { status: string }) {
           textTransform: 'capitalize',
         } as TextStyle}
       >
-        {status}
+        {label}
       </Text>
     </View>
   );

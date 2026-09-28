@@ -52,14 +52,14 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
             }
           }
 
-          recognition.onerror = (e: any) => {
-            console.warn('SpeechRecognition error', e.error)
+          recognition.onerror = () => {
+            // Speech errors are silent; Done simply completes with what's heard.
           }
 
           recognition.start()
           recognitionRef.current = recognition
-        } catch (e) {
-          console.warn('SpeechRecognition initialization error', e)
+        } catch {
+          // Recognition unavailable — Done completes with what's heard (maybe nothing).
         }
       }
     } else {
@@ -105,19 +105,19 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   }
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-red-50 border-2 border-red-500 rounded-full shadow-[3px_3px_0px_#dc2626] animate-pulse">
+    <div className="flex items-center gap-3 px-4 py-2 bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] animate-pulse">
       {/* Pulsing recording indicator */}
-      <span className="w-3 h-3 rounded-full bg-red-600 animate-ping" />
-      <span className="text-xs font-mono font-bold text-red-700">
+      <span className="w-3 h-3 rounded-full bg-red-600 animate-ping" aria-hidden="true" />
+      <span className="text-xs font-mono font-bold text-[#071E2D] dark:text-white" role="timer">
         Recording {formatTime(seconds)}
       </span>
 
       {/* Animated waveform bars */}
-      <div className="flex items-center gap-1 h-4 px-2">
-        <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_100ms] h-full rounded" />
-        <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_250ms] h-3/4 rounded" />
-        <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_400ms] h-full rounded" />
-        <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_200ms] h-1/2 rounded" />
+      <div className="flex items-center gap-1 h-4 px-2" aria-hidden="true">
+        <span className="w-1 bg-[#00C4B3] animate-[bounce_0.6s_infinite_100ms] h-full rounded" />
+        <span className="w-1 bg-[#00C4B3] animate-[bounce_0.6s_infinite_250ms] h-3/4 rounded" />
+        <span className="w-1 bg-[#00C4B3] animate-[bounce_0.6s_infinite_400ms] h-full rounded" />
+        <span className="w-1 bg-[#00C4B3] animate-[bounce_0.6s_infinite_200ms] h-1/2 rounded" />
       </div>
 
       <button
@@ -140,7 +140,8 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       <button
         type="button"
         onClick={onCancel}
-        className="text-xs font-bold text-red-600 hover:text-red-800"
+        aria-label="Cancel voice recording"
+        className="text-xs font-bold text-red-700 dark:text-red-400 hover:text-red-800 min-h-[44px] px-2"
       >
         ✕
       </button>

@@ -1,5 +1,5 @@
 /** Chat bubble — AI/user variants, TTS replay on AI, goal proposal card. */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -51,7 +51,7 @@ export function ChatBubble({
     >
       <View
         style={{
-          backgroundColor: isUser ? Brand.navy : '#fff',
+          backgroundColor: isUser ? Brand.navy : Brand.white,
           borderWidth: 2,
           borderColor: Brand.navy,
           borderRadius: Radii.bubble,
@@ -69,7 +69,9 @@ export function ChatBubble({
             onPress={replay}
             hitSlop={10}
             accessibilityLabel={speaking ? 'Stop voice replay' : 'Replay with voice'}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}
+            accessibilityRole="button"
+            accessibilityState={{ busy: speaking }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, minHeight: 44 }}
           >
             <Ionicons name={speaking ? 'pause-circle' : 'volume-high'} size={20} color={Brand.teal} />
             <Text style={{ fontSize: 11, fontWeight: '600', color: Brand.teal }}>
@@ -89,7 +91,9 @@ export function ChatBubble({
             )}
             <Pressable
               onPress={() => onActivate(msg.proposal)}
-              style={{ marginTop: 8, backgroundColor: Brand.navy, borderRadius: 999, paddingVertical: 10, alignItems: 'center' }}
+              accessibilityLabel={`Use this tracker: ${msg.proposal.title ?? 'new goal'}`}
+              accessibilityRole="button"
+              style={{ marginTop: 8, backgroundColor: Brand.navy, borderRadius: Radii.pill, paddingVertical: 12, alignItems: 'center', minHeight: 44, justifyContent: 'center' }}
             >
               <Text style={{ color: '#fff', fontWeight: '700' }}>Use this tracker</Text>
             </Pressable>

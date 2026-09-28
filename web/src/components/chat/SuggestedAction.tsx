@@ -12,10 +12,10 @@ export const SUGGESTED_PROMPTS = [
     prompt: 'I want to close 5 enterprise software deals within the next 14 days.',
   },
   {
-    title: 'Ship Frontend Web MVP',
+    title: 'Ship Product MVP',
     description: 'Engineering sprint with milestone checklists',
     type: 'Checklist',
-    prompt: 'Complete 5 key frontend web engineering milestones for our OnTrack hackathon release.',
+    prompt: 'Complete 5 key product engineering milestones for our next release.',
   },
   {
     title: 'Daily Founder Focus',
