@@ -35,12 +35,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     scrollToBottom()
   }, [messages, isThinking])
 
-  useEffect(() => {
-    if (initialPrompt) {
-      handleSendMessage(initialPrompt)
-    }
-  }, [initialPrompt])
-
   const handleSendMessage = (content: string) => {
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -57,7 +51,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     // If it's NOT an explicit goal creation request, respond conversationally without proposing a bogus goal!
     if (intent.type !== 'goal_creation') {
       setTimeout(() => {
-        let reply = ''
+        let reply: string
         if (intent.type === 'status_query') {
           reply = `You currently have ${activeGoals.length} active tracker(s) in motion.${
             activeGoals.length > 0 ? ` Your lead target is "${activeGoals[0].title}".` : ' Ready to set a new goal?'
@@ -145,6 +139,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
         setIsThinking(false)
       })
   }
+
+  // Fires when an initial prompt arrives (e.g. deep-linked from onboarding).
+  // Declared after handleSendMessage on purpose: effects run post-render,
+  // so the handler is always assigned before this can fire.
+  useEffect(() => {
+    if (initialPrompt) {
+      handleSendMessage(initialPrompt)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPrompt])
 
   const handleActivateGoal = async (proposed: Partial<Goal>) => {
     try {

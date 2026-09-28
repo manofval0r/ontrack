@@ -387,12 +387,12 @@ export const api = {
         mapped.current_value = mapped.items.filter((i) => i.completed).length
       }
       return mapped
-    } catch (err) {
+    } catch {
       // Local fallback in case of network or auth failure
       const local = localStorage.getItem('ontrack_local_goals')
       let localGoals: Goal[] = []
       if (local) {
-        try { localGoals = JSON.parse(local) } catch {}
+        try { localGoals = JSON.parse(local) } catch { /* corrupt cache — use empty list */ }
       }
       const existing = localGoals.find((g) => g.id === id)
       const merged: Goal = {

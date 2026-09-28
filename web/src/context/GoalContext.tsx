@@ -233,7 +233,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setGoals(parsed)
           }
         }
-      } catch {}
+      } catch { /* corrupt local cache — fall through to empty state */ }
       if (err?.code !== 'UNAUTHORIZED' && err?.code !== 'AUTH_INVALID') {
         setError(err?.code ? err : { error: 'Failed to load goals', code: 'FETCH_ERROR' })
       }
@@ -288,7 +288,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return found
           }
         }
-      } catch {}
+      } catch { /* storage optional — continue without cache */ }
 
       const goal = await api.getGoal(id)
       setActiveGoal(goal)
@@ -336,7 +336,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const next = [fallbackGoal, ...prev]
         try {
           localStorage.setItem('ontrack_local_goals', JSON.stringify(next))
-        } catch {}
+        } catch { /* storage optional — continue without cache */ }
         return next
       })
       setActiveGoal(fallbackGoal)
@@ -365,7 +365,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
       try {
         localStorage.setItem('ontrack_local_goals', JSON.stringify(next))
-      } catch {}
+      } catch { /* storage optional — continue without cache */ }
       return next
     })
 
@@ -375,7 +375,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const next = prev.map((g) => (g.id === id ? { ...g, ...updated } : g))
         try {
           localStorage.setItem('ontrack_local_goals', JSON.stringify(next))
-        } catch {}
+        } catch { /* storage optional — continue without cache */ }
         return next
       })
       if (activeGoal?.id === id) setActiveGoal(updated)
@@ -398,7 +398,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const filtered = prev.filter((g) => g.id !== id)
       try {
         localStorage.setItem('ontrack_local_goals', JSON.stringify(filtered))
-      } catch {}
+      } catch { /* storage optional — continue without cache */ }
       return filtered
     })
     if (activeGoal?.id === id) {
@@ -473,7 +473,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
             : [fallbackGoal, ...prev]
           try {
             localStorage.setItem('ontrack_local_goals', JSON.stringify(list))
-          } catch {}
+          } catch { /* storage optional — continue without cache */ }
           return list
         })
         if (activeGoal?.id === goalId || !activeGoal) setActiveGoal(fallbackGoal)

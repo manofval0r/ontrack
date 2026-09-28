@@ -72,6 +72,13 @@ export const Signup: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null)
   const [emailConfirmationSent, setEmailConfirmationSent] = useState(false)
 
+  React.useEffect(() => {
+    const token = localStorage.getItem('ontrack_token')
+    if (token && !token.startsWith('mock_')) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [navigate])
+
   const handleGoogleAuth = () => {
     if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
       const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
@@ -361,6 +368,22 @@ export const Signup: React.FC = () => {
                     className="font-semibold text-[#071E2D] dark:text-white hover:text-[#006D6A] dark:hover:text-[#00C4B3] transition-colors underline decoration-[#00C4B3] underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] rounded"
                   >
                     Log in
+                  </Link>
+                </p>
+                <p className="font-sans text-xs text-center text-[#071E2D]/40 dark:text-slate-500 mt-2">
+                  By joining, you agree to our{' '}
+                  <Link
+                    to="/terms-of-service"
+                    className="text-[#006D6A] dark:text-[#00C4B3] hover:underline font-medium"
+                  >
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link
+                    to="/privacy-policy"
+                    className="text-[#006D6A] dark:text-[#00C4B3] hover:underline font-medium"
+                  >
+                    Privacy Policy
                   </Link>
                 </p>
               </>

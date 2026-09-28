@@ -14,7 +14,7 @@ export type ClassifiedIntent =
 const GREETING_REGEX = /^(hi|hello|hey|heya|howdy|yo|sup|hiya|greetings|good\s+(morning|afternoon|evening|day))(\s+.*)?$/i
 
 // Conversational affirmations/acknowledgments
-const ACK_REGEX = /^(ok|okay|cool|nice|thanks|thank you|ok,?\s*thank you|ok,?\s*thanks|thx|ty|got it|awesome|great|sure|alright|perfect|sounds good|understood|noted|yes|no|yep|nope|k|thank u)(\.|\!)*$/i
+const ACK_REGEX = /^(ok|okay|cool|nice|thanks|thank you|ok,?\s*thank you|ok,?\s*thanks|thx|ty|got it|awesome|great|sure|alright|perfect|sounds good|understood|noted|yes|no|yep|nope|k|thank u)(\.|!)*$/i
 
 // Casual non-goal statements that should be answered conversationally, never turned into trackers
 const CASUAL_PHRASES: { pattern: RegExp; reply: string }[] = [
@@ -48,7 +48,7 @@ const CASUAL_PHRASES: { pattern: RegExp; reply: string }[] = [
 const STATUS_REGEX = /(how am i doing|my status|shipping rate|progress report|how is my week|my summary|overall stats|show my stats|my streak|how am i tracking)/i
 
 // Help and instructions
-const HELP_REGEX = /^(help|how does this work|what can you do|who are you|how to use|commands|features)(\?|\.|\!)?$/i
+const HELP_REGEX = /^(help|how does this work|what can you do|who are you|how to use|commands|features)(\?|\.|!)?$/i
 
 // Motivational or emotional coaching triggers
 const COACHING_TRIGGERS: { [key: string]: 'motivation' | 'habits' | 'burnout' } = {
@@ -408,7 +408,7 @@ export function classifyUserMessage(text: string, activeGoals: Goal[]): Classifi
   // 5. Coaching Advice (motivation, procrastination, habits)
   for (const [trigger, topic] of Object.entries(COACHING_TRIGGERS)) {
     if (lower.includes(trigger)) {
-      let advice = ""
+      let advice: string
       if (topic === 'motivation') {
         advice =
           "Action precedes motivation! The secret to breaking inertia is the **2-minute rule**: pick the absolute smallest sub-task on your goal and do it for just two minutes. What is one tiny thing you can knock out right now?"

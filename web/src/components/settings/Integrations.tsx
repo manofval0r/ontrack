@@ -17,6 +17,7 @@ interface CatalogEntry {
   kind: 'oauth' | 'manual'
   supabaseProvider?: string
   scopes?: string
+  isFuture?: boolean
 }
 
 const CATALOG: CatalogEntry[] = [
@@ -28,6 +29,7 @@ const CATALOG: CatalogEntry[] = [
     kind: 'manual',
     supabaseProvider: 'github',
     scopes: 'read:user public_repo',
+    isFuture: false,
   },
   {
     provider: 'google-cal',
@@ -37,6 +39,7 @@ const CATALOG: CatalogEntry[] = [
     kind: 'manual',
     supabaseProvider: 'google',
     scopes: 'openid email profile https://www.googleapis.com/auth/calendar.events',
+    isFuture: false,
   },
   {
     provider: 'slack',
@@ -44,6 +47,7 @@ const CATALOG: CatalogEntry[] = [
     description: 'Receive Nemotron accountability nudges and progress updates in a private channel.',
     icon: 'slack',
     kind: 'manual',
+    isFuture: true,
   },
   {
     provider: 'notion',
@@ -51,6 +55,7 @@ const CATALOG: CatalogEntry[] = [
     description: 'Export finalized goal verdicts and daily reflections to your Notion workspace.',
     icon: 'notion',
     kind: 'manual',
+    isFuture: true,
   },
 ]
 
@@ -86,12 +91,16 @@ export const Integrations: React.FC = () => {
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [credsFor, setCredsFor] = useState<'slack' | 'notion' | 'github' | 'google-cal' | null>(null)
+  const [futureModalEntry, setFutureModalEntry] = useState<CatalogEntry | null>(null)
+  const [notifiedProviders, setNotifiedProviders] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('ontrack_future_notifications') || '{}')
+    } catch {
+      return {}
+    }
+  })
 
   // Form states
-  const [webhookUrl, setWebhookUrl] = useState('')
-  const [slackChannel, setSlackChannel] = useState('')
-  const [notionToken, setNotionToken] = useState('')
-  const [notionDb, setNotionDb] = useState('')
   const [githubUsername, setGithubUsername] = useState(() => localStorage.getItem('ontrack_github_login') || '')
   const [githubToken, setGithubToken] = useState('')
   const [googleCalendarEmail, setGoogleCalendarEmail] = useState(() => localStorage.getItem('ontrack_google_cal_id') || 'primary')
@@ -137,24 +146,6 @@ export const Integrations: React.FC = () => {
           updated_at: new Date().toISOString(),
         })
       }
-      if (pTokens.slack) {
-        fallbackRows.push({
-          id: 'slack',
-          provider: 'slack',
-          connected: true,
-          status_label: 'Posting to Slack',
-          updated_at: new Date().toISOString(),
-        })
-      }
-      if (pTokens.notion) {
-        fallbackRows.push({
-          id: 'notion',
-          provider: 'notion',
-          connected: true,
-          status_label: 'Exporting to Notion DB',
-          updated_at: new Date().toISOString(),
-        })
-      }
       setRows(fallbackRows)
       if (err?.code !== 'AUTH_INVALID') {
         setLoadError(null)
@@ -164,6 +155,12 @@ export const Integrations: React.FC = () => {
 
   useEffect(() => {
     refresh()
+    const completedProvider = localStorage.getItem('ontrack_oauth_provider_completed')
+    if (completedProvider) {
+      setNotice(`Successfully connected ${completedProvider === 'github' ? 'GitHub' : completedProvider}!`)
+      localStorage.removeItem('ontrack_oauth_provider_completed')
+      setTimeout(() => setNotice(null), 5000)
+    }
   }, [refresh])
 
   // After OAuth returns, verify identity against the provider and enrich meta.
@@ -209,6 +206,7 @@ export const Integrations: React.FC = () => {
   const rowFor = (provider: string) => (rows ?? []).find((r) => r.provider === provider)
 
   const isConnected = (provider: string) => {
+    if (provider === 'slack' || provider === 'notion') return false
     const row = rowFor(provider)
     if (row?.connected) return true
     const tokens = getProviderTokens()
@@ -223,11 +221,14 @@ export const Integrations: React.FC = () => {
     try {
       const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')
       if (localInts.find((i: any) => i.id === provider && i.connected)) return true
-    } catch {}
+    } catch { /* local cache optional — continue without it */ }
     return false
   }
 
   const getStatusLabel = (entry: CatalogEntry) => {
+    if (entry.isFuture) {
+      return 'Scheduled for future release'
+    }
     const row = rowFor(entry.provider)
     if (row?.status_label && row.status_label !== 'Not connected') {
       return row.status_label
@@ -239,12 +240,6 @@ export const Integrations: React.FC = () => {
     if (entry.provider === 'google-cal' && isConnected('google-cal')) {
       const calId = localStorage.getItem('ontrack_google_cal_id')
       return calId && calId !== 'primary' ? `Synced to ${calId}` : 'Calendar sync active'
-    }
-    if (entry.provider === 'slack' && isConnected('slack')) {
-      return 'Posting to #accountability'
-    }
-    if (entry.provider === 'notion' && isConnected('notion')) {
-      return 'Synced to Notion Database'
     }
     return row?.status_label ?? 'Not connected'
   }
@@ -274,7 +269,7 @@ export const Integrations: React.FC = () => {
         const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')
         const updated = localInts.map((i: any) => (i.id === provider ? { ...i, connected: false } : i))
         localStorage.setItem('ontrack_integrations', JSON.stringify(updated))
-      } catch {}
+      } catch { /* local cache optional — continue without it */ }
       await refresh()
       setNotice(`${provider.toUpperCase()} disconnected.`)
     } catch (err: any) {
@@ -302,7 +297,7 @@ export const Integrations: React.FC = () => {
         const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')
         const updated = localInts.map((i: any) => (i.id === 'github' ? { ...i, connected: true } : i))
         localStorage.setItem('ontrack_integrations', JSON.stringify(updated))
-      } catch {}
+      } catch { /* local cache optional — continue without it */ }
 
       await api.saveIntegration({
         provider: 'github',
@@ -370,88 +365,6 @@ export const Integrations: React.FC = () => {
     }
   }
 
-  const handleSlackSave = async () => {
-    const targetUrl = webhookUrl.trim() || 'https://hooks.slack.com/services/T00000000/B00000000/mock_webhook'
-    const targetChannel = slackChannel.trim() || '#accountability'
-
-    setBusy('slack-save')
-    try {
-      const tokens = getProviderTokens()
-      tokens.slack = 'connected'
-      localStorage.setItem('ontrack_provider_tokens', JSON.stringify(tokens))
-
-      await api.saveIntegration({
-        provider: 'slack',
-        meta: { webhook_url: targetUrl, channel: targetChannel },
-      }).catch(() => {})
-
-      await refresh()
-      setCredsFor(null)
-      setNotice(`Slack connected (${targetChannel}). Send a test nudge to verify delivery.`)
-    } catch {
-      setNotice('Slack connected locally. Ready for accountability nudges.')
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  const handleSlackTest = async () => {
-    setBusy('slack-test')
-    try {
-      await api.slackNotify('OnTrack test nudge — your accountability channel is live. Consistency beats intensity.')
-      setNotice('Test nudge sent — check your Slack channel!')
-    } catch {
-      // Graceful fallback simulation
-      setNotice('Test nudge dispatched to Slack #accountability! High-velocity alerts active.')
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  const handleNotionSave = async () => {
-    const token = notionToken.trim() || 'ntn_workspace_token'
-    const db = notionDb.trim() || 'db_ontrack_verdicts'
-
-    setBusy('notion-save')
-    try {
-      const tokens = getProviderTokens()
-      tokens.notion = 'connected'
-      localStorage.setItem('ontrack_provider_tokens', JSON.stringify(tokens))
-
-      await api.saveIntegration({
-        provider: 'notion',
-        meta: { api_token: token, database_id: db },
-      }).catch(() => {})
-
-      await refresh()
-      setCredsFor(null)
-      setNotionToken('')
-      setNotice('Notion connected. Click "Export verdict" to sync completed goal records.')
-    } catch {
-      setNotice('Notion workspace connected. Ready to export verdicts.')
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  const handleNotionExport = async () => {
-    const goal = goals[0]
-    if (!goal) {
-      setNotice('Create or open a goal first, then export its verdict.')
-      return
-    }
-    setBusy('notion-export')
-    try {
-      const res = await api.notionExport(goal.id)
-      setNotice(`Verdict exported to Notion${res.page_id ? ` (page ${res.page_id.slice(0, 8)}…)` : ''}.`)
-    } catch {
-      // Graceful local export confirmation
-      setNotice(`Verdict for "${goal.title}" exported to Notion database! Page ID: ntn_${goal.id.slice(0, 8)}.`)
-    } finally {
-      setBusy(null)
-    }
-  }
-
   const iconFor = (icon: CatalogEntry['icon']) =>
     icon === 'calendar' ? (
       <Calendar className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
@@ -507,22 +420,29 @@ export const Integrations: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-base font-bold text-[#071E2D] dark:text-white">{entry.name}</h4>
-                    <span
-                      className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border mt-1 ${
-                        connected
-                          ? 'bg-[#F0FDF4] dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 border-[#166534] dark:border-emerald-700'
-                          : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-300 dark:border-slate-600'
-                      }`}
-                    >
-                      {connected ? (
-                        <>
-                          <Check className="w-3 h-3" />
-                          <span>Connected</span>
-                        </>
-                      ) : (
-                        'Not Connected'
-                      )}
-                    </span>
+                    {entry.isFuture ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800 mt-1">
+                        <Sparkles className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                        <span>Future Implementation</span>
+                      </span>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border mt-1 ${
+                          connected
+                            ? 'bg-[#F0FDF4] dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 border-[#166534] dark:border-emerald-700'
+                            : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-300 dark:border-slate-600'
+                        }`}
+                      >
+                        {connected ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            <span>Connected</span>
+                          </>
+                        ) : (
+                          'Not Connected'
+                        )}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -548,31 +468,22 @@ export const Integrations: React.FC = () => {
                       <span>{busy === 'google-cal-sync' ? 'Syncing…' : 'Sync Milestones'}</span>
                     </button>
                   )}
-                  {connected && entry.provider === 'slack' && (
+                  {entry.isFuture ? (
                     <button
                       type="button"
-                      onClick={handleSlackTest}
-                      disabled={busy === 'slack-test'}
-                      className="text-[11px] font-bold text-[#006D6A] dark:text-[#00C4B3] underline underline-offset-2 disabled:opacity-50 cursor-pointer"
+                      onClick={() => setFutureModalEntry(entry)}
+                      className="btn-pill text-xs !py-1 !px-3 !shadow-[2px_2px_0px_#071E2D] dark:!shadow-[2px_2px_0px_#000000] btn-pill-white text-[#6B21A8] dark:text-purple-300 hover:border-purple-400 cursor-pointer"
                     >
-                      {busy === 'slack-test' ? 'Sending…' : 'Test nudge'}
+                      <span>Future Implementation</span>
+                      <span className="btn-bubble !w-5 !h-5 text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200">
+                        <Sparkles className="w-3 h-3" />
+                      </span>
                     </button>
-                  )}
-                  {connected && entry.provider === 'notion' && (
-                    <button
-                      type="button"
-                      onClick={handleNotionExport}
-                      disabled={busy === 'notion-export'}
-                      className="text-[11px] font-bold text-[#006D6A] dark:text-[#00C4B3] underline underline-offset-2 disabled:opacity-50 cursor-pointer"
-                    >
-                      {busy === 'notion-export' ? 'Exporting…' : 'Export verdict'}
-                    </button>
-                  )}
-                  {connected ? (
+                  ) : connected ? (
                     <button
                       type="button"
                       onClick={() => setConfirmId(row?.id || entry.provider)}
-                      className="btn-pill text-xs !py-1 !px-3 !shadow-[2px_2px_0px_#071E2D] dark:!shadow-[2px_2px_0px_#000000] btn-pill-white text-red-600 dark:text-rose-400"
+                      className="btn-pill text-xs !py-1 !px-3 !shadow-[2px_2px_0px_#071E2D] dark:!shadow-[2px_2px_0px_#000000] btn-pill-white text-red-600 dark:text-rose-400 cursor-pointer"
                     >
                       <span>Disconnect</span>
                       <span className="btn-bubble !w-5 !h-5 text-[10px]">
@@ -583,7 +494,7 @@ export const Integrations: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setCredsFor(entry.provider)}
-                      className="btn-pill text-xs !py-1 !px-3 !shadow-[2px_2px_0px_#071E2D] dark:!shadow-[2px_2px_0px_#000000] btn-pill-primary"
+                      className="btn-pill text-xs !py-1 !px-3 !shadow-[2px_2px_0px_#071E2D] dark:!shadow-[2px_2px_0px_#000000] btn-pill-primary cursor-pointer"
                     >
                       <span>Connect</span>
                       <span className="btn-bubble !w-5 !h-5 text-[10px]">
@@ -747,117 +658,68 @@ export const Integrations: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Slack credentials */}
-      <Modal isOpen={credsFor === 'slack'} onClose={() => setCredsFor(null)} title="Connect Slack">
-        <div className="flex flex-col gap-3 text-[#071E2D] dark:text-white">
-          <p className="text-sm text-[#071E2D]/80 dark:text-slate-300 leading-relaxed">
-            Paste your Incoming Webhook URL to deliver automated accountability reminders into your team or private channel.
-          </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              setWebhookUrl('https://hooks.slack.com/services/T00000000/B00000000/sample_webhook_token')
-              setSlackChannel('#accountability')
-            }}
-            className="self-start text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] inline-flex items-center gap-1.5 hover:underline cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Fill Demo Channel Webhook</span>
-          </button>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-[#071E2D] dark:text-slate-200">
-              Webhook URL
-            </label>
-            <input
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              placeholder="https://hooks.slack.com/services/…"
-              className="w-full px-4 py-2.5 rounded-xl border-2 bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-white font-sans text-sm border-[#071E2D]/20 dark:border-[#1E3A52] focus:border-[#00C4B3] outline-none"
-            />
+      {/* Future Implementation Modal for Slack and Notion */}
+      <Modal
+        isOpen={!!futureModalEntry}
+        onClose={() => setFutureModalEntry(null)}
+        title={`${futureModalEntry?.name} Integration`}
+      >
+        <div className="flex flex-col gap-4 text-[#071E2D] dark:text-white">
+          <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-xl text-purple-900 dark:text-purple-200 text-xs font-medium">
+            <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+            <span>This feature is designated for future implementation and is on our active product roadmap.</span>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-[#071E2D] dark:text-slate-200">
-              Channel Label
-            </label>
-            <input
-              value={slackChannel}
-              onChange={(e) => setSlackChannel(e.target.value)}
-              placeholder="e.g. #accountability"
-              className="w-full px-4 py-2.5 rounded-xl border-2 bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-white font-sans text-sm border-[#071E2D]/20 dark:border-[#1E3A52] focus:border-[#00C4B3] outline-none"
-            />
+          <p className="text-sm text-[#071E2D]/80 dark:text-slate-300 leading-relaxed">
+            {futureModalEntry?.provider === 'slack'
+              ? 'When released, the Slack integration will deliver real-time Nemotron accountability check-ins, milestone summaries, and streak nudges directly into your private or workspace channels.'
+              : 'When released, the Notion integration will automatically synchronize your daily reflection journals, completed targets, and final goal verdicts into a designated Notion database.'}
+          </p>
+
+          <div className="p-3.5 bg-[#F8FAFB] dark:bg-[#091824] rounded-xl border border-[#071E2D]/10 dark:border-white/10 flex flex-col gap-1.5 text-xs text-[#071E2D]/70 dark:text-slate-400">
+            <span className="font-bold text-[#071E2D] dark:text-white uppercase tracking-wider text-[10px]">Roadmap Highlights:</span>
+            <ul className="list-disc list-inside space-y-1">
+              {futureModalEntry?.provider === 'slack' ? (
+                <>
+                  <li>Interactive slash commands (/ontrack checkin)</li>
+                  <li>Weekly team accountability digest in private channel</li>
+                  <li>Direct DM reminders from your chosen coach persona</li>
+                </>
+              ) : (
+                <>
+                  <li>Two-way progress sync with Notion board/gallery views</li>
+                  <li>Automatic reflection log archival</li>
+                  <li>Pre-built Ontrack template for your Notion workspace</li>
+                </>
+              )}
+            </ul>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#071E2D]/10 dark:border-white/10">
             <button
               type="button"
-              onClick={() => setCredsFor(null)}
+              onClick={() => setFutureModalEntry(null)}
               className="px-4 py-2 text-xs font-semibold text-[#071E2D]/70 dark:text-slate-400 hover:text-[#071E2D] dark:hover:text-white cursor-pointer"
             >
-              Cancel
+              Close
             </button>
-            <Button variant="primary" onClick={handleSlackSave} noBubble className="text-xs !py-2 !px-4">
-              {busy === 'slack-save' ? 'Saving…' : 'Save & Connect'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Notion credentials */}
-      <Modal isOpen={credsFor === 'notion'} onClose={() => setCredsFor(null)} title="Connect Notion">
-        <div className="flex flex-col gap-3 text-[#071E2D] dark:text-white">
-          <p className="text-sm text-[#071E2D]/80 dark:text-slate-300 leading-relaxed">
-            Link an internal integration token to export goal verdicts, reflections, and check-in logs into your Notion workspace.
-          </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              setNotionToken('ntn_demo_workspace_token_9982')
-              setNotionDb('db_ontrack_verdicts_live')
-            }}
-            className="self-start text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] inline-flex items-center gap-1.5 hover:underline cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Fill Demo Notion Workspace</span>
-          </button>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-[#071E2D] dark:text-slate-200">
-              Internal Integration Token
-            </label>
-            <input
-              value={notionToken}
-              onChange={(e) => setNotionToken(e.target.value)}
-              placeholder="ntn_… or secret_…"
-              className="w-full px-4 py-2.5 rounded-xl border-2 bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-white font-sans text-sm border-[#071E2D]/20 dark:border-[#1E3A52] focus:border-[#00C4B3] outline-none"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-[#071E2D] dark:text-slate-200">
-              Database ID
-            </label>
-            <input
-              value={notionDb}
-              onChange={(e) => setNotionDb(e.target.value)}
-              placeholder="Database ID to export verdicts into"
-              className="w-full px-4 py-2.5 rounded-xl border-2 bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-white font-sans text-sm border-[#071E2D]/20 dark:border-[#1E3A52] focus:border-[#00C4B3] outline-none"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#071E2D]/10 dark:border-white/10">
-            <button
-              type="button"
-              onClick={() => setCredsFor(null)}
-              className="px-4 py-2 text-xs font-semibold text-[#071E2D]/70 dark:text-slate-400 hover:text-[#071E2D] dark:hover:text-white cursor-pointer"
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (futureModalEntry) {
+                  const updated = { ...notifiedProviders, [futureModalEntry.provider]: true }
+                  setNotifiedProviders(updated)
+                  localStorage.setItem('ontrack_future_notifications', JSON.stringify(updated))
+                  setNotice(`You're on the list! We'll notify you when ${futureModalEntry.name} integration launches.`)
+                  setFutureModalEntry(null)
+                }
+              }}
+              noBubble
+              className="text-xs !py-2 !px-4 cursor-pointer"
             >
-              Cancel
-            </button>
-            <Button variant="primary" onClick={handleNotionSave} noBubble className="text-xs !py-2 !px-4">
-              {busy === 'notion-save' ? 'Saving…' : 'Save & Connect'}
+              {futureModalEntry && notifiedProviders[futureModalEntry.provider]
+                ? '✓ Notification Preference Saved'
+                : 'Notify Me When Live'}
             </Button>
           </div>
         </div>

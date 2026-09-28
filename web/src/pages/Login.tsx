@@ -79,11 +79,16 @@ export const Login: React.FC = () => {
   const [forgotError, setForgotError] = useState<string | null>(null)
 
   useEffect(() => {
+    const token = localStorage.getItem('ontrack_token')
+    if (token && !token.startsWith('mock_')) {
+      navigate('/dashboard', { replace: true })
+      return
+    }
     const searchParams = new URLSearchParams(location.search)
     if (searchParams.get('forgot') === 'true') {
       setShowForgotPasswordModal(true)
     }
-  }, [location.search])
+  }, [location.search, navigate])
 
   const handleSendResetLink = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()

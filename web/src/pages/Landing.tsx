@@ -51,19 +51,14 @@ const BoltIcon = () => (
 // ─── Hero Section (Hero section excluded from copy changes) ───────────────────
 
 const Hero: React.FC = () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('ontrack_token') : null
+  const isAuthenticated = !!token && !token.startsWith('mock_')
+  const primaryHref = isAuthenticated ? '/dashboard' : '/signup'
+  const primaryText = isAuthenticated ? 'Open Dashboard' : 'Start Tracking Free'
+
   return (
     <section className="relative overflow-hidden bg-dot-grid pt-10 pb-16 sm:pt-12 sm:pb-20 md:pt-16 md:pb-28 border-b-2 border-[#071E2D]/8 dark:border-white/10">
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
-        {/* Credibility pill */}
-        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2.5px_2.5px_0px_#071E2D] dark:shadow-[2.5px_2.5px_0px_#000000] mb-6 sm:mb-8 transition-transform hover:-translate-y-0.5 cursor-pointer">
-          <span className="flex items-center justify-center w-4 h-4 rounded-full bg-[#006D6A] text-white flex-shrink-0">
-            <CheckIcon />
-          </span>
-          <span className="font-sans font-semibold text-xs text-[#071E2D] dark:text-white">
-            Verified AI Accountability · Designed for Follow-Through
-          </span>
-          <span className="text-[#071E2D]/60 dark:text-slate-400 text-xs font-bold">›</span>
-        </div>
 
         {/* Display Headline */}
         <h1
@@ -93,8 +88,8 @@ const Hero: React.FC = () => {
 
         {/* Dual Pill CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4 w-full px-4 sm:px-0">
-          <Link to="/signup" className="btn-pill btn-pill-primary text-sm sm:text-base py-3 px-6 pl-7 w-full sm:w-auto justify-center">
-            <span>Start Tracking Free</span>
+          <Link to={primaryHref} className="btn-pill btn-pill-primary text-sm sm:text-base py-3 px-6 pl-7 w-full sm:w-auto justify-center">
+            <span>{primaryText}</span>
             <span className="btn-bubble bg-white text-[#006D6A]">
               <ArrowRight />
             </span>
@@ -566,35 +561,41 @@ const WhoItsFor: React.FC = () => {
 
 // ─── Section F — Final CTA (Clean Tactile Dark Card — No Blur Glow) ─────────────
 
-const FinalCTA: React.FC = () => (
-  <section className="py-12 sm:py-24 px-4 sm:px-6 bg-white dark:bg-[#07141E]">
-    <div className="max-w-5xl mx-auto bg-[#071E2D] dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] p-6 sm:p-10 lg:p-14 relative overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center relative z-10">
-        {/* Left Column */}
-        <div className="lg:col-span-7 flex flex-col items-start gap-4 sm:gap-5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[#00C4B3] font-sans font-bold text-xs">
-            <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-pulse" />
-            Zero Setup Required
-          </div>
+const FinalCTA: React.FC = () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('ontrack_token') : null
+  const isAuthenticated = !!token && !token.startsWith('mock_')
+  const ctaHref = isAuthenticated ? '/dashboard' : '/signup'
+  const ctaText = isAuthenticated ? 'Open Dashboard' : 'Start tracking'
 
-          <h2
-            style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700, fontSize: 'clamp(1.75rem, 4.5vw, 3.25rem)' }}
-            className="text-white tracking-tight leading-tight"
-          >
-            Say your first goal
-          </h2>
-          <p className="font-sans text-white/70 text-sm sm:text-base leading-relaxed max-w-lg">
-            Takes less time to start than it took to read this page.
-          </p>
+  return (
+    <section className="py-12 sm:py-24 px-4 sm:px-6 bg-white dark:bg-[#07141E]">
+      <div className="max-w-5xl mx-auto bg-[#071E2D] dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] p-6 sm:p-10 lg:p-14 relative overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center relative z-10">
+          {/* Left Column */}
+          <div className="lg:col-span-7 flex flex-col items-start gap-4 sm:gap-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[#00C4B3] font-sans font-bold text-xs">
+              <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-pulse" />
+              Zero Setup Required
+            </div>
 
-          <div className="pt-1">
-            <Link to="/signup" className="btn-pill btn-pill-white text-sm sm:text-base py-3 px-6 pl-8">
-              <span>Start tracking</span>
-              <span className="btn-bubble bg-[#00C4B3] text-white">
-                <ArrowRight />
-              </span>
-            </Link>
-          </div>
+            <h2
+              style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700, fontSize: 'clamp(1.75rem, 4.5vw, 3.25rem)' }}
+              className="text-white tracking-tight leading-tight"
+            >
+              Say your first goal
+            </h2>
+            <p className="font-sans text-white/70 text-sm sm:text-base leading-relaxed max-w-lg">
+              Takes less time to start than it took to read this page.
+            </p>
+
+            <div className="pt-1">
+              <Link to={ctaHref} className="btn-pill btn-pill-white text-sm sm:text-base py-3 px-6 pl-8">
+                <span>{ctaText}</span>
+                <span className="btn-bubble bg-[#00C4B3] text-white">
+                  <ArrowRight />
+                </span>
+              </Link>
+            </div>
 
           <p className="font-sans text-xs text-white/50 pt-1">
             Free forever tier · No credit card required · Data saved in browser
@@ -624,7 +625,8 @@ const FinalCTA: React.FC = () => (
       </div>
     </div>
   </section>
-)
+  )
+}
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
@@ -657,14 +659,22 @@ const Footer: React.FC = () => (
         <ul className="flex flex-col gap-2 list-none p-0 m-0 font-sans text-sm text-[#071E2D]/65 dark:text-slate-300">
           <li><a href="#" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">About</a></li>
           <li><a href="#" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Contact</a></li>
+          <li><Link to="/terms-of-service" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Terms of Service</Link></li>
+          <li><Link to="/privacy-policy" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Privacy Policy</Link></li>
         </ul>
       </div>
     </div>
 
-    <div className="max-w-6xl mx-auto mt-8 sm:mt-12 pt-6 border-t border-[#071E2D]/10 dark:border-white/10 text-center">
+    <div className="max-w-6xl mx-auto mt-8 sm:mt-12 pt-6 border-t border-[#071E2D]/10 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
       <p className="font-sans text-xs text-[#071E2D]/40 dark:text-slate-400">
         © 2026 Ontrack. All rights reserved.
       </p>
+      <div className="flex items-center gap-4 text-xs text-[#071E2D]/60 dark:text-slate-400">
+        <Link to="/terms-of-service" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Terms of Service</Link>
+        <Link to="/privacy-policy" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Privacy Policy</Link>
+        <Link to="/login" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Log in</Link>
+        <Link to="/signup" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Sign up</Link>
+      </div>
     </div>
   </footer>
 )

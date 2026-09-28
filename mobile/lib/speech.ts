@@ -20,7 +20,7 @@ export async function speakText(text: string, onDone?: () => void): Promise<void
     if (audio_url && !audio_url.includes('stub')) {
       const player = createAudioPlayer({ uri: audio_url });
       activePlayer = player;
-      player.addListener('playbackStatusUpdate', (status) => {
+      player.addListener('playbackStatusUpdate', (status: { didJustFinish?: boolean }) => {
         if (status.didJustFinish) {
           stopSpeaking();
           onDone?.();

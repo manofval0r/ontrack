@@ -247,7 +247,7 @@ export const Onboarding: React.FC = () => {
 
     // 3. Counter tracker (numeric / reps / deals / pushups / default)
     let target = 5
-    let unit = 'reps'
+    let unit: string
     let domain: Goal['domain'] = 'general'
 
     // Extract numbers if present
