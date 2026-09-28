@@ -53,3 +53,13 @@ Updated: 2026-09-28.
 All 3 jobs pass locally (backend 54 OK incl. ES256, web build OK, mobile `tsc` OK;
 lockfiles in sync). GitHub runs fail in ~5s with **"account is locked due to a
 billing issue"** — no code fix possible. Clear billing, then re-run failed jobs.
+
+## AI liveness check (2026-09-28)
+
+- Cloudflare Qwen tunnel (`jay-tomorrow-blessed-composite.trycloudflare.com`):
+  **DEAD** — DNS no longer resolves (`getaddrinfo failed`).
+- Mobile backend `/api/health`: **UP** (`{"status":"ok","instance":"mobile"}`, ~1s).
+- NVIDIA direct (`integrate.api.nvidia.com/v1`): **reachable** (HTTP 200, no key
+  needed for `/models`) — viable if Evans sets `NVIDIA_API_KEY` on Render.
+- Unknown: what `NVIDIA_BASE_URL` the Render mobile instance currently holds.
+  Chat revival is ON HOLD until a live model endpoint is confirmed.
