@@ -11,6 +11,14 @@ interface MetricPoint {
   inProgress: number
 }
 
+/** Parse both timestamp shapes in the app: ISO ("...T...") from the API
+ * and "YYYY-MM-DD HH:MM" written by local log entries. Null when unusable. */
+function parseStamp(raw: unknown): Date | null {
+  if (typeof raw !== 'string' || !raw) return null
+  const t = new Date(raw.includes('T') ? raw : raw.replace(' ', 'T'))
+  return isNaN(+t) ? null : t
+}
+
 export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [] }) => {
   const [selectedRange, setSelectedRange] = useState<'1W' | '1M' | '1Y'>('1M')
 
@@ -45,41 +53,62 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [] }) =>
     }
 
     if (selectedRange === '1M') {
-      return [
-        { label: 'W1', completed: 0, inProgress: 0 },
-        { label: 'W2', completed: 0, inProgress: 0 },
-        { label: 'W3', completed: 0, inProgress: 0 },
-        { label: 'W4', completed: 0, inProgress: 0 },
-      ].map((w, idx) => {
-        const completed = goals.filter((g) => g.status === 'completed').length
-        const inProgress = goals.filter((g) => g.status === 'active').length
-        // Distribute proportionally across weeks for visual throughput
-        const splitComp = idx === 3 ? completed : Math.min(completed, idx)
-        const splitProg = Math.max(0, inProgress - idx)
-        return {
-          label: w.label,
-          completed: splitComp,
-          inProgress: splitProg,
-        }
+      // Four real 7-day buckets ending today (W4 = current week).
+      // inProgress = progress logs stamped inside the bucket;
+      // completed = goals completed with a deadline inside the bucket
+      // (same attribution rule as the 1W view — stable, no invented splits).
+      return Array.from({ length: 4 }, (_, i) => {
+        const end = new Date(now)
+        end.setDate(now.getDate() - 7 * (3 - i))
+        end.setHours(23, 59, 59, 999)
+        const start = new Date(end)
+        start.setDate(end.getDate() - 6)
+        start.setHours(0, 0, 0, 0)
+
+        let completed = 0
+        let inProgress = 0
+
+        goals.forEach((g) => {
+          ;(g.progress_logs || []).forEach((l) => {
+            const t = parseStamp(l.timestamp)
+            if (t && t >= start && t <= end) inProgress += 1
+          })
+          if (g.status === 'completed' && g.deadline) {
+            const d = new Date(g.deadline)
+            if (!isNaN(+d) && d >= start && d <= end) completed += 1
+          }
+        })
+
+        return { label: `W${i + 1}`, completed, inProgress }
       })
     }
 
-    // 1Y (Months)
+    // 1Y (Months) — same real bucketing per calendar month.
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     const curMonth = now.getMonth()
     const sliceStart = Math.max(0, curMonth - 5)
     const relevantMonths = months.slice(sliceStart, curMonth + 1)
 
     return relevantMonths.map((m, idx) => {
-      const compCount = goals.filter(
-        (g) => g.status === 'completed' && (g.deadline ? new Date(g.deadline).getMonth() === sliceStart + idx : true)
-      ).length
-      const activeCount = goals.filter((g) => g.status === 'active').length
-      return {
-        label: m,
-        completed: compCount,
-        inProgress: Math.max(0, activeCount - (idx === relevantMonths.length - 1 ? 0 : 1)),
-      }
+      const monthIdx = sliceStart + idx
+      const mStart = new Date(now.getFullYear(), monthIdx, 1)
+      const mEnd = new Date(now.getFullYear(), monthIdx + 1, 0, 23, 59, 59, 999)
+
+      let completed = 0
+      let inProgress = 0
+
+      goals.forEach((g) => {
+        ;(g.progress_logs || []).forEach((l) => {
+          const t = parseStamp(l.timestamp)
+          if (t && t >= mStart && t <= mEnd) inProgress += 1
+        })
+        if (g.status === 'completed' && g.deadline) {
+          const d = new Date(g.deadline)
+          if (!isNaN(+d) && d >= mStart && d <= mEnd) completed += 1
+        }
+      })
+
+      return { label: m, completed, inProgress }
     })
   }, [goals, selectedRange])
 
