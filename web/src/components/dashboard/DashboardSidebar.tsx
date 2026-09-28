@@ -90,12 +90,12 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     <aside className="hidden lg:flex flex-col w-60 flex-shrink-0 bg-white border-2 border-[#071E2D] rounded-3xl shadow-[4px_4px_0px_#071E2D] p-5 justify-between">
       {/* Top: Logo & Navigation */}
       <div className="flex flex-col gap-6">
-        {/* OnTrack wordmark: links to /dashboard home, NOT marketing site */}
+        {/* Ontrack wordmark: links to /dashboard home, NOT marketing site */}
         <button
           type="button"
           onClick={() => onSelectView('dashboard')}
           className="flex items-center gap-2.5 text-left group cursor-pointer px-1"
-          aria-label="OnTrack Dashboard Home"
+          aria-label="Ontrack Dashboard Home"
         >
           <img
             src={logoImg}
@@ -109,7 +109,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             className="text-xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
-            OnTrack
+            Ontrack
           </span>
         </button>
 
@@ -150,14 +150,14 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           aria-label="User account menu"
         >
           <div className="w-9 h-9 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center font-bold text-xs text-[#071E2D] shadow-[2px_2px_0px_#071E2D] flex-shrink-0">
-            {(user.name || '?').charAt(0).toUpperCase()}
+            {(user.name || 'Israel').charAt(0).toUpperCase()}
           </div>
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-xs font-bold text-[#071E2D] truncate">
-              {user.name || 'Your account'}
+              {user.name || 'Israel'}
             </span>
             <span className="text-[10px] text-[#071E2D]/55 truncate">
-              {user.email || 'Sign in to sync'}
+              {user.email || 'israel@example.com'}
             </span>
           </div>
           <span className="text-xs text-[#071E2D]/40">⋮</span>

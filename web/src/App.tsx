@@ -7,7 +7,6 @@ import { Login } from './pages/Login'
 import { Signup } from './pages/Signup'
 import { ResetPassword } from './pages/ResetPassword'
 import { Onboarding } from './pages/Onboarding'
-import { Docs } from './pages/Docs'
 import { DashboardOverview } from './pages/DashboardOverview'
 import { Chat } from './pages/Chat'
 import { GoalWorkspace } from './pages/GoalWorkspace'
@@ -42,7 +41,6 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/docs" element={<Docs />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/reset-password" element={<ResetPassword />} />

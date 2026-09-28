@@ -25,7 +25,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     },
   ])
   const [isThinking, setIsThinking] = useState(false)
-  const [activateError, setActivateError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -84,33 +83,54 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     // Call POST /api/chat/parse-goal — backend AI returns proposal + response text
     api.parseGoal(content)
       .then(({ ai_response_text, goal_proposal }) => {
-        const computedDeadline = goal_proposal?.deadline || parseRelativeDeadline(content) || undefined
+        const localProposal = extractGoalProposal(content)
+        const computedDeadline = goal_proposal?.deadline || parseRelativeDeadline(content) || localProposal.deadline || undefined
+
+        // Determine goal type: prefer local detection if backend fell back to manual on a clear counter/checklist prompt
+        let resolvedGoalType: Goal['goal_type'] = (goal_proposal?.goal_type as Goal['goal_type']) || localProposal.goal_type || 'counter'
+        if (goal_proposal?.goal_type === 'manual' && localProposal.goal_type && localProposal.goal_type !== 'manual') {
+          resolvedGoalType = localProposal.goal_type
+        }
+
+        // Determine target and unit
+        const resolvedTarget = (goal_proposal?.target !== null && goal_proposal?.target !== undefined)
+          ? goal_proposal.target
+          : (localProposal.target ?? 10)
+        const resolvedUnit = (goal_proposal as unknown as { unit?: string })?.unit || localProposal.unit || (resolvedGoalType === 'counter' ? 'units' : '')
+
         const goalProposal: Partial<Goal> = {
-          title: goal_proposal?.title || intent.cleanTitle || content,
+          title: goal_proposal?.title || intent.cleanTitle || localProposal.title || content,
           description: goal_proposal?.summary || '',
-          goal_type: (goal_proposal?.goal_type as Goal['goal_type']) || intent.suggestedType || 'manual',
-          target: goal_proposal?.target ?? (intent.suggestedType === 'counter' ? 10 : 1),
-          unit: goal_proposal?.goal_type === 'counter' ? 'units' : '',
-          domain: (goal_proposal?.domain as Goal['domain']) || 'general',
+          goal_type: resolvedGoalType,
+          target: resolvedTarget,
+          unit: resolvedUnit,
+          domain: (goal_proposal?.domain as Goal['domain']) || localProposal.domain || 'general',
           deadline: computedDeadline,
           items: goal_proposal?.items?.map((title, idx) => ({
             id: `item-${idx}`,
             title,
             completed: false,
             order: idx + 1,
-          })),
+          })) || (resolvedGoalType === 'checklist' ? localProposal.items : undefined),
+        }
+
+        // Clean up response text if backend used a fallback message that misstated the format
+        let responseContent = ai_response_text
+        if (!responseContent || responseContent.includes('manual goal') && resolvedGoalType !== 'manual') {
+          responseContent = `I've prepared your tracker for "${goalProposal.title}". Click "Activate Tracker" below to start.`
         }
 
         const aiMsg: ChatMessage = {
           id: `msg-ai-${Date.now()}`,
           sender: 'ai',
-          content: ai_response_text || `I've prepared your tracker for "${goalProposal.title}". Click "Activate Tracker" below to start.`,
+          content: responseContent,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           goal_proposal: goalProposal,
         }
         setMessages((prev) => [...prev, aiMsg])
       })
       .catch(() => {
+        // Resilient fallback when backend is unreachable or session expired
         const localProposal = extractGoalProposal(content)
         const aiMsg: ChatMessage = {
           id: `msg-ai-${Date.now()}`,
@@ -128,7 +148,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
 
   const handleActivateGoal = async (proposed: Partial<Goal>) => {
     try {
-      setActivateError(null)
+      // Pass full proposed goal configuration to ensure target, deadline, and unit are preserved
       const created = await createGoal({
         title: proposed.title,
         text: proposed.title ?? 'Untitled Goal',
@@ -141,8 +161,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
         description: proposed.description,
       })
       navigate(`/dashboard/goal/${created.id}`)
-    } catch (e: any) {
-      setActivateError(e?.error ?? 'Could not create this tracker. Try again.')
+    } catch (e) {
+      console.error('[ChatWindow] Activation error:', e)
     }
   }
 
@@ -158,12 +178,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
           <div className="max-w-md">
             <Loader aiThinking label="Nemotron is analyzing target, timeline, and tracker architecture..." />
           </div>
-        )}
-
-        {activateError && (
-          <p role="alert" className="text-xs font-semibold text-red-700 dark:text-red-400 px-1">
-            {activateError}
-          </p>
         )}
 
         <div ref={bottomRef} />

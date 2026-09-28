@@ -54,7 +54,7 @@ export const Profile: React.FC = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] focus-visible:ring-2 focus-visible:ring-[#00C4B3] text-sm text-[#071E2D] dark:text-white outline-none"
+            className="w-full px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white outline-none"
           />
         </div>
 
@@ -68,7 +68,7 @@ export const Profile: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] focus-visible:ring-2 focus-visible:ring-[#00C4B3] text-sm text-[#071E2D] dark:text-white outline-none"
+            className="w-full px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white outline-none"
           />
         </div>
 
@@ -80,7 +80,7 @@ export const Profile: React.FC = () => {
           <select
             value={persona}
             onChange={(e) => setPersona(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] focus-visible:ring-2 focus-visible:ring-[#00C4B3] text-sm text-[#071E2D] dark:text-white outline-none"
+            className="w-full px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white outline-none"
           >
             <option value="Nemotron High-Accountability Coach" className="dark:bg-[#091824]">Nemotron High-Accountability Coach (Direct & Urgent)</option>
             <option value="Empathetic Habit Partner" className="dark:bg-[#091824]">Empathetic Habit Partner (Supportive & Encouraging)</option>
@@ -91,13 +91,13 @@ export const Profile: React.FC = () => {
         {/* Timezone */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold text-[#071E2D] dark:text-slate-300 uppercase tracking-wider pl-1">
-            Timezone (For Check-ins)
+            Timezone (For Check-Ins)
           </label>
           <input
             type="text"
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] focus-visible:ring-2 focus-visible:ring-[#00C4B3] text-sm text-[#071E2D] dark:text-white outline-none"
+            className="w-full px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white outline-none"
           />
         </div>
       </div>

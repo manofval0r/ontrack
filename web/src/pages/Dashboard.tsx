@@ -3,6 +3,7 @@ import { Zap, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useGoals } from '../context/GoalContext'
 import type { Goal } from '../types'
+import { executionPercent } from '../utils/goalMetrics'
 import { DashboardRail } from '../components/dashboard/DashboardRail'
 import { DashboardTopNav } from '../components/dashboard/DashboardTopNav'
 import { DashboardCards } from '../components/dashboard/DashboardCards'
@@ -52,9 +53,6 @@ export const Dashboard: React.FC = () => {
   const streakDays = dashboardData?.stats.streak_days || 0
   const completedGoalsCount = goals.filter((g) => g.status === 'completed').length
   const pendingGoalsCount = goals.filter((g) => g.status === 'active').length
-  // Real shipping rate from actual goals — no demo scalers.
-  const shippingRate =
-    goals.length > 0 ? Math.round((completedGoalsCount / goals.length) * 100) : 0
 
   const handleOpenDetail = (goal: Goal) => {
     setSelectedGoal(goal)
@@ -161,13 +159,13 @@ export const Dashboard: React.FC = () => {
                     completedCount={completedGoalsCount}
                     pendingCount={pendingGoalsCount}
                     streakDays={streakDays}
-                    totalScore={shippingRate}
+                    totalScore={Math.round(executionPercent(goals))}
                   />
                 </div>
 
                 {/* Right Column — full width on md (2-col grid), 3rd col on lg */}
                 <div className="md:col-span-2 lg:col-span-4 flex flex-col">
-                  <DashboardChart goals={goals} logs={dashboardData?.recent_activity ?? []} />
+                  <DashboardChart goals={goals} />
                 </div>
               </div>
 
@@ -219,20 +217,20 @@ export const Dashboard: React.FC = () => {
           <div className="relative w-full sm:max-w-md bg-white dark:bg-[#0E202D] border-l-2 border-[#071E2D] dark:border-[#1E3A52] h-full shadow-2xl z-10 flex flex-col">
             <div className="p-4 border-b-2 border-[#071E2D] dark:border-white/10 flex items-center justify-between bg-[#F8FAFB] dark:bg-[#091824]">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center text-[#071E2D] text-xs font-black shadow-[2px_2px_0px_#071E2D]" aria-hidden="true">
+                <div className="w-7 h-7 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center text-[#071E2D] text-xs font-black shadow-[1px_1px_0px_#071E2D]">
                   <Zap className="w-3.5 h-3.5 fill-[#071E2D]" />
                 </div>
                 <h3
                   className="font-bold text-sm text-[#071E2D] dark:text-white"
                   style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                 >
-                  OnTrack AI Accountability Coach
+                  Ontrack AI Accountability Coach
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsChatDrawerOpen(false)}
-                className="w-11 h-11 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center text-[#071E2D] dark:text-white hover:bg-[#E6F7F5] dark:hover:bg-white/5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center text-[#071E2D] dark:text-white hover:bg-[#E6F7F5] dark:hover:bg-white/5 shadow-[1px_1px_0px_#071E2D] dark:shadow-[1px_1px_0px_#000000] transition-colors cursor-pointer"
                 aria-label="Close assistant"
               >
                 <X className="w-4 h-4" />
@@ -245,7 +243,7 @@ export const Dashboard: React.FC = () => {
                 onCreateGoal={createGoal}
                 onLogProgress={logProgress}
                 onUpdateGoal={updateGoal}
-                shippingRate={shippingRate}
+                shippingRate={executionPercent(goals)}
                 streakDays={streakDays}
               />
             </div>

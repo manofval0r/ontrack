@@ -32,9 +32,9 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
       {/* Header with Filter Pills and Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A]">Workspace Radar</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">Workspace Radar</span>
           <h2
-            className="text-xl sm:text-2xl font-bold text-[#071E2D]"
+            className="text-xl sm:text-2xl font-bold text-[#071E2D] dark:text-white"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
             Active Trackers ({filteredGoals.length})
@@ -48,7 +48,7 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search goals..."
-            className="px-3 py-1 text-xs rounded-full border-2 border-[#071E2D]/20 focus:border-[#00C4B3] outline-none bg-white text-[#071E2D] placeholder:text-[#071E2D]/40"
+            className="px-3.5 py-1 text-xs rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] focus:border-[#00C4B3] outline-none bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 shadow-[1px_1px_0px_#071E2D] dark:shadow-[1px_1px_0px_#000000]"
           />
 
           {/* Tracker Type Filters */}
@@ -84,20 +84,7 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGoals.map((g) => (
-            <div
-              key={g.id}
-              role="button"
-              tabIndex={0}
-              aria-label={`Open goal ${g.title}`}
-              onClick={() => onSelectGoal?.(g)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  onSelectGoal?.(g)
-                }
-              }}
-              className="cursor-pointer"
-            >
+            <div key={g.id} onClick={() => onSelectGoal?.(g)} className="cursor-pointer">
               <GoalCard
                 goal={g}
                 onEdit={(goalToEdit) => {
@@ -115,20 +102,20 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
 
           {/* Quick Add Goal Card */}
           <Link
-            to="/chat"
-            className="border-2 border-dashed border-[#071E2D]/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 bg-white/50 hover:bg-white hover:border-[#00C4B3] hover:shadow-[4px_4px_0px_#071E2D] transition-all min-h-[200px] group"
+            to="/dashboard/chat"
+            className="border-2 border-dashed border-[#071E2D]/40 dark:border-white/20 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 bg-white/50 dark:bg-[#0E202D]/50 hover:bg-white dark:hover:bg-[#0E202D] hover:border-[#00C4B3] dark:hover:border-[#00C4B3] hover:shadow-[4px_4px_0px_#071E2D] dark:hover:shadow-[4px_4px_0px_#000000] transition-all min-h-[200px] group"
           >
-            <div className="w-12 h-12 rounded-full border-2 border-[#071E2D] bg-[#ECFEFF] flex items-center justify-center text-[#006D6A] group-hover:bg-[#00C4B3] group-hover:text-[#071E2D] transition-colors">
+            <div className="w-12 h-12 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-[#ECFEFF] dark:bg-[#07141E] flex items-center justify-center text-[#006D6A] dark:text-[#00C4B3] group-hover:bg-[#00C4B3] group-hover:text-[#071E2D] transition-colors">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
             </div>
             <div>
-              <span className="font-bold text-[#071E2D] text-base block group-hover:text-[#006D6A]">
+              <span className="font-bold text-[#071E2D] dark:text-white text-base block group-hover:text-[#006D6A] dark:group-hover:text-[#00C4B3]">
                 + Speak or Type a New Goal
               </span>
-              <span className="text-xs text-[#071E2D]/60 mt-0.5 block">
+              <span className="text-xs text-[#071E2D]/60 dark:text-slate-400 mt-0.5 block">
                 Nemotron parses and generates your tracker instantly
               </span>
             </div>

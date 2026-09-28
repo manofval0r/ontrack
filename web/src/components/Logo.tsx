@@ -36,7 +36,7 @@ export const Logo: React.FC<LogoProps> = ({
         className={`font-display font-700 text-xl tracking-tight ${textColor}`}
         style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700 }}
       >
-        OnTrack
+        Ontrack
       </span>
     </span>
   )
@@ -45,7 +45,7 @@ export const Logo: React.FC<LogoProps> = ({
     <Link
       to={linkTo}
       className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2 rounded"
-      aria-label="OnTrack — go to homepage"
+      aria-label="Ontrack — go to homepage"
     >
       {mark}
     </Link>

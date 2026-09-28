@@ -21,14 +21,14 @@ export const AuthIllustration: React.FC<AuthIllustrationProps> = ({
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference
 
   return (
-    <div className="w-full h-full min-h-[580px] lg:min-h-[640px] max-w-[600px] bg-[#F8FAFB] dark:bg-[#0E202D] border-2 border-[#071E2D]/10 dark:border-[#1E3A52] rounded-3xl p-8 lg:p-10 flex flex-col justify-between items-center text-center relative overflow-hidden shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] transition-colors">
+    <div className="w-full h-full min-h-[580px] lg:min-h-[640px] max-w-[600px] bg-[#F2FAF9] dark:bg-[#0E202D] border-2 border-[#071E2D]/10 dark:border-[#1E3A52] rounded-[32px] p-8 lg:p-10 flex flex-col justify-between items-center text-center relative overflow-hidden shadow-[4px_4px_0px_#071E2D]/5 dark:shadow-[4px_4px_0px_#000000] transition-colors">
       {/* ── Top Floating Avatar 1 (Top Left) ─────────────────────────────── */}
       <div
-        className="absolute top-10 left-8 sm:left-12 z-20 flex items-center justify-center w-12 h-12 rounded-full bg-[#ECFEFF] dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]"
+        className="absolute top-10 left-8 sm:left-12 z-20 flex items-center justify-center w-12 h-12 rounded-full bg-[#D7F3EE] dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]"
         aria-hidden="true"
       >
         <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
-          <circle cx="18" cy="18" r="16" fill="#ECFEFF" />
+          <circle cx="18" cy="18" r="16" fill="#D7F3EE" />
           {/* Hair */}
           <path d="M12 14c0-4 3-7 7-7s7 3 7 7v2H12v-2z" fill="#071E2D" />
           {/* Face */}
@@ -43,11 +43,11 @@ export const AuthIllustration: React.FC<AuthIllustrationProps> = ({
 
       {/* ── Top Floating Avatar 2 (Right) ─────────────────────────────────── */}
       <div
-        className="absolute top-36 right-6 sm:right-10 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-[#F3F6F8] dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]"
+        className="absolute top-36 right-6 sm:right-10 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-[#FCE8D8] dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]"
         aria-hidden="true"
       >
         <svg width="26" height="26" viewBox="0 0 36 36" fill="none">
-          <circle cx="18" cy="18" r="16" fill="#F3F6F8" />
+          <circle cx="18" cy="18" r="16" fill="#FCE8D8" />
           {/* Bob hair */}
           <path d="M11 15c0-4.5 3.2-8 7-8s7 3.5 7 8v5H11v-5z" fill="#071E2D" />
           {/* Face */}

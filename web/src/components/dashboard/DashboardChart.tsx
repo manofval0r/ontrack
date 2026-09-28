@@ -1,105 +1,240 @@
-import React, { useMemo, useState } from 'react'
-import type { Goal, ProgressLog } from '../../types'
+import React, { useState, useMemo } from 'react'
+import type { Goal } from '../../types'
+import { useGoals } from '../../context/GoalContext'
 
 interface DashboardChartProps {
   goals?: Goal[]
-  logs?: ProgressLog[]
 }
 
 interface MetricPoint {
   label: string
-  detail: string
+  detail?: string
   completed: number
   inProgress: number
 }
 
-function parseStamp(raw: unknown): Date | null {
-  if (typeof raw !== 'string' || !raw) return null
-  const value = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T00:00:00` : raw.replace(' ', 'T')
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? null : date
+// Safely parse date strings into epoch milliseconds
+function parseTime(dateStr?: string | null): number | null {
+  if (!dateStr) return null
+  const d = new Date(dateStr)
+  const time = d.getTime()
+  return isNaN(time) ? null : time
 }
 
-function getCompletionDate(goal: Goal): Date | null {
-  if (goal.status !== 'completed') return null
-  return parseStamp(goal.finished_at || goal.deadline)
+// Extract the completion timestamp for a completed goal
+function getGoalCompletionTime(g: Goal): number | null {
+  if (g.status !== 'completed') return null
+  if (g.finished_at) {
+    const t = parseTime(g.finished_at)
+    if (t) return t
+  }
+  // Check latest progress log
+  const logs = g.progress_logs || []
+  if (logs.length > 0) {
+    for (let i = logs.length - 1; i >= 0; i--) {
+      const t = parseTime(logs[i].timestamp)
+      if (t) return t
+    }
+  }
+  // Fall back to deadline
+  if (g.deadline) {
+    const t = parseTime(g.deadline)
+    if (t) return t
+  }
+  // Fall back to created_at
+  if (g.created_at) {
+    const t = parseTime(g.created_at)
+    if (t) return t
+  }
+  return null
 }
 
-export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [], logs = [] }) => {
+// Extract created timestamp for a goal
+function getGoalCreatedTime(g: Goal): number {
+  const t = parseTime(g.created_at)
+  return t ?? 0
+}
+
+export const DashboardChart: React.FC<DashboardChartProps> = ({ goals: propGoals }) => {
+  const { goals: contextGoals } = useGoals()
+  const goals = propGoals ?? contextGoals ?? []
   const [selectedRange, setSelectedRange] = useState<'1W' | '1M' | '1Y'>('1M')
 
-  const allLogs = useMemo(
-    () => (logs.length > 0 ? logs : goals.flatMap((goal) => goal.progress_logs ?? [])),
-    [goals, logs]
-  )
-
-  const chartData = useMemo<MetricPoint[]>(() => {
+  const chartData: MetricPoint[] = useMemo(() => {
     const now = new Date()
-    let ranges: Array<{ label: string; start: Date; end: Date; detail: string }>
 
+    // ── 1W: Last 7 Days (day-by-day throughput) ──────────────────────────
     if (selectedRange === '1W') {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-      ranges = Array.from({ length: 7 }, (_, index) => {
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (6 - index))
-        const end = new Date(start)
-        end.setHours(23, 59, 59, 999)
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (6 - i))
+        const dayLabel = i === 6 ? 'Today' : days[d.getDay()]
+        const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).getTime()
+        const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).getTime()
+
+        let completed = 0
+        let inProgress = 0
+
+        goals.forEach((g) => {
+          // Check if goal was completed on this day
+          const compTime = getGoalCompletionTime(g)
+          if (compTime && compTime >= dayStart && compTime <= dayEnd) {
+            completed += 1
+          }
+
+          // Check if goal was active and logged progress or in motion on this day
+          const createdTime = getGoalCreatedTime(g)
+          const wasActiveOnDay =
+            createdTime <= dayEnd && (!compTime || compTime >= dayStart)
+
+          if (wasActiveOnDay) {
+            // Count activity logs on this day
+            const logsToday = (g.progress_logs || []).filter((l) => {
+              const lt = parseTime(l.timestamp)
+              return lt && lt >= dayStart && lt <= dayEnd
+            })
+
+            if (logsToday.length > 0) {
+              inProgress += logsToday.length
+            } else if (g.status === 'active') {
+              inProgress += 1
+            }
+          }
+        })
+
         return {
-          label: index === 6 ? 'Today' : days[start.getDay()],
-          detail: start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }),
-          start,
-          end,
+          label: dayLabel,
+          detail: d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }),
+          completed,
+          inProgress,
         }
-      })
-    } else if (selectedRange === '1M') {
-      ranges = Array.from({ length: 4 }, (_, index) => {
-        const end = new Date(now)
-        end.setDate(now.getDate() - 7 * (3 - index))
-        end.setHours(23, 59, 59, 999)
-        const start = new Date(end)
-        start.setDate(end.getDate() - 6)
-        start.setHours(0, 0, 0, 0)
-        const format = (date: Date) => date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-        return { label: `W${index + 1}`, detail: `${format(start)} - ${format(end)}`, start, end }
-      })
-    } else {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-      ranges = Array.from({ length: 6 }, (_, index) => {
-        const start = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1)
-        const end = new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59, 999)
-        const label = months[start.getMonth()]
-        return { label, detail: `${label} ${start.getFullYear()}`, start, end }
       })
     }
 
-    return ranges.map(({ label, detail, start, end }) => {
-      const completed = goals.filter((goal) => {
-        const date = getCompletionDate(goal)
-        return date !== null && date >= start && date <= end
-      }).length
-      const inProgress = allLogs.filter((log) => {
-        const date = parseStamp(log.timestamp)
-        return date !== null && date >= start && date <= end
-      }).length
-      return { label, detail, completed, inProgress }
-    })
-  }, [allLogs, goals, selectedRange])
+    // ── 1M: Last 4 Weeks (W1: -28d to -21d, W2: -21d to -14d, W3: -14d to -7d, W4: Last 7d) ─
+    if (selectedRange === '1M') {
+      return [
+        { label: 'W1', weekOffset: 3 },
+        { label: 'W2', weekOffset: 2 },
+        { label: 'W3', weekOffset: 1 },
+        { label: 'W4', weekOffset: 0 },
+      ].map(({ label, weekOffset }) => {
+        const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (weekOffset * 7 + 6), 0, 0, 0, 0).getTime()
+        const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (weekOffset * 7), 23, 59, 59, 999).getTime()
 
+        let completed = 0
+        let inProgress = 0
+
+        goals.forEach((g) => {
+          // Real completed goals in this 7-day week
+          const compTime = getGoalCompletionTime(g)
+          if (compTime && compTime >= weekStart && compTime <= weekEnd) {
+            completed += 1
+          }
+
+          // Real active throughput in this week
+          const createdTime = getGoalCreatedTime(g)
+          const wasActiveInWeek =
+            createdTime <= weekEnd && (!compTime || compTime >= weekStart)
+
+          if (wasActiveInWeek) {
+            const logsInWeek = (g.progress_logs || []).filter((l) => {
+              const lt = parseTime(l.timestamp)
+              return lt && lt >= weekStart && lt <= weekEnd
+            })
+
+            if (logsInWeek.length > 0) {
+              inProgress += logsInWeek.length
+            } else if (g.status === 'active') {
+              inProgress += 1
+            }
+          }
+        })
+
+        const startDateStr = new Date(weekStart).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+        const endDateStr = new Date(weekEnd).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+
+        return {
+          label,
+          detail: `${label} (${startDateStr} - ${endDateStr})`,
+          completed,
+          inProgress,
+        }
+      })
+    }
+
+    // ── 1Y: Past 6 Months (Month-by-Month Velocity) ───────────────────────
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const curYear = now.getFullYear()
+    const curMonth = now.getMonth()
+
+    return Array.from({ length: 6 }, (_, i) => {
+      const mIdx = curMonth - (5 - i)
+      const dateForMonth = new Date(curYear, mIdx, 1)
+      const monthLabel = months[dateForMonth.getMonth()]
+      const startOfMonth = new Date(dateForMonth.getFullYear(), dateForMonth.getMonth(), 1, 0, 0, 0, 0).getTime()
+      const endOfMonth = new Date(dateForMonth.getFullYear(), dateForMonth.getMonth() + 1, 0, 23, 59, 59, 999).getTime()
+
+      let completed = 0
+      let inProgress = 0
+
+      goals.forEach((g) => {
+        const compTime = getGoalCompletionTime(g)
+        if (compTime && compTime >= startOfMonth && compTime <= endOfMonth) {
+          completed += 1
+        }
+
+        const createdTime = getGoalCreatedTime(g)
+        const wasActiveInMonth =
+          createdTime <= endOfMonth && (!compTime || compTime >= startOfMonth)
+
+        if (wasActiveInMonth) {
+          const logsInMonth = (g.progress_logs || []).filter((l) => {
+            const lt = parseTime(l.timestamp)
+            return lt && lt >= startOfMonth && lt <= endOfMonth
+          })
+
+          if (logsInMonth.length > 0) {
+            inProgress += logsInMonth.length
+          } else if (g.status === 'active') {
+            inProgress += 1
+          }
+        }
+      })
+
+      return {
+        label: monthLabel,
+        detail: `${monthLabel} ${dateForMonth.getFullYear()}`,
+        completed,
+        inProgress,
+      }
+    })
+  }, [goals, selectedRange])
+
+  // Scale Y-Axis nicely to clean intervals (4, 8, 12, etc.)
   const maxVal = useMemo(() => {
-    const highest = Math.max(...chartData.map((point) => point.completed + point.inProgress), 1)
+    const highest = Math.max(
+      ...chartData.map((d) => d.completed + d.inProgress),
+      1
+    )
     if (highest <= 4) return 4
     if (highest <= 8) return 8
     if (highest <= 12) return 12
     return Math.ceil(highest / 5) * 5
   }, [chartData])
 
-  const totalCompleted = goals.filter((goal) => goal.status === 'completed').length
-  const totalActive = goals.filter((goal) => goal.status === 'active').length
+  const totalCompleted = goals.filter((g) => g.status === 'completed').length
+  const totalActive = goals.filter((g) => g.status === 'active').length
 
   return (
     <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] flex flex-col justify-between h-full transition-colors">
+      {/* Header and Legend */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b-2 border-[#071E2D]/10 dark:border-white/10">
         <div>
-          <h3 className="text-base sm:text-lg font-bold text-[#071E2D] dark:text-white tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+          <h3
+            className="text-base sm:text-lg font-bold text-[#071E2D] dark:text-white tracking-tight"
+            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+          >
             Total Velocity
           </h3>
           <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 mt-0.5 font-medium">
@@ -107,6 +242,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [], logs
           </p>
         </div>
 
+        {/* Legend & Filter Controls */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-1 bg-[#F8FAFB] dark:bg-[#091824] p-1 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]">
             {(['1W', '1M', '1Y'] as const).map((range) => (
@@ -114,8 +250,11 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [], logs
                 key={range}
                 type="button"
                 onClick={() => setSelectedRange(range)}
-                aria-pressed={selectedRange === range}
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${selectedRange === range ? 'bg-[#00C4B3] text-[#071E2D] shadow-sm' : 'text-[#071E2D]/60 dark:text-slate-400 hover:text-[#071E2D]'}`}
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                  selectedRange === range
+                    ? 'bg-[#00C4B3] text-[#071E2D] shadow-sm'
+                    : 'text-[#071E2D]/60 dark:text-slate-400 hover:text-[#071E2D]'
+                }`}
               >
                 {range}
               </button>
@@ -135,7 +274,9 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [], logs
         </div>
       </div>
 
+      {/* Stacked Chart Canvas */}
       <div className="flex items-end gap-3 sm:gap-4 pt-4 h-48 sm:h-52 w-full">
+        {/* Y-Axis Labels */}
         <div className="flex flex-col justify-between h-full text-[10px] text-[#071E2D]/50 dark:text-slate-400 font-mono pb-6 pr-1 select-none font-bold">
           <span>{maxVal}</span>
           <span>{Math.round(maxVal * 0.75)}</span>
@@ -144,25 +285,42 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({ goals = [], logs
           <span>0</span>
         </div>
 
+        {/* Bars Container */}
         <div className="flex-1 flex items-end justify-between h-full border-b-2 border-[#071E2D]/15 dark:border-white/10 pb-2 px-1 gap-2">
-          {chartData.map((point) => {
-            const completedHeight = Math.min(100, Math.round((point.completed / maxVal) * 100))
-            const inProgressHeight = Math.min(100 - completedHeight, Math.round((point.inProgress / maxVal) * 100))
+          {chartData.map((item) => {
+            const completedHeight = Math.min(100, Math.round((item.completed / maxVal) * 100))
+            const inProgressHeight = Math.min(100 - completedHeight, Math.round((item.inProgress / maxVal) * 100))
+
             return (
-              <div key={point.label} className="flex-1 flex flex-col items-center h-full justify-end group relative">
+              <div key={item.label} className="flex-1 flex flex-col items-center h-full justify-end group relative">
+                {/* Tooltip on hover */}
                 <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-[#071E2D] dark:bg-white text-white dark:text-[#071E2D] text-[10px] font-bold py-1 px-2 rounded-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 shadow-md">
-                  {point.detail}: {point.completed} Done, {point.inProgress} Active
+                  {item.detail || item.label}: {item.completed} Done, {item.inProgress} Active
                 </div>
+
                 <div className="w-full max-w-[28px] h-full flex flex-col items-center justify-end rounded-t-xl overflow-hidden transition-all duration-300 group-hover:scale-y-105">
-                  {inProgressHeight > 0 && <div className="w-full bg-[#00C4B3] rounded-t-md transition-all" style={{ height: `${inProgressHeight}%` }} />}
+                  {/* Top Bar: Turquoise Accent (Active) */}
+                  {inProgressHeight > 0 && (
+                    <div
+                      className="w-full bg-[#00C4B3] rounded-t-md relative transition-all"
+                      style={{ height: `${inProgressHeight}%` }}
+                    />
+                  )}
+
+                  {/* Bottom Bar: Deep Navy Solid in light / White in dark (Done) */}
                   {completedHeight > 0 ? (
-                    <div className="w-full bg-[#071E2D] dark:bg-white transition-all" style={{ height: `${completedHeight}%` }} />
+                    <div
+                      className="w-full bg-[#071E2D] dark:bg-white transition-all"
+                      style={{ height: `${completedHeight}%` }}
+                    />
                   ) : inProgressHeight === 0 ? (
                     <div className="w-full h-1 bg-[#071E2D]/10 dark:bg-white/10 rounded-full" />
                   ) : null}
                 </div>
+
+                {/* X-Axis Label */}
                 <span className="text-[11px] text-[#071E2D]/60 dark:text-slate-400 font-bold mt-2 group-hover:text-[#071E2D] dark:group-hover:text-[#00C4B3] transition-colors">
-                  {point.label}
+                  {item.label}
                 </span>
               </div>
             )

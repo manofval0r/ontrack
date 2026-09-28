@@ -39,7 +39,7 @@ export const CheckIn: React.FC<CheckInProps> = ({ checkIns, onRespond }) => {
             className="text-lg sm:text-xl font-bold text-[#071E2D] dark:text-white"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
-            Nemotron AI Accountability Check-ins
+            Nemotron AI Accountability Check-Ins
           </h3>
         </div>
         <span className="text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] bg-[#ECFEFF] dark:bg-[#00C4B3]/15 px-2.5 py-0.5 rounded-full border border-[#006D6A] dark:border-[#00C4B3]">

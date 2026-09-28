@@ -119,14 +119,13 @@ export const DashboardRail: React.FC<DashboardRailProps> = ({
           <button
             type="button"
             onClick={() => setTheme('light')}
-            className={`w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
               theme === 'light'
                 ? 'bg-[#071E2D] text-[#00C4B3] shadow-sm font-bold'
                 : 'text-[#071E2D]/50 dark:text-slate-400 hover:text-[#071E2D]'
             }`}
             title="Light Mode"
             aria-label="Light mode"
-            aria-pressed={theme === 'light'}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="5" />
@@ -143,14 +142,13 @@ export const DashboardRail: React.FC<DashboardRailProps> = ({
           <button
             type="button"
             onClick={() => setTheme('dark')}
-            className={`w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
               theme === 'dark'
                 ? 'bg-[#00C4B3] text-[#071E2D] shadow-sm font-bold'
                 : 'text-[#071E2D]/50 dark:text-slate-400 hover:text-[#00C4B3]'
             }`}
             title="Dark Mode"
             aria-label="Dark mode"
-            aria-pressed={theme === 'dark'}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />

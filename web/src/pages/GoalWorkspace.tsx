@@ -33,7 +33,6 @@ export const GoalWorkspace: React.FC = () => {
   } = useGoals()
 
   const [confirmFinalizeOpen, setConfirmFinalizeOpen] = useState(false)
-  const [finalizing, setFinalizing] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
 
   const goalId = id || (goals.length > 0 ? goals[0].id : '')
@@ -61,16 +60,9 @@ export const GoalWorkspace: React.FC = () => {
         <p className="text-sm text-[#071E2D]/70 dark:text-slate-300 max-w-md">
           The requested goal tracker could not be retrieved or has not been created yet.
         </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          {goalId && (
-            <Button variant="primary" onClick={() => selectGoal(goalId)}>
-              Retry Loading
-            </Button>
-          )}
-          <Button variant="secondary" onClick={() => navigate('/dashboard')}>
-            Return to Dashboard
-          </Button>
-        </div>
+        <Button variant="primary" onClick={() => navigate('/dashboard')}>
+          Return to Dashboard
+        </Button>
       </div>
     )
   }
@@ -98,14 +90,8 @@ export const GoalWorkspace: React.FC = () => {
   }
 
   const handleConfirmFinalize = async () => {
-    if (finalizing) return
-    setFinalizing(true)
-    try {
-      await finalizeGoal(activeGoal.id)
-      setConfirmFinalizeOpen(false)
-    } finally {
-      setFinalizing(false)
-    }
+    await finalizeGoal(activeGoal.id)
+    setConfirmFinalizeOpen(false)
   }
 
   return (
@@ -208,8 +194,8 @@ export const GoalWorkspace: React.FC = () => {
             >
               Keep Tracking
             </button>
-            <Button variant="primary" onClick={handleConfirmFinalize} noBubble disabled={finalizing} className="text-xs !py-2 !px-4">
-              {finalizing ? 'Scoring…' : 'Confirm & Score Verdict'}
+            <Button variant="primary" onClick={handleConfirmFinalize} noBubble className="text-xs !py-2 !px-4">
+              Confirm & Score Verdict
             </Button>
           </div>
         </div>

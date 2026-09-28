@@ -23,52 +23,16 @@ import type {
 // ─── Base URL ────────────────────────────────────────────────────────────────
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'https://ontrack-api-web.onrender.com'
+const SUPABASE_URL =
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, '') || 'https://destcakvqdzhkzemdugo.supabase.co'
+const SUPABASE_ANON_KEY =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
+  'sb_publishable_kT5JCbb2BFocdW23HIJYfw_jk879gsk'
+
 // ─── Auth helpers ────────────────────────────────────────────────────────────
 
 function getToken(): string | null {
   return localStorage.getItem('ontrack_token')
-}
-
-// Public defaults (anon key is public by design); Vercel env overrides these.
-// Needed here so expired sessions can silently refresh without a login round-trip.
-const SUPABASE_URL =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? 'https://destcakvqdzhkzemdugo.supabase.co'
-const SUPABASE_ANON_KEY =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
-  'sb_publishable_kT5JCbb2BFocdW23HIJYfw_jk879gsk'
-
-/** Single-flight refresh so parallel 401s trigger exactly one token call. */
-let refreshPromise: Promise<boolean> | null = null
-
-async function tryRefreshSession(): Promise<boolean> {
-  if (refreshPromise) return refreshPromise
-  refreshPromise = (async () => {
-    try {
-      const refreshToken = localStorage.getItem('ontrack_refresh_token')
-      if (!refreshToken || !SUPABASE_URL || !SUPABASE_ANON_KEY) return false
-      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok || !data.access_token) return false
-      localStorage.setItem('ontrack_token', data.access_token)
-      if (data.refresh_token) localStorage.setItem('ontrack_refresh_token', data.refresh_token)
-      return true
-    } catch {
-      return false
-    } finally {
-      refreshPromise = null
-    }
-  })()
-  return refreshPromise
-}
-
-function clearSession(): void {
-  localStorage.removeItem('ontrack_token')
-  localStorage.removeItem('ontrack_refresh_token')
-  localStorage.removeItem('ontrack_provider_tokens')
 }
 
 function authHeaders(): Record<string, string> {
@@ -76,50 +40,105 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
+let refreshPromise: Promise<string | null> | null = null
+
+async function refreshSession(): Promise<string | null> {
+  if (refreshPromise) return refreshPromise
+
+  refreshPromise = (async () => {
+    const refreshToken = localStorage.getItem('ontrack_refresh_token')
+    if (!refreshToken) return null
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      })
+
+      if (!res.ok) {
+        return null
+      }
+
+      const data = await res.json()
+      if (data.access_token) {
+        localStorage.setItem('ontrack_token', data.access_token)
+        if (data.refresh_token) {
+          localStorage.setItem('ontrack_refresh_token', data.refresh_token)
+        }
+        return data.access_token as string
+      }
+    } catch (err) {
+      console.warn('[API] Token refresh attempt failed:', err)
+    }
+    return null
+  })().finally(() => {
+    refreshPromise = null
+  })
+
+  return refreshPromise
+}
+
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
+
+interface ExtendedRequestInit extends RequestInit {
+  _retry?: boolean
+}
 
 async function request<T>(
   path: string,
-  options: RequestInit = {},
+  options: ExtendedRequestInit = {},
   authenticated = true
 ): Promise<T> {
-  const doFetch = async (): Promise<{ res: Response; body: any }> => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(authenticated ? authHeaders() : {}),
-      ...(options.headers as Record<string, string> | undefined ?? {}),
-    }
-    const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
-    let body: any
-    const contentType = res.headers.get('content-type') ?? ''
-    if (contentType.includes('application/json')) {
-      body = await res.json()
-    } else {
-      body = await res.text()
-    }
-    return { res, body }
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(authenticated ? authHeaders() : {}),
+    ...(options.headers as Record<string, string> | undefined ?? {}),
   }
 
-  const toError = (res: Response, body: any): StandardError => ({
-    // Backend error shape: { error: string, code: string }
-    error: body?.error ?? `HTTP ${res.status}`,
-    code: body?.code ?? (res.status === 401 ? 'AUTH_INVALID' : 'API_ERROR'),
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers,
   })
 
   // Parse body (always JSON from this backend)
-  let { res, body } = await doFetch()
+  let body: any
+  const contentType = res.headers.get('content-type') ?? ''
+  if (contentType.includes('application/json')) {
+    body = await res.json()
+  } else {
+    body = await res.text()
+  }
 
-  // Silent refresh: Supabase access tokens expire (~1h). One refresh + retry
-  // before surfacing 401, so reloads don't wipe the session hourly.
-  if (res.status === 401 && authenticated && (await tryRefreshSession())) {
-    ;({ res, body } = await doFetch())
+  // Handle 401 with automatic token refresh + transparent retry
+  if (res.status === 401 && authenticated && !options._retry) {
+    const newToken = await refreshSession()
+    if (newToken) {
+      return request<T>(
+        path,
+        {
+          ...options,
+          _retry: true,
+          headers: {
+            ...((options.headers as Record<string, string>) || {}),
+            Authorization: `Bearer ${newToken}`,
+          },
+        },
+        authenticated
+      )
+    }
   }
 
   if (!res.ok) {
-    // Genuinely logged out (bad/expired refresh too): drop the dead session
-    // so the app routes to login instead of 401-looping on empty data.
-    if (res.status === 401 && authenticated) clearSession()
-    throw toError(res, body)
+    // Backend error shape: { error: string, code: string }
+    const err: StandardError = {
+      error: body?.error ?? `HTTP ${res.status}`,
+      code: body?.code ?? (res.status === 401 ? 'AUTH_INVALID' : 'API_ERROR'),
+    }
+    throw err
   }
 
   return body as T
@@ -441,12 +460,6 @@ export const api = {
    * Backend returns the new ProgressLog, not the goal — so we re-fetch the goal.
    */
   async logProgress(payload: { goal_id: string; value: number | string; note?: string }): Promise<Goal> {
-    const SENTIMENT_LABELS: Record<string, string> = {
-      focused: 'Laser Focused',
-      'on-track': 'On Track',
-      pushed: 'Pushed Hard',
-      obstacle: 'Encountered Blocker',
-    }
     let intValue: number
     let finalNote = payload.note ?? ''
 
@@ -454,10 +467,7 @@ export const api = {
       const parsed = parseInt(payload.value, 10)
       if (isNaN(parsed)) {
         intValue = 1
-        const label = SENTIMENT_LABELS[payload.value] ?? payload.value
-        if (!finalNote.startsWith(`[${label}]`)) {
-          finalNote = `[${label}]${finalNote ? ` ${finalNote}` : ''}`.slice(0, 500)
-        }
+        if (!finalNote) finalNote = payload.value
       } else {
         intValue = parsed
       }

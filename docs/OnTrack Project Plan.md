@@ -1034,19 +1034,3 @@ Instance 2: `ontrack-api-mobile`
 ---
 
 **This plan is your north star. Each role should now write their own detailed breakdown (1 page each) using these hooks. Good luck. Ship it.**
-
----
-
-## 16. Future Talk (parked — do not build yet)
-
-- **iOS Screen Time app-blocking (Duolingo-style):** Android ships first
-  (`artifacts/app-blocking-plan.md`). iOS needs FamilyControls distribution
-  approval x4 bundle IDs, App Group `group.com.manofval0r.ontrack.blocker`,
-  3 app extensions (DeviceActivityMonitor, ShieldAction, ShieldConfiguration),
-  `expo-dev-client` + EAS, and a physical iPhone (simulator returns no data).
-  Revisit after Android blocking + backend FocusSession endpoints land.
-- **Mobile parity gaps** (`docs/mobile/cross-platform.md`): tab badges, modal snap
-  points, quiet hours, widgets, deep-link routes, audio service contracts.
-- **Backend serializer enrichment for mobile** (Evans): computed `current_value`,
-  last-20 `progress_logs`, and `unit` on goal payloads; `template_context` on the
-  goal list. Mobile currently derives progress client-side from `progress_pct`.

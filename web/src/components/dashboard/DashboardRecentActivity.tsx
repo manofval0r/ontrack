@@ -42,10 +42,10 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
       const getIcon = () => {
         const domain = (g.domain || '').toLowerCase()
         if (domain === 'sales') return { icon: Zap, iconBg: 'bg-[#E6F7F5] dark:bg-[#00C4B3]/20 text-[#006D6A] dark:text-[#00C4B3]' }
-        if (domain === 'engineering') return { icon: Rocket, iconBg: 'bg-[#ECFEFF] dark:bg-[#00C4B3]/15 text-[#006D6A] dark:text-[#00C4B3]' }
-        if (domain === 'fitness') return { icon: HeartPulse, iconBg: 'bg-[#ECFEFF] dark:bg-[#00C4B3]/15 text-[#006D6A] dark:text-[#00C4B3]' }
-        if (domain === 'learning') return { icon: BookOpen, iconBg: 'bg-[#FFFBEB] dark:bg-[#FFFBEB] text-[#B45309] dark:text-[#B45309]' }
-        return { icon: Target, iconBg: 'bg-[#F8FAFB] dark:bg-[#091824] text-[#006D6A] dark:text-[#00C4B3]' }
+        if (domain === 'engineering') return { icon: Rocket, iconBg: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400' }
+        if (domain === 'fitness') return { icon: HeartPulse, iconBg: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' }
+        if (domain === 'learning') return { icon: BookOpen, iconBg: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400' }
+        return { icon: Target, iconBg: 'bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400' }
       }
 
       const { icon, iconBg } = getIcon()
@@ -76,10 +76,10 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
           id: `ci-${ci.id}`,
           goalId: g.id,
           trackerId: trackerCode,
-          title: `${g.title} (Check-in)`,
+          title: `${g.title} (Check-In)`,
           icon,
           iconBg,
-          value: ci.user_response ? 'Responded' : 'Check-in',
+          value: ci.user_response ? 'Responded' : 'Check-In',
           status: ci.user_response ? 'Completed' : 'Pending',
           date: formatLogTime(ci.timestamp),
           rawDate: ts,
@@ -226,15 +226,14 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search logs & goals..."
-              aria-label="Search activity logs and goals"
               className="bg-transparent outline-none text-[#071E2D] dark:text-white w-full placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 text-xs font-medium"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
+                className="text-xs text-[#071E2D]/50 hover:text-[#071E2D] dark:text-white/50 dark:hover:text-white"
                 aria-label="Clear search"
-                className="text-xs text-[#071E2D]/50 hover:text-[#071E2D] dark:text-white/50 dark:hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -246,8 +245,6 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
             <button
               type="button"
               onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-              aria-expanded={isFilterMenuOpen}
-              aria-controls="activity-filter-menu"
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] text-xs font-bold shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer ${
                 statusFilter !== 'All'
                   ? 'bg-[#00C4B3] text-[#071E2D]'
@@ -259,7 +256,7 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
             </button>
 
             {isFilterMenuOpen && (
-              <div id="activity-filter-menu" className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-1.5 z-30 flex flex-col gap-1">
+              <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-1.5 z-30 flex flex-col gap-1">
                 {(['All', 'Completed', 'In Progress', 'Pending'] as const).map((filterOpt) => (
                   <button
                     key={filterOpt}
@@ -306,8 +303,7 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                     type="checkbox"
                     checked={filteredActivities.length > 0 && filteredActivities.every((a) => selectedRows[a.id])}
                     onChange={toggleSelectAll}
-                    aria-label="Select all activity rows"
-                    className="rounded accent-[#00C4B3] cursor-pointer w-4 h-4"
+                    className="rounded accent-[#00C4B3] cursor-pointer"
                   />
                 </th>
                 <th className="py-3 px-3 hidden sm:table-cell">Tracker ID</th>
@@ -324,7 +320,10 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                 return (
                   <tr
                     key={act.id}
-                    className={`hover:bg-[#E6F7F5]/60 dark:hover:bg-white/5 transition-colors ${
+                    onClick={() => {
+                      toggleSelectRow(act.id)
+                    }}
+                    className={`hover:bg-[#E6F7F5]/60 dark:hover:bg-white/5 transition-colors cursor-pointer ${
                       isSelected ? 'bg-[#E6F7F5]/40 dark:bg-white/5' : ''
                     }`}
                   >
@@ -333,8 +332,7 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelectRow(act.id)}
-                        aria-label={`Select activity: ${act.title}`}
-                        className="rounded accent-[#00C4B3] cursor-pointer w-4 h-4"
+                        className="rounded accent-[#00C4B3] cursor-pointer"
                       />
                     </td>
                     <td className="py-3.5 px-3 font-mono text-[#071E2D]/60 dark:text-slate-400 font-semibold hidden sm:table-cell">
@@ -366,8 +364,8 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                           act.status === 'Completed'
                             ? 'bg-[#E6F7F5] dark:bg-[#00C4B3]/15 text-[#006D6A] dark:text-[#00C4B3] border-[#00C4B3]/50'
                             : act.status === 'Pending'
-                            ? 'bg-white dark:bg-[#0E202D] text-red-700 dark:text-red-400 border-[#071E2D] dark:border-[#1E3A52]'
-                            : 'bg-[#FFFBEB] dark:bg-[#FFFBEB] text-[#B45309] dark:text-[#B45309] border-[#F59E0B]'
+                            ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border-rose-300'
+                            : 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-300'
                         }`}
                       >
                         <span
@@ -375,8 +373,8 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                             act.status === 'Completed'
                               ? 'bg-[#00C4B3]'
                               : act.status === 'Pending'
-                              ? 'bg-red-700'
-                              : 'bg-[#F59E0B]'
+                              ? 'bg-rose-500'
+                              : 'bg-amber-500'
                           }`}
                         />
                         <span className="hidden sm:inline">{act.status}</span>
@@ -393,8 +391,7 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                             e.stopPropagation()
                             onSelectGoal?.(act.goalId)
                           }}
-                          aria-label={`Inspect goal ${act.title}`}
-                          className="px-3 min-h-[44px] inline-flex items-center bg-white dark:bg-[#091824] hover:bg-[#00C4B3] hover:text-[#071E2D] text-[#071E2D] dark:text-white border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full text-xs font-bold shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer whitespace-nowrap"
+                          className="px-3 py-1 bg-white dark:bg-[#091824] hover:bg-[#00C4B3] hover:text-[#071E2D] text-[#071E2D] dark:text-white border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full text-[10px] font-bold shadow-[1px_1px_0px_#071E2D] dark:shadow-[1px_1px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer whitespace-nowrap"
                           title={`Inspect ${act.title}`}
                         >
                           Inspect

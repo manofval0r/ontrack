@@ -129,11 +129,42 @@ def coerce_parse_result(raw):
     return (goal_type, target, items, domain, deadline, summary, template, False)
 
 
-def parse_goal_safely(text):
-    """Call David's parser; on ANY failure return the manual fallback.
+def _smart_fallback(text, rel_deadline):
+    """When LLM is unavailable or fails, construct a sensible goal proposal
+    by analyzing text keywords and numbers rather than forcing an empty manual goal."""
+    template = ai_module.infer_goal_template(text)
+    inferred_type = Goal.GOAL_TYPE_MANUAL
+    inferred_domain = "general"
+    
+    num_match = re.search(r"\b(\d+)\b", text)
+    found_num = int(num_match.group(1)) if num_match else None
+    
+    if template in (Goal.TEMPLATE_SALES_COUNTER, Goal.TEMPLATE_FITNESS_COUNTER):
+        inferred_type = Goal.GOAL_TYPE_COUNTER
+        inferred_target = found_num if found_num is not None else 10
+        inferred_domain = "sales" if template == Goal.TEMPLATE_SALES_COUNTER else "fitness"
+    elif template in (Goal.TEMPLATE_GITHUB_CHECKLIST, Goal.TEMPLATE_STUDY_CHECKLIST):
+        inferred_type = Goal.GOAL_TYPE_CHECKLIST
+        inferred_target = found_num if found_num is not None else 5
+        inferred_domain = "engineering" if template == Goal.TEMPLATE_GITHUB_CHECKLIST else "learning"
+    elif found_num is not None:
+        inferred_type = Goal.GOAL_TYPE_COUNTER
+        inferred_target = found_num
+    else:
+        inferred_target = None
+        
+    default_deadline = rel_deadline or (timezone.now() + timedelta(days=7))
+    return (
+        inferred_type, inferred_target, [], inferred_domain, default_deadline, None,
+        template, True,
+    )
 
-    The template still comes from local keyword rules even on fallback,
-    so the tracker renders sensibly without an LLM round-trip.
+
+def parse_goal_safely(text):
+    """Call David's parser; on ANY failure return an intelligent local fallback.
+
+    The template and target number come from local extraction even on fallback,
+    so the tracker renders accurately without requiring an LLM round-trip.
     """
     rel_deadline_str = ai_module.parse_relative_deadline(text)
     rel_deadline = None
@@ -146,21 +177,15 @@ def parse_goal_safely(text):
     try:
         parsed = coerce_parse_result(ai_module.parse_goal(text))
     except Exception:
-        logger.warning("ai_module.parse_goal failed; using manual fallback", exc_info=True)
-        return (
-            Goal.GOAL_TYPE_MANUAL, None, [], "", rel_deadline, None,
-            ai_module.infer_goal_template(text), True,
-        )
+        logger.warning("ai_module.parse_goal failed; using smart fallback", exc_info=True)
+        return _smart_fallback(text, rel_deadline)
     if parsed[-1]:
-        logger.warning("ai_module.parse_goal returned malformed data; using manual fallback")
-        return (
-            Goal.GOAL_TYPE_MANUAL, None, [], "", rel_deadline, None,
-            ai_module.infer_goal_template(text), True,
-        )
-    # If the parser did not determine a deadline, use the relative expression parser
-    if not parsed[4] and rel_deadline:
+        logger.warning("ai_module.parse_goal returned malformed data; using smart fallback")
+        return _smart_fallback(text, rel_deadline)
+    # If the parser did not determine a deadline, use the relative expression parser or 7-day default
+    if not parsed[4]:
         parsed_list = list(parsed)
-        parsed_list[4] = rel_deadline
+        parsed_list[4] = rel_deadline or (timezone.now() + timedelta(days=7))
         parsed = tuple(parsed_list)
     return parsed
 
@@ -233,12 +258,6 @@ class GoalDetailView(APIView):
         )
         payload = GoalSerializer(goal).data
         payload["template_context"] = _template_context(goal)
-        # Newest 20 logs from the prefetched cache (no extra query).
-        # Manual-tracker feeds and history UIs need these; the list
-        # serializer deliberately omits them to avoid N+1 on /api/goals.
-        logs = list(goal.progress_logs.all())
-        logs.sort(key=lambda entry: entry.logged_at, reverse=True)
-        payload["progress_logs"] = ProgressLogSerializer(logs[:20], many=True).data
         return Response(payload)
 
     def put(self, request, goal_id):
@@ -582,7 +601,12 @@ class ChatParseGoalView(APIView):
             "summary": summary or "",
         }
         if used_fallback:
-            ai_text = "Got it — I set this up as a manual goal. You can adjust the details."
+            if goal_type == Goal.GOAL_TYPE_COUNTER:
+                ai_text = f"Got it — I configured this as a counter tracker targeting {target or 1}. You can adjust the details."
+            elif goal_type == Goal.GOAL_TYPE_CHECKLIST:
+                ai_text = "Got it — I configured this as a checklist tracker. You can adjust the details."
+            else:
+                ai_text = "Got it — I configured this as a reflection tracker. You can adjust the details."
         elif goal_type == "checklist":
             ai_text = f"Understood! I structured this as a checklist with {len(items)} items."
         else:

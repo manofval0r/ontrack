@@ -12,10 +12,13 @@ interface GoalHeaderProps {
 
 export const GoalHeader: React.FC<GoalHeaderProps> = ({ goal, onFinalize, onEdit, onDelete }) => {
   // Calculate days remaining
-  const calculateDaysLeft = (deadline: string) => {
+  const calculateDaysLeft = (deadline?: string) => {
+    if (!deadline || !deadline.trim()) return { text: 'Ongoing Target', isLate: false }
     const end = new Date(deadline).getTime()
+    if (Number.isNaN(end)) return { text: 'Ongoing Target', isLate: false }
     const now = new Date().getTime()
     const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
+    if (Number.isNaN(diff)) return { text: 'Ongoing Target', isLate: false }
     if (diff < 0) return { text: 'Deadline Passed', isLate: true }
     if (diff === 0) return { text: 'Due Today', isLate: false }
     return { text: `${diff} Days Left`, isLate: false }
@@ -37,7 +40,7 @@ export const GoalHeader: React.FC<GoalHeaderProps> = ({ goal, onFinalize, onEdit
             className={`
               flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border-2
               ${daysInfo.isLate
-                ? 'bg-white dark:bg-[#0E202D] text-red-700 dark:text-red-400 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]'
+                ? 'bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-rose-400 border-red-700 dark:border-rose-700 shadow-[2px_2px_0px_#dc2626] dark:shadow-[2px_2px_0px_#000000]'
                 : 'bg-[#ECFEFF] dark:bg-[#00C4B3]/15 text-[#006D6A] dark:text-[#00C4B3] border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]'
               }
             `.trim()}

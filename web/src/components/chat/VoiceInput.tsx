@@ -21,9 +21,6 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   const recognitionRef = useRef<any>(null)
   // Accumulates the real speech-recognized text so the Done button can send it
   const liveTranscriptRef = useRef<string>('')
-  // Parent passes a new closure every render — ref it so recognition isn't restarted.
-  const completeRef = useRef(onTranscriptionComplete)
-  completeRef.current = onTranscriptionComplete
 
   useEffect(() => {
     if (isRecording) {
@@ -44,23 +41,30 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
           recognition.lang = 'en-US'
 
           recognition.onresult = (event: any) => {
-            // Accumulate finals silently; emit ONCE on Done. Streaming every
-            // interim/final here duplicates text because the parent appends.
+            let partial = ''
             for (let i = event.resultIndex; i < event.results.length; ++i) {
+              const t = event.results[i][0].transcript
               if (event.results[i].isFinal) {
-                liveTranscriptRef.current += event.results[i][0].transcript
+                liveTranscriptRef.current += t
+              } else {
+                partial += t
               }
+            }
+            // Fire immediately for final segments so chat input updates in real-time
+            const combined = liveTranscriptRef.current + (partial ? ` ${partial}` : '')
+            if (combined.trim()) {
+              onTranscriptionComplete(combined.trim())
             }
           }
 
-          recognition.onerror = () => {
-            // Speech errors are silent; Done simply completes with what's heard.
+          recognition.onerror = (e: any) => {
+            console.warn('SpeechRecognition error', e.error)
           }
 
           recognition.start()
           recognitionRef.current = recognition
-        } catch {
-          // Recognition unavailable — Done completes with what's heard (maybe nothing).
+        } catch (e) {
+          console.warn('SpeechRecognition initialization error', e)
         }
       }
     } else {
@@ -78,7 +82,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
         recognitionRef.current = null
       }
     }
-  }, [isRecording])
+  }, [isRecording, onTranscriptionComplete])
 
   if (!isRecording) {
     return (
@@ -106,32 +110,33 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   }
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-[#F8FAFB] dark:bg-[#091824] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] animate-pulse">
+    <div className="flex items-center gap-3 px-4 py-2 bg-red-50 border-2 border-red-500 rounded-full shadow-[3px_3px_0px_#dc2626] animate-pulse">
       {/* Pulsing recording indicator */}
-      <span className="w-3 h-3 rounded-full bg-red-600 animate-ping" aria-hidden="true" />
-      <span className="text-xs font-mono font-bold text-[#071E2D] dark:text-white" role="timer">
+      <span className="w-3 h-3 rounded-full bg-red-600 animate-ping" />
+      <span className="text-xs font-mono font-bold text-red-700">
         Recording {formatTime(seconds)}
       </span>
 
       {/* Animated waveform bars */}
-      <div className="flex items-center gap-1 h-4 px-2" aria-hidden="true">
-        <span className="w-1 bg-[#00C4B3] animate-[bounce_0.6s_infinite_100ms] h-full rounded" />
-        <span className="w-1 bg-[#00C4B3] animate-[bounce_0.6s_infinite_250ms] h-3/4 rounded" />
-        <span className="w-1 bg-[#00C4B3] animate-[bounce_0.6s_infinite_400ms] h-full rounded" />
-        <span className="w-1 bg-[#00C4B3] animate-[bounce_0.6s_infinite_200ms] h-1/2 rounded" />
+      <div className="flex items-center gap-1 h-4 px-2">
+        <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_100ms] h-full rounded" />
+        <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_250ms] h-3/4 rounded" />
+        <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_400ms] h-full rounded" />
+        <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_200ms] h-1/2 rounded" />
       </div>
 
       <button
         type="button"
         onClick={() => {
           onStopRecording()
-          // Only complete when the browser actually heard something.
-          // Emitting a fake sample transcript was the "same text every time" bug;
-          // silence now simply ends recording with no fake input.
+          // Only fall back to a sample when the browser heard nothing
+          // (e.g. mic denied / SpeechRecognition unsupported). Never
+          // overwrite a real transcript — that was the "same text every time" bug.
           const heard = liveTranscriptRef.current.trim()
-          if (heard) {
-            completeRef.current(heard)
+          if (!heard) {
+            onTranscriptionComplete('I want to close 5 enterprise deals before the end of next week')
           }
+          // else: the real transcript was already streamed via onresult
         }}
         className="px-3 py-1 bg-white text-xs font-bold text-[#071E2D] border border-[#071E2D] rounded-full shadow-sm hover:bg-[#F3F6F8] inline-flex items-center gap-1"
       >
@@ -142,8 +147,8 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       <button
         type="button"
         onClick={onCancel}
-        aria-label="Cancel voice recording"
-        className="text-xs font-bold text-red-700 dark:text-red-400 hover:text-red-800 min-h-[44px] px-2 flex items-center justify-center"
+        className="text-xs font-bold text-red-600 hover:text-red-800 p-1 flex items-center justify-center"
+        aria-label="Cancel recording"
       >
         <X className="w-4 h-4" />
       </button>

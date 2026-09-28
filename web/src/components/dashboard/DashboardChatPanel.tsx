@@ -46,7 +46,6 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
   const [messages, setMessages] = useState<ChatMessageItem[]>([])
   const [inputText, setInputText] = useState('')
   const [isThinking, setIsThinking] = useState(false)
-  const [chatError, setChatError] = useState<string | null>(null)
   const [thinkingIndex, setThinkingIndex] = useState(0)
   const [pendingGoalAction, setPendingGoalAction] = useState<{ delta: number; text: string } | null>(null)
 
@@ -82,11 +81,10 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
     if (activeGoals.length > 0) {
       const pushupGoal = activeGoals.find((g) => g.title.toLowerCase().includes('pushup'))
       if (pushupGoal) {
-        const target = pushupGoal.target > 0 ? ` (target ${pushupGoal.target})` : ''
-        proactiveMessage = `Pushups are on the board${target} — log today's session when you're ready?`
+        proactiveMessage = "You haven't logged pushups since yesterday — still on for 50 today?"
       } else {
         const firstGoal = activeGoals[0]
-        proactiveMessage = `"${firstGoal.title}" is active — log your latest progress or tell me what's blocking you?`
+        proactiveMessage = `You haven't logged updates for "${firstGoal.title}" since yesterday — still on track for your target?`
       }
     }
 
@@ -156,8 +154,8 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
         },
       }
       setMessages((prev) => [...prev, aiMsg])
-    } catch {
-      setChatError('Could not log that update. Check your connection and try again.')
+    } catch (err) {
+      console.error(err)
     } finally {
       setIsThinking(false)
     }
@@ -262,8 +260,8 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
             },
           ])
           return
-        } catch {
-          setChatError('Could not log that update. Check your connection and try again.')
+        } catch (e) {
+          console.error(e)
         }
       }
     }
@@ -289,8 +287,8 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
           },
         ])
         return
-      } catch {
-        setChatError('Could not create that goal. Check your connection and try again.')
+      } catch (err) {
+        console.error(err)
       }
     }
 
@@ -308,7 +306,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-white border-2 border-[#071E2D] rounded-2xl sm:rounded-3xl shadow-[4px_4px_0px_#071E2D] overflow-hidden">
-      {/* Header: OnTrack small label / icon, no unnecessary chrome */}
+      {/* Header: Ontrack small label / icon, no unnecessary chrome */}
       <div className="px-5 py-4 border-b-2 border-[#071E2D] bg-[#F8FAFB] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center font-bold text-xs text-[#071E2D]">
@@ -318,7 +316,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
             className="font-bold text-base text-[#071E2D] tracking-tight"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
-            OnTrack AI
+            Ontrack AI
           </span>
         </div>
         <span className="text-[11px] font-bold text-[#006D6A] bg-[#ECFEFF] border border-[#00C4B3] px-2.5 py-0.5 rounded-full">
@@ -364,9 +362,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
                           key={g.id}
                           type="button"
                           onClick={() => handleSelectAmbiguousGoal(g)}
-                          disabled={isThinking}
-                          aria-label={`Log to goal ${g.title}`}
-                          className="px-3 py-1.5 rounded-xl border-2 border-[#071E2D] bg-white text-xs font-bold text-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:bg-[#ECFEFF] hover:border-[#006D6A] text-left transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 min-h-[44px]"
+                          className="px-3 py-1.5 rounded-xl border-2 border-[#071E2D] bg-white text-xs font-bold text-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:bg-[#ECFEFF] hover:border-[#006D6A] text-left transition-all cursor-pointer inline-flex items-center gap-1.5"
                         >
                           <ArrowRight className="w-3 h-3 text-[#006D6A] shrink-0" />
                           <span>{g.title} ({g.current_value} / {g.target} {g.unit || ''})</span>
@@ -455,18 +451,12 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
 
         {/* Typing / Thinking Indicator: Step 3 rotating status text */}
         {isThinking && (
-          <div aria-live="polite" className="flex items-center gap-2 p-3 rounded-2xl bg-white border-2 border-[#071E2D] shadow-[2px_2px_0px_#071E2D] mr-auto max-w-[85%] animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-ping" aria-hidden="true" />
+          <div className="flex items-center gap-2 p-3 rounded-2xl bg-white border-2 border-[#071E2D] shadow-[2px_2px_0px_#071E2D] mr-auto max-w-[85%] animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-ping" />
             <span className="text-xs font-bold text-[#071E2D]" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
               {THINKING_PHRASES[thinkingIndex]}
             </span>
           </div>
-        )}
-
-        {chatError && (
-          <p role="alert" className="text-xs font-semibold text-red-700 dark:text-red-400 px-1">
-            {chatError}
-          </p>
         )}
 
         <div ref={messagesEndRef} />
@@ -484,13 +474,9 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
           <input
             type="text"
             value={inputText}
-            onChange={(e) => {
-              setInputText(e.target.value)
-              if (chatError) setChatError(null)
-            }}
+            onChange={(e) => setInputText(e.target.value)}
             disabled={isThinking}
             placeholder="Log progress, add a goal, or ask something"
-            aria-label="Message the accountability coach"
             className="flex-1 px-4 py-2.5 bg-white border-2 border-[#071E2D] rounded-full text-xs sm:text-sm text-[#071E2D] placeholder:text-[#071E2D]/45 outline-none shadow-[2px_2px_0px_#071E2D] focus:shadow-[3px_3px_0px_#00C4B3] transition-all"
           />
 

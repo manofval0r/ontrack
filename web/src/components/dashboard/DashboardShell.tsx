@@ -150,7 +150,7 @@ export const DashboardShell: React.FC = () => {
                   className="font-bold text-sm text-[#071E2D] dark:text-white"
                   style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                 >
-                  OnTrack AI Accountability Coach
+                  Ontrack AI Accountability Coach
                 </h3>
               </div>
               <button

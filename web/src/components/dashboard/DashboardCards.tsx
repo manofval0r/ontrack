@@ -148,7 +148,7 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
               onClick={onOpenNewGoal}
               className="bg-[#F8FAFB] dark:bg-[#091824] border-2 border-dashed border-[#071E2D]/30 dark:border-[#1E3A52] rounded-2xl p-4 text-center cursor-pointer hover:border-[#00C4B3] transition-colors"
             >
-              <span className="text-xs font-bold text-[#071E2D] dark:text-white block">+ {goals.length > 0 ? 'Start your next tracker' : 'Create your first tracker'}</span>
+              <span className="text-xs font-bold text-[#071E2D] dark:text-white block">+ Create your first tracker</span>
               <span className="text-[11px] text-[#071E2D]/60 dark:text-slate-400">Speak or type a goal with Nemotron AI</span>
             </div>
           ) : (

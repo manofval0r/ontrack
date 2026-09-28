@@ -246,19 +246,34 @@ export function parseRelativeDeadline(text: string, referenceDate: Date = new Da
   return null
 }
 
-/**
- * Extract quantity and unit from user goal prompt
- * e.g. "buy 3 phones" -> { target: 3, unit: "phones" }
- */
 export function extractTargetAndUnit(text: string): { target: number; unit: string } {
-  const match = text.match(/(?:^|\s)(\d+)\s*([a-zA-Z]+)?/)
-  if (match) {
-    const target = parseInt(match[1], 10)
-    const rawUnit = (match[2] || '').trim().toLowerCase()
-    // Ignore common non-units like temporal words
-    const ignoredWords = ['days', 'weeks', 'months', 'hours', 'minutes', 'today', 'daily', 'times', 'before', 'by', 'until']
-    const unit = rawUnit && !ignoredWords.includes(rawUnit) ? rawUnit : 'units'
-    return { target: Math.max(1, target), unit }
+  // Support expressions like "sell 2 of Israel's laptop", "run 5 km", "read 20 pages", "buy 3 phones"
+  const numberMatch = text.match(/(?:^|\s)(\d+)(?:\s+(?:of\s+)?(?:the\s+|my\s+|our\s+|a\s+|an\s+|[a-zA-Z0-9'’]+'s\s+)*([a-zA-Z]+))?/i)
+  if (numberMatch && numberMatch[1]) {
+    const target = parseInt(numberMatch[1], 10)
+    const rawUnit = (numberMatch[2] || '').trim().toLowerCase()
+    const ignoredWords = [
+      'days', 'weeks', 'months', 'hours', 'minutes', 'today', 'daily', 'times',
+      'before', 'by', 'until', 'of', 'the', 'a', 'an', 'my', 'our', 'israel', 'israels'
+    ]
+    let unit = rawUnit && !ignoredWords.includes(rawUnit) ? rawUnit : ''
+
+    // If unit was not cleanly extracted in the first pass, scan remaining words for the actual object noun
+    if (!unit) {
+      const idx = text.indexOf(numberMatch[1])
+      if (idx !== -1) {
+        const afterNum = text.slice(idx + numberMatch[1].length).trim()
+        const words = afterNum.split(/\s+/).map((w) => w.replace(/[^a-zA-Z]/g, '').toLowerCase())
+        for (const w of words) {
+          if (w && !ignoredWords.includes(w) && w.length > 2) {
+            unit = w
+            break
+          }
+        }
+      }
+    }
+
+    return { target: Math.max(1, target), unit: unit || 'units' }
   }
   return { target: 10, unit: 'units' }
 }

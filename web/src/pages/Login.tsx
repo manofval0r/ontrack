@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { AuthIllustration } from '../components/AuthIllustration'
@@ -71,16 +71,19 @@ export const Login: React.FC = () => {
   const [submitting, setSubmitting] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
 
-  const supabaseConfigured =
-    !!SUPABASE_URL && !!SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')
   // ── Forgot Password States ─────────────────────────────────────────
-  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(
-    () => new URLSearchParams(location.search).get('forgot') === 'true'
-  )
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotSubmitting, setForgotSubmitting] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotError, setForgotError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    if (searchParams.get('forgot') === 'true') {
+      setShowForgotPasswordModal(true)
+    }
+  }, [location.search])
 
   const handleSendResetLink = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -116,33 +119,31 @@ export const Login: React.FC = () => {
   }
 
   const handleGoogleAuth = () => {
-    if (!supabaseConfigured) {
-      setAuthError('Google sign-in is not configured in this build. Use email instead.')
-      return
+    if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
+      const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
+      window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
+    } else {
+      localStorage.setItem('ontrack_token', 'mock_google_oauth_token')
+      navigate('/dashboard')
     }
-    const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
   }
 
   const handleGithubAuth = () => {
-    if (!supabaseConfigured) {
-      setAuthError('GitHub sign-in is not configured in this build. Use email instead.')
-      return
+    if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
+      const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
+      window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=github&redirect_to=${redirectTo}`
+    } else {
+      localStorage.setItem('ontrack_token', 'mock_github_oauth_token')
+      navigate('/dashboard')
     }
-    const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=github&redirect_to=${redirectTo}`
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setAuthError(null)
 
-    // ── Supabase email auth (required — no mock bypass) ──────────────────
-    if (!supabaseConfigured) {
-      setAuthError('Email sign-in is not configured in this build yet.')
-      return
-    }
-    {
+    // ── If Supabase is configured, use real auth ───────────────────────
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       setSubmitting(true)
       try {
         const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
@@ -170,7 +171,11 @@ export const Login: React.FC = () => {
       } finally {
         setSubmitting(false)
       }
+      return
     }
+
+    // ── Dev fallback: skip real auth, go straight to dashboard ────────
+    navigate('/dashboard')
   }
 
   return (
@@ -215,7 +220,7 @@ export const Login: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]"
+                  className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-sm"
                 />
               </div>
 
@@ -235,7 +240,7 @@ export const Login: React.FC = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    className="w-full px-5 py-3.5 pr-12 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]"
+                    className="w-full px-5 py-3.5 pr-12 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-sm"
                   />
                   <button
                     type="button"
@@ -282,15 +287,9 @@ export const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                aria-busy={submitting}
                 className="w-full mt-3 py-3.5 px-6 rounded-full bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] font-sans font-semibold text-base transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] hover:shadow-[5px_5px_0px_#071E2D] dark:hover:shadow-[5px_5px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2 flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {submitting ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white dark:border-[#071E2D]/40 dark:border-t-[#071E2D] animate-spin" aria-hidden="true" />
-                    Logging in…
-                  </span>
-                ) : 'Log in'}
+                {submitting ? 'Logging in…' : 'Log in'}
               </button>
             </form>
 

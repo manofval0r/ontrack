@@ -144,7 +144,7 @@ export const Onboarding: React.FC = () => {
   // Compiled goal state for Step 4 payoff
   const [createdGoal, setCreatedGoal] = useState<Goal>({
     id: 'onboarding-initial',
-    user_id: 'demo-local',
+    user_id: 'user-israel',
     title: '',
     description: '',
     goal_type: 'counter',
@@ -203,7 +203,7 @@ export const Onboarding: React.FC = () => {
 
       return {
         id,
-        user_id: 'demo-local',
+        user_id: 'user-israel',
         title: text,
         description: `Custom AI checklist tracker built for "${text}".`,
         goal_type: 'checklist',
@@ -230,7 +230,7 @@ export const Onboarding: React.FC = () => {
     ) {
       return {
         id,
-        user_id: 'demo-local',
+        user_id: 'user-israel',
         title: text,
         description: `Daily reflection and insight log tracking "${text}".`,
         goal_type: 'manual',
@@ -274,7 +274,7 @@ export const Onboarding: React.FC = () => {
 
     return {
       id,
-      user_id: 'demo-local',
+      user_id: 'user-israel',
       title: text,
       description: `Target counter tracker built for "${text}".`,
       goal_type: 'counter',
@@ -339,9 +339,10 @@ export const Onboarding: React.FC = () => {
       try {
         // POST /api/goals { text: goalText } — backend AI parses the rest
         await createGoal({ text: goalText.trim() || createdGoal.title })
-      } catch {
+      } catch (e) {
         // Non-fatal: goal creation failure should not block the user from
         // continuing. The goal can be created later from the dashboard.
+        console.warn('[Onboarding] Could not persist goal to API:', e)
       }
     }
     localStorage.setItem('ontrack_onboarded', 'true')
@@ -433,8 +434,6 @@ export const Onboarding: React.FC = () => {
                       setSelectedPersona(key)
                       setGoalText(p.exampleGoal)
                     }}
-                    aria-pressed={isSelected}
-                    aria-label={`Persona: ${p.label}`}
                     className={`px-3 py-1.5 rounded-full border-2 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       isSelected
                         ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D] shadow-[2px_2px_0px_#071E2D] scale-105'
@@ -518,7 +517,6 @@ export const Onboarding: React.FC = () => {
                         }
                       }}
                       placeholder='Try "Ship MVP by Friday" or "50 pushups a day"'
-                      aria-label="Describe your goal"
                       className="w-full bg-transparent font-sans text-base sm:text-lg text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none resize-none leading-relaxed"
                       autoFocus
                     />
@@ -542,8 +540,6 @@ export const Onboarding: React.FC = () => {
                               setSelectedPersona(key)
                               setGoalText(p.exampleGoal)
                             }}
-                            aria-pressed={isCurrent}
-                            aria-label={`Use example goal: ${p.exampleGoal}`}
                             className={`text-xs font-semibold px-3 py-2.5 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-2.5 text-left ${
                               isCurrent
                                 ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D] shadow-[3px_3px_0px_#071E2D] font-bold'
@@ -622,20 +618,15 @@ export const Onboarding: React.FC = () => {
                   alt="Building Tracker Progress"
                   className="w-56 sm:w-72 max-w-full h-auto object-contain transition-all duration-300"
                 />
-                <div className="w-full max-w-xs bg-[#F3F6F8] dark:bg-[#07141E] h-3 sm:h-3.5 rounded-full mt-4 sm:mt-5 border-2 border-[#071E2D] dark:border-[#1E3A52] overflow-hidden p-0.5">
+                <div className="w-full max-w-xs bg-[#E2E8F0] dark:bg-[#07141E] h-3 sm:h-3.5 rounded-full mt-4 sm:mt-5 border-2 border-[#071E2D] dark:border-[#1E3A52] overflow-hidden p-0.5">
                   <div
                     className="h-full bg-[#00C4B3] rounded-full transition-all duration-700 ease-out"
                     style={{ width: loadingPhase === 0 ? '35%' : loadingPhase === 1 ? '70%' : '98%' }}
-                    role="progressbar"
-                    aria-valuenow={loadingPhase === 0 ? 35 : loadingPhase === 1 ? 70 : 98}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label="Building your tracker"
                   />
                 </div>
               </div>
             </div>
-            <div className="h-9 sm:h-10 flex items-center justify-center px-4" role="status" aria-live="polite">
+            <div className="h-9 sm:h-10 flex items-center justify-center px-4">
               <p
                 key={loadingPhase}
                 className="text-lg sm:text-2xl font-extrabold text-[#071E2D] dark:text-white tracking-tight animate-fadeIn"

@@ -39,7 +39,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onActivat
           }
         `.trim()}
       >
-        <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">
+        <p className="text-sm sm:text-[0.9375rem] font-medium leading-relaxed whitespace-pre-wrap">
           {message.content}
         </p>
 

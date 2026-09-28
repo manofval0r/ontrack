@@ -248,7 +248,7 @@ export const CalendarPanel: React.FC = () => {
                 {cell.hasActivity && (
                   <div className="flex items-center gap-0.5 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#00C4B3]" />
-                    {cell.completedCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#00C4B3]" />}
+                    {cell.completedCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
                   </div>
                 )}
               </button>

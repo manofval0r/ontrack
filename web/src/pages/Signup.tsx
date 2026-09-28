@@ -72,37 +72,32 @@ export const Signup: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null)
   const [emailConfirmationSent, setEmailConfirmationSent] = useState(false)
 
-  const supabaseConfigured =
-    !!SUPABASE_URL && !!SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')
-
   const handleGoogleAuth = () => {
-    if (!supabaseConfigured) {
-      setAuthError('Google sign-in is not configured in this build. Use email instead.')
-      return
+    if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
+      const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
+      window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
+    } else {
+      localStorage.setItem('ontrack_token', 'mock_google_oauth_token')
+      navigate('/dashboard')
     }
-    const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
   }
 
   const handleGithubAuth = () => {
-    if (!supabaseConfigured) {
-      setAuthError('GitHub sign-in is not configured in this build. Use email instead.')
-      return
+    if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
+      const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
+      window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=github&redirect_to=${redirectTo}`
+    } else {
+      localStorage.setItem('ontrack_token', 'mock_github_oauth_token')
+      navigate('/dashboard')
     }
-    const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=github&redirect_to=${redirectTo}`
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setAuthError(null)
 
-    // ── Supabase signup (required — no mock bypass) ─────────────────────
-    if (!supabaseConfigured) {
-      setAuthError('Email sign-up is not configured in this build yet.')
-      return
-    }
-    {
+    // ── Real Supabase signup ──────────────────────────────────────────
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       setSubmitting(true)
       try {
         const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
@@ -165,7 +160,11 @@ export const Signup: React.FC = () => {
       } finally {
         setSubmitting(false)
       }
+      return
     }
+
+    // ── Dev fallback ──────────────────────────────────────────────────
+    navigate('/onboarding')
   }
 
   return (
@@ -372,7 +371,7 @@ export const Signup: React.FC = () => {
         {/* ── Right Column: Full-Screen Illustration Showcase ─────────────── */}
         <div className="hidden lg:flex w-full lg:w-1/2 justify-center items-center">
           <AuthIllustration
-            headline="Type or speak in plain language. OnTrack builds the tracker."
+            headline="Type or speak in plain language. Ontrack builds the tracker."
             taskTitle="Morning Routine"
             taskSubtitle="50 Pushups & Reading"
             progressPercent={84}

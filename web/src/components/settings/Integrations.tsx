@@ -344,13 +344,13 @@ export const Integrations: React.FC = () => {
 
   const iconFor = (icon: CatalogEntry['icon']) =>
     icon === 'calendar' ? (
-      <Calendar className="w-5 h-5 text-[#006D6A] dark:text-[#00C4B3]" />
+      <Calendar className="w-5 h-5 text-indigo-500" />
     ) : icon === 'slack' ? (
-      <MessageSquare className="w-5 h-5 text-[#B45309] dark:text-[#00C4B3]" />
+      <MessageSquare className="w-5 h-5 text-amber-500" />
     ) : icon === 'notion' ? (
-      <FileText className="w-5 h-5 text-[#006D6A] dark:text-[#00C4B3]" />
+      <FileText className="w-5 h-5 text-emerald-500" />
     ) : (
-      <GitBranch className="w-5 h-5 text-[#071E2D] dark:text-[#00C4B3]" />
+      <GitBranch className="w-5 h-5 text-violet-500" />
     )
 
   return (
@@ -373,19 +373,8 @@ export const Integrations: React.FC = () => {
         </div>
       )}
       {loadError && (
-        <div role="alert" className="text-xs font-medium text-red-600 bg-red-50/80 dark:bg-red-950/30 border border-red-200/80 dark:border-red-900/50 rounded-xl px-3.5 py-2 flex flex-wrap items-center justify-between gap-2">
-          <span>{loadError}</span>
-          <button type="button" onClick={() => refresh()} className="font-bold underline underline-offset-2">
-            Retry
-          </button>
-        </div>
-      )}
-
-      {rows === null && !loadError && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" aria-busy="true" aria-label="Loading integrations">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-36 rounded-2xl border-2 border-[#071E2D]/20 dark:border-white/10 bg-[#F8FAFB] dark:bg-[#091824] animate-pulse" />
-          ))}
+        <div role="alert" className="text-xs font-medium text-red-600 bg-red-50/80 dark:bg-red-950/30 border border-red-200/80 dark:border-red-900/50 rounded-xl px-3.5 py-2">
+          {loadError}
         </div>
       )}
 
@@ -408,8 +397,8 @@ export const Integrations: React.FC = () => {
                     <span
                       className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border mt-1 ${
                         connected
-                          ? 'bg-[#ECFEFF] dark:bg-[#00C4B3]/15 text-[#006D6A] dark:text-[#00C4B3] border-[#00C4B3]'
-                          : 'bg-[#F8FAFB] dark:bg-[#091824] text-[#071E2D]/60 dark:text-slate-300 border-[#071E2D]/30 dark:border-white/20'
+                          ? 'bg-[#F0FDF4] dark:bg-emerald-950/40 text-[#166534] dark:text-emerald-400 border-[#166534] dark:border-emerald-700'
+                          : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-300 dark:border-slate-600'
                       }`}
                     >
                       {connected ? (
@@ -595,15 +584,13 @@ export const Integrations: React.FC = () => {
             value={webhookUrl}
             onChange={(e) => setWebhookUrl(e.target.value)}
             placeholder="https://hooks.slack.com/services/…"
-            aria-label="Slack webhook URL"
-            className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] focus-visible:ring-2 focus-visible:ring-[#00C4B3] outline-none"
+            className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] outline-none"
           />
           <input
             value={slackChannel}
             onChange={(e) => setSlackChannel(e.target.value)}
             placeholder="Channel label, e.g. #accountability (optional)"
-            aria-label="Slack channel label, optional"
-            className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] focus-visible:ring-2 focus-visible:ring-[#00C4B3] outline-none"
+            className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] outline-none"
           />
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#071E2D]/10 dark:border-white/10">
             <button
@@ -630,15 +617,13 @@ export const Integrations: React.FC = () => {
             value={notionToken}
             onChange={(e) => setNotionToken(e.target.value)}
             placeholder="Internal integration token (ntn_… / secret_…)"
-            aria-label="Notion integration token"
-            className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] focus-visible:ring-2 focus-visible:ring-[#00C4B3] outline-none"
+            className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] outline-none"
           />
           <input
             value={notionDb}
             onChange={(e) => setNotionDb(e.target.value)}
             placeholder="Database ID to export verdicts into"
-            aria-label="Notion database ID"
-            className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] focus-visible:ring-2 focus-visible:ring-[#00C4B3] outline-none"
+            className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] outline-none"
           />
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#071E2D]/10 dark:border-white/10">
             <button
