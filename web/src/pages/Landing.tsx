@@ -659,6 +659,7 @@ const Footer: React.FC = () => (
         <ul className="flex flex-col gap-2 list-none p-0 m-0 font-sans text-sm text-[#071E2D]/65 dark:text-slate-300">
           <li><a href="#" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">About</a></li>
           <li><a href="#" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Contact</a></li>
+          <li><Link to="/terms-of-service" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Terms of Service</Link></li>
           <li><Link to="/privacy-policy" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Privacy Policy</Link></li>
         </ul>
       </div>
@@ -669,6 +670,7 @@ const Footer: React.FC = () => (
         © 2026 Ontrack. All rights reserved.
       </p>
       <div className="flex items-center gap-4 text-xs text-[#071E2D]/60 dark:text-slate-400">
+        <Link to="/terms-of-service" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Terms of Service</Link>
         <Link to="/privacy-policy" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Privacy Policy</Link>
         <Link to="/login" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Log in</Link>
         <Link to="/signup" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Sign up</Link>

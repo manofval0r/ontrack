@@ -230,13 +230,16 @@ export const PrivacyPolicy: React.FC = () => {
             <span>© 2026 Ontrack. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-4">
+            <Link to="/terms-of-service" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">
+              Terms of Service
+            </Link>
             <Link to="/privacy-policy" className="font-bold text-[#071E2D] dark:text-white hover:underline">
               Privacy Policy
             </Link>
-            <Link to="/login" className="hover:text-[#071E2D] dark:hover:text-white">
+            <Link to="/login" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">
               Log in
             </Link>
-            <Link to="/signup" className="hover:text-[#071E2D] dark:hover:text-white">
+            <Link to="/signup" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">
               Sign up
             </Link>
           </div>

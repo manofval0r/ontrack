@@ -373,6 +373,13 @@ export const Signup: React.FC = () => {
                 <p className="font-sans text-xs text-center text-[#071E2D]/40 dark:text-slate-500 mt-2">
                   By joining, you agree to our{' '}
                   <Link
+                    to="/terms-of-service"
+                    className="text-[#006D6A] dark:text-[#00C4B3] hover:underline font-medium"
+                  >
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link
                     to="/privacy-policy"
                     className="text-[#006D6A] dark:text-[#00C4B3] hover:underline font-medium"
                   >

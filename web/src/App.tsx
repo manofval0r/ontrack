@@ -8,6 +8,7 @@ import { Signup } from './pages/Signup'
 import { ResetPassword } from './pages/ResetPassword'
 import { Onboarding } from './pages/Onboarding'
 import { PrivacyPolicy } from './pages/PrivacyPolicy'
+import { TermsOfService } from './pages/TermsOfService'
 import { DashboardOverview } from './pages/DashboardOverview'
 import { Chat } from './pages/Chat'
 import { GoalWorkspace } from './pages/GoalWorkspace'
@@ -47,6 +48,8 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/terms" element={<Navigate to="/terms-of-service" replace />} />
 
             {/* Core Authenticated App Flow */}
             <Route
