@@ -5,6 +5,8 @@ interface VoiceInputProps {
   isRecording: boolean
   onStartRecording: () => void
   onStopRecording: () => void
+  /** Live interim transcript for the input preview (best-effort). */
+  onTranscriptionLive?: (interim: string) => void
   onTranscriptionComplete: (text: string) => void
   onCancel: () => void
 }
@@ -13,6 +15,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   isRecording,
   onStartRecording,
   onStopRecording,
+  onTranscriptionLive,
   onTranscriptionComplete,
   onCancel,
 }) => {
@@ -46,11 +49,19 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
           recognition.onresult = (event: any) => {
             // Accumulate finals silently; emit ONCE on Done. Streaming every
             // interim/final here duplicates text because the parent appends.
+            let partial = ''
             for (let i = event.resultIndex; i < event.results.length; ++i) {
+              const text = event.results[i][0].transcript
               if (event.results[i].isFinal) {
-                liveTranscriptRef.current += event.results[i][0].transcript
+                liveTranscriptRef.current += text
+              } else {
+                partial += text
               }
             }
+            // Live preview only — never the submitted value.
+            try {
+              onTranscriptionLive?.((liveTranscriptRef.current + ' ' + partial).trim())
+            } catch { /* preview is best-effort */ }
           }
 
           recognition.onerror = () => {

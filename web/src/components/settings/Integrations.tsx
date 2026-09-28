@@ -223,7 +223,7 @@ export const Integrations: React.FC = () => {
     try {
       const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')
       if (localInts.find((i: any) => i.id === provider && i.connected)) return true
-    } catch {}
+    } catch { /* local cache optional — continue without it */ }
     return false
   }
 
@@ -274,7 +274,7 @@ export const Integrations: React.FC = () => {
         const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')
         const updated = localInts.map((i: any) => (i.id === provider ? { ...i, connected: false } : i))
         localStorage.setItem('ontrack_integrations', JSON.stringify(updated))
-      } catch {}
+      } catch { /* local cache optional — continue without it */ }
       await refresh()
       setNotice(`${provider.toUpperCase()} disconnected.`)
     } catch (err: any) {
@@ -302,7 +302,7 @@ export const Integrations: React.FC = () => {
         const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')
         const updated = localInts.map((i: any) => (i.id === 'github' ? { ...i, connected: true } : i))
         localStorage.setItem('ontrack_integrations', JSON.stringify(updated))
-      } catch {}
+      } catch { /* local cache optional — continue without it */ }
 
       await api.saveIntegration({
         provider: 'github',
