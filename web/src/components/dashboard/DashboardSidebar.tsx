@@ -150,14 +150,14 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           aria-label="User account menu"
         >
           <div className="w-9 h-9 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center font-bold text-xs text-[#071E2D] shadow-[2px_2px_0px_#071E2D] flex-shrink-0">
-            {(user.name || 'Israel').charAt(0).toUpperCase()}
+            {(user.name || '?').charAt(0).toUpperCase()}
           </div>
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-xs font-bold text-[#071E2D] truncate">
-              {user.name || 'Israel'}
+              {user.name || 'Your account'}
             </span>
             <span className="text-[10px] text-[#071E2D]/55 truncate">
-              {user.email || 'israel@example.com'}
+              {user.email || 'Sign in to sync'}
             </span>
           </div>
           <span className="text-xs text-[#071E2D]/40">⋮</span>

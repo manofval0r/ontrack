@@ -80,10 +80,11 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
     if (activeGoals.length > 0) {
       const pushupGoal = activeGoals.find((g) => g.title.toLowerCase().includes('pushup'))
       if (pushupGoal) {
-        proactiveMessage = "You haven't logged pushups since yesterday — still on for 50 today?"
+        const target = pushupGoal.target > 0 ? ` (target ${pushupGoal.target})` : ''
+        proactiveMessage = `Pushups are on the board${target} — log today's session when you're ready?`
       } else {
         const firstGoal = activeGoals[0]
-        proactiveMessage = `You haven't logged updates for "${firstGoal.title}" since yesterday — still on track for your target?`
+        proactiveMessage = `"${firstGoal.title}" is active — log your latest progress or tell me what's blocking you?`
       }
     }
 

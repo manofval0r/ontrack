@@ -4,10 +4,15 @@ import { useGoals } from '../../context/GoalContext'
 import { Button } from '../Button'
 
 export const AudioPreferences: React.FC = () => {
-  const { audioSettings, updateAudioSettings, playTTS, isAudioPlaying } = useGoals()
+  const { audioSettings, updateAudioSettings, playTTS, isAudioPlaying, user } = useGoals()
 
   const handleTestVoice = () => {
-    playTTS("Hello Israel! This is your Nemotron AI accountability partner. I will keep you on track every single day.")
+    const name = user.name?.split(' ')[0]
+    playTTS(
+      name
+        ? `Hello ${name}! This is your Nemotron AI accountability partner. I will keep you on track every single day.`
+        : 'Hello! This is your Nemotron AI accountability partner. I will keep you on track every single day.'
+    )
   }
 
   return (

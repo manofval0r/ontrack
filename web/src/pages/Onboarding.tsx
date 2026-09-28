@@ -144,7 +144,7 @@ export const Onboarding: React.FC = () => {
   // Compiled goal state for Step 4 payoff
   const [createdGoal, setCreatedGoal] = useState<Goal>({
     id: 'onboarding-initial',
-    user_id: 'user-israel',
+    user_id: 'demo-local',
     title: '',
     description: '',
     goal_type: 'counter',
@@ -203,7 +203,7 @@ export const Onboarding: React.FC = () => {
 
       return {
         id,
-        user_id: 'user-israel',
+        user_id: 'demo-local',
         title: text,
         description: `Custom AI checklist tracker built for "${text}".`,
         goal_type: 'checklist',
@@ -230,7 +230,7 @@ export const Onboarding: React.FC = () => {
     ) {
       return {
         id,
-        user_id: 'user-israel',
+        user_id: 'demo-local',
         title: text,
         description: `Daily reflection and insight log tracking "${text}".`,
         goal_type: 'manual',
@@ -274,7 +274,7 @@ export const Onboarding: React.FC = () => {
 
     return {
       id,
-      user_id: 'user-israel',
+      user_id: 'demo-local',
       title: text,
       description: `Target counter tracker built for "${text}".`,
       goal_type: 'counter',

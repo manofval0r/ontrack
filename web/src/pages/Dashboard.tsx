@@ -50,6 +50,9 @@ export const Dashboard: React.FC = () => {
   const streakDays = dashboardData?.stats.streak_days || 0
   const completedGoalsCount = goals.filter((g) => g.status === 'completed').length
   const pendingGoalsCount = goals.filter((g) => g.status === 'active').length
+  // Real shipping rate from actual goals — no demo scalers.
+  const shippingRate =
+    goals.length > 0 ? Math.round((completedGoalsCount / goals.length) * 100) : 0
 
   const handleOpenDetail = (goal: Goal) => {
     setSelectedGoal(goal)
@@ -153,10 +156,10 @@ export const Dashboard: React.FC = () => {
                 {/* Middle Column */}
                 <div className="md:col-span-1 lg:col-span-4 flex flex-col">
                   <DashboardStatGrid
-                    completedCount={completedGoalsCount ? completedGoalsCount * 150 : 950}
-                    pendingCount={pendingGoalsCount ? pendingGoalsCount * 120 : 700}
+                    completedCount={completedGoalsCount}
+                    pendingCount={pendingGoalsCount}
                     streakDays={streakDays}
-                    totalScore={850}
+                    totalScore={shippingRate}
                   />
                 </div>
 
@@ -238,7 +241,7 @@ export const Dashboard: React.FC = () => {
                 onCreateGoal={createGoal}
                 onLogProgress={logProgress}
                 onUpdateGoal={updateGoal}
-                shippingRate={84}
+                shippingRate={shippingRate}
                 streakDays={streakDays}
               />
             </div>

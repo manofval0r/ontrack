@@ -20,6 +20,9 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   const recognitionRef = useRef<any>(null)
   // Accumulates the real speech-recognized text so the Done button can send it
   const liveTranscriptRef = useRef<string>('')
+  // Parent passes a new closure every render — ref it so recognition isn't restarted.
+  const completeRef = useRef(onTranscriptionComplete)
+  completeRef.current = onTranscriptionComplete
 
   useEffect(() => {
     if (isRecording) {
@@ -40,19 +43,12 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
           recognition.lang = 'en-US'
 
           recognition.onresult = (event: any) => {
-            let partial = ''
+            // Accumulate finals silently; emit ONCE on Done. Streaming every
+            // interim/final here duplicates text because the parent appends.
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-              const t = event.results[i][0].transcript
               if (event.results[i].isFinal) {
-                liveTranscriptRef.current += t
-              } else {
-                partial += t
+                liveTranscriptRef.current += event.results[i][0].transcript
               }
-            }
-            // Fire immediately for final segments so chat input updates in real-time
-            const combined = liveTranscriptRef.current + (partial ? ` ${partial}` : '')
-            if (combined.trim()) {
-              onTranscriptionComplete(combined.trim())
             }
           }
 
@@ -81,7 +77,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
         recognitionRef.current = null
       }
     }
-  }, [isRecording, onTranscriptionComplete])
+  }, [isRecording])
 
   if (!isRecording) {
     return (
@@ -128,14 +124,13 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
         type="button"
         onClick={() => {
           onStopRecording()
-          // Only fall back to a sample when the browser heard nothing
-          // (e.g. mic denied / SpeechRecognition unsupported). Never
-          // overwrite a real transcript — that was the "same text every time" bug.
+          // Only complete when the browser actually heard something.
+          // Emitting a fake sample transcript was the "same text every time" bug;
+          // silence now simply ends recording with no fake input.
           const heard = liveTranscriptRef.current.trim()
-          if (!heard) {
-            onTranscriptionComplete('I want to close 5 enterprise deals before the end of next week')
+          if (heard) {
+            completeRef.current(heard)
           }
-          // else: the real transcript was already streamed via onresult
         }}
         className="px-3 py-1 bg-white text-xs font-bold text-[#071E2D] border border-[#071E2D] rounded-full shadow-sm hover:bg-[#F3F6F8]"
       >

@@ -1,6 +1,8 @@
 # OnTrack App-Blocking (Duolingo-style) — Research & Implementation Plan
 
-Status: RESEARCH ONLY. Nothing here is implemented. Review, then approve to build.
+Status: SCOPED DECISION (2026-09-28) — implement **Android only** for now.
+Apple Screen Time moves to **Future Talk** (see `docs/OnTrack Project Plan.md` §16).
+Nothing here is implemented. Review, then approve to build.
 Date: 2026-09-28 · Target: Expo SDK 57 app in `mobile/`, Django backend in `backend/ontrack/`
 
 ## 1. Goal (what "done" looks like)
@@ -54,14 +56,17 @@ else; only the blocking toggle will be dev-build-gated.
 - Settings → new "Focus & blocking" section: blocked-app picker entry, quiet hours (plan §9 already wants this), permission status rows
 - Shield primary button → `ontrack://unlock` → goal check-in (`POST /api/goals/:id/checkin`) → `temporaryUnlock(N)` on success (the Duolingo loop)
 
-## 4. Phased rollout
+## 4. Phased rollout (Android-first)
 
-1. **Now (no code):** submit Apple Family Controls requests; create App Group; approve this plan.
+1. **Now (no code):** approve this plan; confirm block-list scope (per-goal vs global + quiet hours).
 2. **Backend first:** FocusSession tables + endpoints (testable via `/api/debug`, no app needed).
-3. **Dev-build spike:** `expo-dev-client` + plugin on EAS `development`; picker → shield → unlock on a physical iPhone + Android preview APK.
-4. **UX wiring:** work-block + settings + shield theming (navy/turquoise copy per design system).
-5. **Policy:** Play Console FGS disclosure + video demo; App Store privacy answers + demo video.
+3. **Dev-build spike:** `expo-dev-client` + plugin on EAS `development`; picker → overlay → unlock on Android preview APK (emulator OK).
+4. **UX wiring:** work-block + settings + overlay theming (navy/turquoise copy per design system).
+5. **Policy:** Play Console foreground-service disclosure + video demo.
 6. **Release:** production EAS builds; Expo Go remains the no-blocking fallback.
+
+iOS Screen Time phases (approval → extensions → wiring) are parked in Future Talk
+until Android ships.
 
 ## 5. Risks & open decisions
 
