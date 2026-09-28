@@ -14,9 +14,9 @@ import { Typography } from '../../constants/typography';
 
 const TABS: Record<string, { icon: keyof typeof Ionicons.glyphMap; outline: keyof typeof Ionicons.glyphMap; label: string }> = {
   index: { icon: 'home', outline: 'home-outline', label: 'Home' },
-  chat: { icon: 'chatbubble', outline: 'chatbubble-outline', label: 'Chat' },
   goals: { icon: 'checkmark-circle', outline: 'checkmark-circle-outline', label: 'Goals' },
   settings: { icon: 'settings', outline: 'settings-outline', label: 'Settings' },
+  you: { icon: 'person', outline: 'person-outline', label: 'You' },
 };
 
 function DockTab({
@@ -55,14 +55,36 @@ function DockTab({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 2,
-        minHeight: 64,
-        borderRadius: 14,
+        gap: 3,
+        minHeight: 70,
+        borderRadius: 16,
         backgroundColor: focused ? Brand.cyanBg : 'transparent',
       }}
     >
       <Animated.View style={style}>
-        <Ionicons name={focused ? tab.icon : tab.outline} size={25} color={focused ? Brand.teal : Brand.navy} />
+        {focused ? (
+          <View
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: 14,
+              backgroundColor: Brand.turquoise,
+              borderWidth: 2,
+              borderColor: Brand.navy,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: Brand.navy,
+              shadowOffset: { width: 2, height: 2 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 3,
+            }}
+          >
+            <Ionicons name={tab.icon} size={25} color={Brand.navy} />
+          </View>
+        ) : (
+          <Ionicons name={tab.outline} size={26} color={Brand.navy} />
+        )}
       </Animated.View>
       <Text style={{ fontSize: 11, fontWeight: '700', color: focused ? Brand.teal : Brand.navy }}>
         {tab.label}
@@ -85,9 +107,9 @@ function CenterAction() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
             router.push('/(tabs)/chat');
           }}
-          accessibilityLabel="Create a goal"
+          accessibilityLabel="Open coach chat"
           accessibilityRole="button"
-          accessibilityHint="Opens the coach chat to create a new goal"
+          accessibilityHint="The main screen: talk to the coach, create goals, log progress"
           style={{
             width: 60,
             height: 60,
@@ -107,7 +129,7 @@ function CenterAction() {
           <Ionicons name="add" size={30} color={Brand.navy} />
         </Pressable>
       </Animated.View>
-      <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.navy, marginTop: 4 }}>New</Text>
+      <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.navy, marginTop: 4 }}>Chat</Text>
     </View>
   );
 }
@@ -127,8 +149,9 @@ interface DockProps {
 
 function FloatingDock({ state, navigation }: DockProps) {
   const insets = useSafeAreaInsets();
-  const left = state.routes.slice(0, 2);
-  const right = state.routes.slice(2);
+  const byName = Object.fromEntries(state.routes.map((r, i) => [r.name, i]));
+  const left = ['index', 'goals'].map((n) => byName[n]).filter((i) => i !== undefined);
+  const right = ['settings', 'you'].map((n) => byName[n]).filter((i) => i !== undefined);
 
   const renderTab = (route: (typeof state.routes)[number], index: number) => {
     const focused = state.index === index;
@@ -171,10 +194,10 @@ function FloatingDock({ state, navigation }: DockProps) {
           elevation: 6,
         }}
       >
-        <View style={{ flex: 1, flexDirection: 'row' }}>{left.map(renderTab)}</View>
+        <View style={{ flex: 1, flexDirection: 'row' }}>{left.map((i) => renderTab(state.routes[i], i))}</View>
         <CenterAction />
         <View style={{ flex: 1, flexDirection: 'row' }}>
-          {right.map((route, i) => renderTab(route, i + 2))}
+          {right.map((i) => renderTab(state.routes[i], i))}
         </View>
       </View>
     </View>
@@ -188,9 +211,10 @@ export default function TabsLayout() {
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="chat" options={{ title: 'Chat' }} />
       <Tabs.Screen name="goals" options={{ title: 'Goals' }} />
+      <Tabs.Screen name="chat" options={{ title: 'Chat' }} />
       <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
+      <Tabs.Screen name="you" options={{ title: 'You' }} />
     </Tabs>
   );
 }

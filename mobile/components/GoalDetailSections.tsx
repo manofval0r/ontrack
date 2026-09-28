@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '../constants/colors';
 import { Radii, Spacing } from '../constants/spacing';
-import { Typography } from '../constants/typography';
+import { FontFamily, Typography } from '../constants/typography';
 import { Card, StatusPill } from './ui';
 import type { TemplateMeta } from '../lib/templates';
 
@@ -25,7 +25,7 @@ export function StatTile({ value, label, dark }: { value: string; label: string;
         alignItems: 'center',
       }}
     >
-      <Text style={{ fontFamily: Typography.display.fontFamily, fontSize: 20, color: dark ? Brand.white : Brand.navy }}>{value}</Text>
+      <Text style={{ fontFamily: FontFamily.expressive, fontSize: 22, color: dark ? Brand.white : Brand.navy }}>{value}</Text>
       <Text style={{ fontSize: 11, fontWeight: '600', color: dark ? Brand.turquoise : Brand.teal, marginTop: 2 }}>{visible}</Text>
     </View>
   );

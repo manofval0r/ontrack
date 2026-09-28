@@ -28,11 +28,13 @@ export interface ChatMsg {
 export function ChatBubble({
   msg,
   index,
+  compact,
   onActivate,
   onChip,
 }: {
   msg: ChatMsg;
   index: number;
+  compact?: boolean;
   onActivate: (proposal: any) => void;
   onChip?: (chip: string) => void;
 }) {
@@ -59,6 +61,7 @@ export function ChatBubble({
         maxWidth: '88%',
         alignSelf: isUser ? 'flex-end' : 'flex-start',
         alignItems: isUser ? 'flex-end' : 'flex-start',
+        marginTop: compact ? -6 : 0,
       }}
     >
       <View

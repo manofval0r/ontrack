@@ -68,9 +68,10 @@ export async function signUpWithEmail(name: string, email: string, password: str
 export async function signInWithProvider(
   provider: 'google' | 'github',
   opts?: { mode?: string; scopes?: string }
-): Promise<string> {
+): Promise<{ accessToken: string; providerToken: string | null }> {
   const redirect = Linking.createURL('auth');
-  await SecureStore.setItemAsync('ontrack_oauth_mode', opts?.mode ?? 'login');
+  const mode = opts?.mode ?? 'login';
+  await SecureStore.setItemAsync('ontrack_oauth_mode', mode);
   let authUrl =
     `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}` +
     `&redirect_to=${encodeURIComponent(redirect)}`;
@@ -82,12 +83,48 @@ export async function signInWithProvider(
   const params = new URLSearchParams(`${query}&${hash}`);
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
+  const providerToken = params.get('provider_token');
   if (!accessToken) throw new Error(`${provider} sign-in returned no token.`);
-  await setSession(accessToken, refreshToken ?? undefined);
-  return accessToken;
+  if (mode === 'login') {
+    // Login only: session swap belongs here and nowhere else.
+    await setSession(accessToken, refreshToken ?? undefined);
+  }
+  if (providerToken) {
+    await saveProviderToken(mode === 'login' ? provider : mode, providerToken);
+  }
+  return { accessToken, providerToken };
+}
+
+export async function saveProviderToken(key: string, token: string) {
+  try {
+    const raw = await SecureStore.getItemAsync('ontrack_provider_tokens');
+    const map = raw ? JSON.parse(raw) : {};
+    map[key] = token;
+    await SecureStore.setItemAsync('ontrack_provider_tokens', JSON.stringify(map));
+  } catch {}
+}
+
+export async function getProviderToken(key: string): Promise<string | null> {
+  try {
+    const raw = await SecureStore.getItemAsync('ontrack_provider_tokens');
+    const map = raw ? JSON.parse(raw) : {};
+    return typeof map[key] === 'string' ? map[key] : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearProviderToken(key: string) {
+  try {
+    const raw = await SecureStore.getItemAsync('ontrack_provider_tokens');
+    const map = raw ? JSON.parse(raw) : {};
+    delete map[key];
+    await SecureStore.setItemAsync('ontrack_provider_tokens', JSON.stringify(map));
+  } catch {}
 }
 
 /** Kept for existing callers — Google via the shared provider flow. */
 export async function signInWithGoogle(): Promise<string> {
-  return signInWithProvider('google');
+  const { accessToken } = await signInWithProvider('google');
+  return accessToken;
 }

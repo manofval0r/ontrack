@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
-import { Typography } from '../constants/typography';
+import { FontFamily } from '../constants/typography';
 import { Card, PillButton } from '../components/ui';
 
 const FOCUS_SECONDS = 25 * 60;
@@ -52,7 +52,7 @@ export default function WorkBlock() {
         <Text accessibilityRole="header" style={{ textAlign: 'center', fontWeight: '700', color: Brand.teal }}>FOCUS SESSION</Text>
         <Text
           accessibilityLabel={done ? 'Focus session complete' : spoken(left)}
-          style={{ fontFamily: Typography.display.fontFamily, fontSize: 56, textAlign: 'center', color: Brand.navy, marginTop: 8 }}
+          style={{ fontFamily: FontFamily.expressive, fontSize: 60, textAlign: 'center', color: Brand.navy, marginTop: 8 }}
         >
           {done ? 'Done' : fmt(left)}
         </Text>
