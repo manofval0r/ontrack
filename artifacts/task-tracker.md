@@ -16,6 +16,7 @@ Updated: 2026-09-28.
 - [x] EAS preview config + project linked (David) — `eas build --platform android --profile preview`
 - [x] App-blocking research → Android-scoped plan (David) — `artifacts/app-blocking-plan.md`
 - [x] Web mock-identity cleanup: sidebar/TTS-test name, dashboard fake stats, voice-empty behavior (David)
+- [x] Flagship polish batch: tokens, a11y roles/labels/states, error/loading/empty states, copy, dead code, splits (David) — `a8eb2ae`
 
 ## In progress
 
