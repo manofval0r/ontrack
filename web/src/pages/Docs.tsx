@@ -38,7 +38,7 @@ const SECTIONS: DocSection[] = [
     title: 'Say your goal. Get your tracker.',
     body: 'OnTrack is a conversational goal and accountability tracker: plain-English goals become adaptive trackers, with AI check-ins and honest deadline verdicts. Source: docs/OnTrack Project Plan.md.',
     bullets: [
-      'Stack: Django REST + Supabase (Postgres + Auth) + NVIDIA Nemotron · React/Vite web · Expo mobile (planned).',
+      'Stack: Django REST + Supabase (Postgres + Auth) + NVIDIA Nemotron · React/Vite web · Expo SDK 57 mobile (shipped to preview).',
       'Flow: onboarding → auth → chat → AI parse → tracker (counter / checklist / log) → progress → dashboard → verdict.',
       'MVP: Supabase auth, chat goal creation, dynamic trackers, 30-min check-ins, verdicts, streaks, TTS/ASR via POST /api/tts + /api/asr.',
       'Deploy: one Django codebase, two Render instances (web + mobile); web on Vercel, mobile on Expo Go.',
@@ -131,18 +131,20 @@ const SECTIONS: DocSection[] = [
   },
   {
     id: 'mobile',
-    kicker: 'Mobile · Expo plan (future)',
-    title: 'Native adaptation, not a shrunk web',
-    body: 'No Expo app exists yet — docs/mobile/ is the build spec. It inherits web tokens and Fraunces/DM Sans. Source: docs/mobile/index.md + cross-platform.md.',
+    kicker: 'Mobile · Expo SDK 57, shipped',
+    title: 'The app in your pocket',
+    body: 'The Expo app is live: 5-tab floating dock (Home, Goals, center Chat action, Settings, You), SecureStore session, expo-audio voice, Reanimated motion, Original Surfer display type. Source: mobile/ + docs/mobile/index.md.',
     bullets: [
-      'Nav: Home, Chat, Goals, Settings bottom tabs; Goal Detail, Voice, Work-Block, Goal Creation as modals/sheets.',
-      'Order: onboarding + first-goal preview before signup; Google on both platforms, Apple deferred; biometrics opt-in for returning users.',
-      'Platform rules: 44pt/48dp targets · safe-area roots · keyboard-shifted forms · haptics map · push templates (reminder, check-in, deadline, streak, verdict) · quiet hours TBD.',
-      'Parity: teal/navy tokens (not dashboard orange); shared schemas, auth handoff, deep-links and audio contracts still pending.',
+      'Nav: floating dock with joined center Chat action (not a nav link); full-screen modals for goal detail, voice, work-block, integrations; custom "You are off track" 404 with sitemap.',
+      'Screens as built: M1 Splash (logo + session routing) · M2 illustrated onboarding with goal-first draft · M3/M4 email + Google/GitHub auth with deep-link receiver (app/auth.tsx) · M5 Home (focus, streak, cards) · M6 conversational chat (intents, dictation, TTS, starters, daily brief) · M7 Goals (active/completed) · M8 template-personalized detail (GitHub-style headers, week strip, activity) · M9 escapable work-block timer · M10–M14 settings (profile, audio, coach cadence, notifications, quiet hours, focus, integrations, data export, about).',
+      'Voice: inline chat dictation (record → POST /api/asr → editable input) plus full-screen voice modal; TTS replay per message with autoplay toggle; expo-audio playback with device-speech fallback.',
+      'Auth: Supabase JWT in SecureStore as ontrack_token; Google/GitHub via system browser; ontrack://auth deep link + in-app listener; integration connects vault provider tokens (never swap the login session).',
+      'Backend parity: goal_template selects presentation; template_context (streak, weekly logs, last activity) powers headers; current_value + progress_logs render real progress; dashboard progress_pct enriches lists.',
+      'Platform rules kept: 44pt/48dp targets · safe-area roots (docs/mobile/safe-area.md) · keyboard-aware composer · haptics map (docs/mobile/haptics.md) · modal behavior per docs/mobile/modal-behavior.md.',
     ],
     links: [
-      { label: 'Cross-platform notes', href: '#mobile' },
-      { label: 'Design system', href: '#mobile' },
+      { label: 'Cross-platform notes', href: '#design-system' },
+      { label: 'Web screens', href: '#web-screens' },
     ],
   },
 ]
@@ -176,6 +178,9 @@ const Pill: React.FC<{ children: React.ReactNode; tone?: 'dark' | 'light' }> = (
 
 export const Docs: React.FC = () => {
   const [query, setQuery] = useState('')
+  const [activeId, setActiveId] = useState<string>(SECTIONS[0].id)
+  const itemRefs = React.useRef<Record<string, HTMLLIElement | null>>({})
+  const [pill, setPill] = useState({ top: 0, height: 0, visible: false })
 
   const filtered = SECTIONS.filter((s) => {
     if (!query.trim()) return true
@@ -186,6 +191,34 @@ export const Docs: React.FC = () => {
       s.bullets.some((b) => b.toLowerCase().includes(q))
     )
   })
+
+  // Scroll-spy: highlight the section currently in view.
+  React.useEffect(() => {
+    const articles = filtered
+      .map((s) => document.getElementById(s.id))
+      .filter((el): el is HTMLElement => !!el)
+    if (articles.length === 0) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActiveId(entry.target.id)
+        }
+      },
+      { rootMargin: '-35% 0px -55% 0px', threshold: 0 }
+    )
+    articles.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [filtered])
+
+  // Glide the pill to the active nav item.
+  React.useEffect(() => {
+    const el = itemRefs.current[activeId]
+    if (el) {
+      setPill({ top: el.offsetTop, height: el.offsetHeight, visible: true })
+    } else {
+      setPill((p) => ({ ...p, visible: false }))
+    }
+  }, [activeId, filtered])
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F8FAFB] dark:bg-[#07141E] text-[#071E2D] dark:text-slate-100 transition-colors">
@@ -205,7 +238,7 @@ export const Docs: React.FC = () => {
               Everything OnTrack, <span className="text-[#00C4B3]">in one place.</span>
             </h1>
             <p className="font-sans text-sm sm:text-base text-[#071E2D]/70 dark:text-slate-300 leading-relaxed max-w-2xl mb-6">
-              Design tokens first, then product, backend, web, API, GitHub setup and the mobile build spec —
+              Design tokens first, then product, backend, web, API, GitHub setup and the shipped mobile app —
               distilled from <span className="font-semibold">docs/</span> into one scannable page.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center mb-6">
@@ -263,18 +296,43 @@ export const Docs: React.FC = () => {
 
         {/* Sections */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Sticky quick-nav */}
+          {/* Sticky quick-nav with scroll-spy pill */}
           <aside className="hidden lg:block lg:col-span-3">
             <div className="sticky top-24 card-tactile p-5">
               <p className="font-sans font-bold text-xs uppercase tracking-wider mb-3 opacity-70">On this page</p>
-              <ul className="flex flex-col gap-1.5 list-none p-0 m-0">
-                {SECTIONS.map((s) => (
-                  <li key={s.id}>
-                    <a href={`#${s.id}`} className="font-sans text-sm font-medium opacity-75 hover:opacity-100 hover:text-[#006D6A] dark:hover:text-[#00C4B3] transition-colors">
-                      {s.title}
-                    </a>
-                  </li>
-                ))}
+              <ul className="relative flex flex-col gap-1.5 list-none p-0 m-0">
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 w-1 rounded-full bg-[#00C4B3] transition-all duration-300 ease-out motion-reduce:transition-none"
+                  style={{
+                    top: pill.top,
+                    height: pill.height,
+                    opacity: pill.visible ? 1 : 0,
+                  }}
+                />
+                {SECTIONS.map((s) => {
+                  const isActive = s.id === activeId
+                  return (
+                    <li
+                      key={s.id}
+                      ref={(el) => {
+                        itemRefs.current[s.id] = el
+                      }}
+                    >
+                      <a
+                        href={`#${s.id}`}
+                        aria-current={isActive ? 'location' : undefined}
+                        className={`block font-sans text-sm rounded-lg pl-4 pr-2 py-1 transition-colors ${
+                          isActive
+                            ? 'font-bold text-[#006D6A] dark:text-[#00C4B3] bg-[#00C4B3]/10'
+                            : 'font-medium opacity-75 hover:opacity-100 hover:text-[#006D6A] dark:hover:text-[#00C4B3]'
+                        }`}
+                      >
+                        {s.title}
+                      </a>
+                    </li>
+                  )
+                })}
               </ul>
               <div className="mt-4 pt-4 border-t border-[#071E2D]/10 dark:border-white/10">
                 <p className="font-sans text-[11px] opacity-60 leading-relaxed">Source of truth stays in docs/ + code. This page is the map, not a fork.</p>
