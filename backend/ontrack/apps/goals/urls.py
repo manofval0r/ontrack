@@ -10,6 +10,7 @@ from .views import (
     GoalListCreateView,
     ProgressCreateView,
 )
+from api.chat import ChatView
 
 urlpatterns = [
     path("goals", GoalListCreateView.as_view(), name="goal-list-create"),
@@ -25,5 +26,7 @@ urlpatterns = [
     path("goals/<uuid:goal_id>/finalize", GoalFinalizeView.as_view(), name="goal-finalize"),
     path("progress", ProgressCreateView.as_view(), name="progress-create"),
     path("dashboard", DashboardView.as_view(), name="dashboard"),
+    path("chat", ChatView.as_view(), name="chat"),
+    path("chat/message", ChatView.as_view(), name="chat-message"),
     path("chat/parse-goal", ChatParseGoalView.as_view(), name="chat-parse-goal"),
 ]

@@ -52,12 +52,14 @@ NVIDIA_API_KEY = env("NVIDIA_API_KEY", default="")
 NVIDIA_TTS_MODEL = env("NVIDIA_TTS_MODEL", default="tts-1")
 NVIDIA_TTS_VOICE = env("NVIDIA_TTS_VOICE", default="Aria")
 NVIDIA_ASR_MODEL = env("NVIDIA_ASR_MODEL", default="whisper-1")
+NVIDIA_EMBEDDING_MODEL = env("NVIDIA_EMBEDDING_MODEL", default="nvidia/nv-embedqa-e5-v5")
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
     "corsheaders",
     "rest_framework",
+    "pgvector.django",
     "apps.accounts",
     "apps.goals",
     "apps.audio",

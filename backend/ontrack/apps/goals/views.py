@@ -17,8 +17,42 @@ from apps.accounts.throttles import GoalsBurstThrottle
 from apps.goals.models import CheckIn, Goal, GoalItem, ProgressLog
 from apps.goals.serializers import GoalSerializer, ProgressLogSerializer
 from config.exceptions import ApiError
+from services.retrieval import get_relevant_context
 
 logger = logging.getLogger(__name__)
+
+import threading
+
+
+def _async_embed_progress_log(log_id):
+    def _run():
+        try:
+            from services.embeddings import generate_embedding
+            target_log = ProgressLog.objects.filter(pk=log_id).select_related("goal").first()
+            if target_log:
+                text_to_embed = f"{target_log.goal.title} {target_log.value} {target_log.note}".strip()
+                target_log.embedding = generate_embedding(text_to_embed)
+                target_log.save(update_fields=["embedding"])
+        except Exception as e:
+            logger.debug("Async embedding for progress log %s: %s", log_id, e)
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def _async_embed_goal(goal_id):
+    def _run():
+        try:
+            from services.embeddings import generate_embedding
+            target_goal = Goal.objects.filter(pk=goal_id).first()
+            if target_goal:
+                text_to_embed = f"{target_goal.title} {target_goal.domain} {target_goal.goal_type}".strip()
+                target_goal.embedding = generate_embedding(text_to_embed)
+                target_goal.save(update_fields=["embedding"])
+        except Exception as e:
+            logger.debug("Async embedding for goal %s: %s", goal_id, e)
+
+    threading.Thread(target=_run, daemon=True).start()
+
 
 CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 GOAL_TYPES = {Goal.GOAL_TYPE_COUNTER, Goal.GOAL_TYPE_CHECKLIST, Goal.GOAL_TYPE_MANUAL}
@@ -139,11 +173,11 @@ def _smart_fallback(text, rel_deadline):
     num_match = re.search(r"\b(\d+)\b", text)
     found_num = int(num_match.group(1)) if num_match else None
     
-    if template in (Goal.TEMPLATE_SALES_COUNTER, Goal.TEMPLATE_FITNESS_COUNTER):
+    if template in (Goal.TEMPLATE_SALES_COUNTER, Goal.TEMPLATE_FITNESS_COUNTER) and found_num is not None:
         inferred_type = Goal.GOAL_TYPE_COUNTER
-        inferred_target = found_num if found_num is not None else 10
+        inferred_target = found_num
         inferred_domain = "sales" if template == Goal.TEMPLATE_SALES_COUNTER else "fitness"
-    elif template in (Goal.TEMPLATE_GITHUB_CHECKLIST, Goal.TEMPLATE_STUDY_CHECKLIST):
+    elif template in (Goal.TEMPLATE_GITHUB_CHECKLIST, Goal.TEMPLATE_STUDY_CHECKLIST) and (found_num is not None or "chapter" in text.lower() or "page" in text.lower()):
         inferred_type = Goal.GOAL_TYPE_CHECKLIST
         inferred_target = found_num if found_num is not None else 5
         inferred_domain = "engineering" if template == Goal.TEMPLATE_GITHUB_CHECKLIST else "learning"
@@ -151,9 +185,10 @@ def _smart_fallback(text, rel_deadline):
         inferred_type = Goal.GOAL_TYPE_COUNTER
         inferred_target = found_num
     else:
+        inferred_type = Goal.GOAL_TYPE_MANUAL
         inferred_target = None
         
-    default_deadline = rel_deadline or (timezone.now() + timedelta(days=7))
+    default_deadline = rel_deadline
     return (
         inferred_type, inferred_target, [], inferred_domain, default_deadline, None,
         template, True,
@@ -182,10 +217,10 @@ def parse_goal_safely(text):
     if parsed[-1]:
         logger.warning("ai_module.parse_goal returned malformed data; using smart fallback")
         return _smart_fallback(text, rel_deadline)
-    # If the parser did not determine a deadline, use the relative expression parser or 7-day default
-    if not parsed[4]:
+    # If the parser did not determine a deadline, use the relative expression parser if found
+    if not parsed[4] and rel_deadline:
         parsed_list = list(parsed)
-        parsed_list[4] = rel_deadline or (timezone.now() + timedelta(days=7))
+        parsed_list[4] = rel_deadline
         parsed = tuple(parsed_list)
     return parsed
 
@@ -244,6 +279,7 @@ class GoalListCreateView(APIView):
             GoalItem.objects.bulk_create(
                 [GoalItem(goal=goal, title=title) for title in items]
             )
+        _async_embed_goal(goal.id)
         payload = GoalSerializer(goal).data
         payload["ai_fallback_used"] = used_fallback
         return Response(payload, status=status.HTTP_201_CREATED)
@@ -346,6 +382,7 @@ class ProgressCreateView(APIView):
         log = ProgressLog.objects.create(
             goal=goal, user_id=request.user_id, value=raw_value, note=note
         )
+        _async_embed_progress_log(log.id)
         payload = ProgressLogSerializer(log).data
         payload["exceeded"] = goal.target is not None and raw_value > goal.target
         return Response(payload, status=status.HTTP_201_CREATED)
@@ -494,9 +531,12 @@ class GoalCheckinView(APIView):
             "domain": goal.domain,
             "status": goal.status,
         }
+        retrieved_context = get_relevant_context(
+            request.user_id, f"Check-in on {goal.title}", goal_id=goal.id
+        )
         try:
             message = ai_module.generate_checkin(
-                str(goal.id), goal_data, current_progress
+                str(goal.id), goal_data, current_progress, retrieved_context=retrieved_context
             )
             if not isinstance(message, str) or not message.strip():
                 raise ValueError("empty check-in")

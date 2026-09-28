@@ -527,6 +527,31 @@ export const api = {
     })
   },
 
+  /**
+   * POST /api/chat  { message, goal_id? }
+   * Nemotron AI Coach conversational check-in and accountability partner.
+   * Powered by pgvector RAG memory over the user's past progress logs and goals.
+   */
+  async sendChatMessage(
+    message: string,
+    goalId?: string
+  ): Promise<{
+    reply: string
+    message: string
+    ai_response_text: string
+    retrieved_context: string[]
+    rag_active: boolean
+    ai_fallback_used?: boolean
+  }> {
+    return request('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        goal_id: goalId || undefined,
+      }),
+    })
+  },
+
   // ── TTS / ASR ───────────────────────────────────────────────────────────────
 
   /** POST /api/tts  { text } → { audio_url, cached } */
