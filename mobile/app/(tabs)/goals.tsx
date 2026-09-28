@@ -1,11 +1,12 @@
 /** M7 Goals — active + completed sections with error and empty states. */
 import { useEffect } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '../../constants/colors';
 import { Spacing, Touch } from '../../constants/spacing';
-import { Typography } from '../../constants/typography';
+import { FontFamily } from '../../constants/typography';
 import { GoalCard } from '../../components/GoalCard';
 import { Card } from '../../components/ui';
 import { useGoals } from '../../lib/store';
@@ -29,7 +30,7 @@ export default function Goals() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { clearError(); refresh(); }} />}
         ListHeaderComponent={
           <View style={{ gap: 8, marginBottom: 4 }}>
-            <Text accessibilityRole="header" style={{ fontFamily: Typography.title.fontFamily, fontSize: Typography.title.fontSize, color: Brand.navy }}>
+            <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 30, color: Brand.navy }}>
               Goals
             </Text>
             <Text style={{ fontSize: 13, color: Brand.navy, opacity: 0.65 }}>
@@ -51,7 +52,7 @@ export default function Goals() {
         ListEmptyComponent={
           !loading ? (
             <Card>
-              <Text style={{ fontSize: Typography.cardHeading.fontSize, fontWeight: '700', color: Brand.navy }}>Start with one goal.</Text>
+              <Text style={{ fontFamily: FontFamily.expressive, fontSize: 22, color: Brand.navy }}>Start with one goal.</Text>
               <Text style={{ marginTop: 4, fontSize: 14, color: Brand.navy, opacity: 0.7 }}>
                 Tell the coach what you want to achieve in the Chat tab.
               </Text>
@@ -67,12 +68,14 @@ export default function Goals() {
           ) : null
         }
         renderItem={({ item, index }) => (
+          <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index, 5) * 70)}>
           <View>
             {index === active.length && done.length > 0 && (
               <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.teal, marginBottom: 8 }}>COMPLETED</Text>
             )}
             <GoalCard goal={item} onOpen={() => router.push(`/goal/${item.id}`)} />
           </View>
+          </Animated.View>
         )}
       />
     </SafeAreaView>

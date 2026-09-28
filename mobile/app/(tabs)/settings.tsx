@@ -8,10 +8,10 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { Brand } from '../../constants/colors';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
-import { Typography } from '../../constants/typography';
+import { FontFamily, Typography } from '../../constants/typography';
 import { Card } from '../../components/ui';
-import { api } from '../../lib/api';
-import { clearSession, signInWithProvider } from '../../lib/auth';
+import { api, request } from '../../lib/api';
+import { clearSession, clearProviderToken, getProviderToken, signInWithProvider } from '../../lib/auth';
 import { useGoals } from '../../lib/store';
 
 const CALENDAR_SCOPES = 'https://www.googleapis.com/auth/calendar.events';
@@ -75,15 +75,24 @@ export default function Settings() {
     try {
       setBusyProvider(provider);
       setError(null);
-      await signInWithProvider(provider === 'google-cal' ? 'google' : 'github', {
+      setNotice(null);
+      const { providerToken } = await signInWithProvider(provider === 'google-cal' ? 'google' : 'github', {
         mode: provider,
         scopes: provider === 'google-cal' ? CALENDAR_SCOPES : undefined,
       });
-      // Warm path returns here without tokens for us — the auth receiver
-      // completes vault storage on cold paths; refresh to pick up state.
+      // Warm path: vault the provider token now (auth.tsx covers cold paths).
+      const vaultToken = providerToken ?? (await getProviderToken(provider));
+      if (!vaultToken) {
+        throw new Error('Connected, but no provider token came back. Try again.');
+      }
+      await request('/api/integrations', {
+        method: 'POST',
+        body: JSON.stringify({ provider, access_token: vaultToken, meta: { via: 'supabase-oauth' } }),
+      });
       await load();
+      setNotice(`${provider === 'google-cal' ? 'Google Calendar' : 'GitHub'} connected.`);
     } catch (e: any) {
-      setError(e?.message ?? 'Connection cancelled.');
+      setError(e?.message ?? e?.error ?? 'Connection cancelled.');
     } finally {
       setBusyProvider(null);
     }
@@ -94,6 +103,8 @@ export default function Settings() {
     try {
       setBusyProvider(row.id);
       await api.deleteIntegration(String(row.id));
+      const key = row.id === 'github' ? 'github' : row.provider === 'google-cal' ? 'google-cal' : row.id;
+      await clearProviderToken(key);
       await load();
       setNotice(`${row.name ?? 'Integration'} disconnected.`);
     } catch (e: any) {
@@ -101,6 +112,11 @@ export default function Settings() {
     } finally {
       setBusyProvider(null);
     }
+  };
+
+  const openDetail = (row: any, fallback: string) => {
+    const p = row?.id === 'google-cal' || row?.provider === 'google-cal' ? 'google-cal' : fallback;
+    router.push({ pathname: '/integration/[provider]', params: { provider: p } } as any);
   };
 
   const exportData = async () => {
@@ -139,7 +155,7 @@ export default function Settings() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 130 }}>
-        <Text accessibilityRole="header" style={{ fontFamily: Typography.title.fontFamily, fontSize: Typography.title.fontSize, color: Brand.navy }}>Settings</Text>
+        <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 30, color: Brand.navy }}>Settings</Text>
         {error && (
           <Card>
             <Text accessibilityLiveRegion="polite" style={{ color: Brand.error, fontSize: 13 }}>{error}</Text>
@@ -229,6 +245,7 @@ export default function Settings() {
             busy={busyProvider === 'github'}
             onConnect={() => connectProvider('github')}
             onDisconnect={() => disconnect(github)}
+            onManage={() => openDetail(github, 'github')}
           />
           <IntegrationRow
             name="Google Calendar"
@@ -237,6 +254,7 @@ export default function Settings() {
             busy={busyProvider === 'google-cal'}
             onConnect={() => connectProvider('google-cal')}
             onDisconnect={() => disconnect(gcal)}
+            onManage={() => openDetail(gcal, 'google-cal')}
           />
           <Text style={{ fontSize: 12, color: Brand.navy, opacity: 0.6, marginTop: 8 }}>
             Slack and Notion connect on web — mobile shows their status here.
@@ -283,13 +301,14 @@ export default function Settings() {
   );
 }
 
-function IntegrationRow({ name, hint, row, busy, onConnect, onDisconnect }: {
+function IntegrationRow({ name, hint, row, busy, onConnect, onDisconnect, onManage }: {
   name: string;
   hint: string;
   row: any;
   busy: boolean;
   onConnect: () => void;
   onDisconnect: () => void;
+  onManage: () => void;
 }) {
   const connected = !!row?.connected;
   return (
@@ -303,6 +322,14 @@ function IntegrationRow({ name, hint, row, busy, onConnect, onDisconnect }: {
             <Text style={{ color: Brand.teal, fontSize: 12, fontWeight: '600', marginTop: 2 }}>{row.status_label}</Text>
           )}
         </View>
+        <Pressable
+          onPress={onManage}
+          accessibilityLabel={`Manage ${name}`}
+          accessibilityRole="button"
+          style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Ionicons name="chevron-forward" size={22} color={Brand.navy} />
+        </Pressable>
       </View>
       <Pressable
         onPress={connected ? onDisconnect : onConnect}

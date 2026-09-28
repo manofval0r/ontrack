@@ -1,7 +1,9 @@
 /** OAuth landing route — receives Supabase redirects that arrive as navigation
  * (cold start, deferred intent, Expo Go) instead of the warm browser session.
- * Parses access/refresh/provider tokens from hash AND query forms, completes
- * the pending mode (login vs integration connect), then routes onward.
+ * Accepts BOTH standalone (`ontrack://auth…`) and Expo Go dev
+ * (`exp://…/--/auth…`) URLs. Parses access/refresh/provider tokens from hash
+ * AND query forms, completes the pending mode (login vs integration connect),
+ * then routes onward. Never spins forever: errors always surface with actions.
  * The warm `openAuthSessionAsync` path in lib/auth.ts stays primary. */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
@@ -16,6 +18,10 @@ import { request } from '../lib/api';
 import { setSession } from '../lib/auth';
 
 const MODE_KEY = 'ontrack_oauth_mode';
+
+function isAuthUrl(url: string): boolean {
+  return url.startsWith('ontrack://auth') || /\/--\/auth([?#]|$)/.test(url);
+}
 
 function parseTokens(url: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -35,10 +41,18 @@ export default function AuthCallback() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (!url || done) return;
+    if (done) return;
+    // No deep link (e.g. opened directly): fail fast, never hang.
+    if (url === null) {
+      const t = setTimeout(
+        () => setError('No sign-in data arrived. Return and try again.'),
+        4000
+      );
+      return () => clearTimeout(t);
+    }
     (async () => {
       try {
-        if (!url.startsWith('ontrack://auth')) {
+        if (!isAuthUrl(url)) {
           router.replace('/(tabs)');
           return;
         }
@@ -57,19 +71,23 @@ export default function AuthCallback() {
           return;
         }
 
-        // Integration connect: provider token (Google) or access token fallback.
-        const providerToken = params.provider_token || params.provider_refresh_token;
-        const accessToken = params.access_token;
-        const vaultToken = providerToken || accessToken;
-        if (!vaultToken) throw new Error('No provider token returned. Try again.');
+        // Integration connect: vault the provider token (never swap the login session).
+        const vaultToken = params.provider_token || params.provider_refresh_token;
+        if (!vaultToken) {
+          throw new Error(
+            'Connected, but no provider token came back. Reconnect — and if it persists, the provider needs re-approval.'
+          );
+        }
         await request('/api/integrations', {
           method: 'POST',
-          body: JSON.stringify({
-            provider: mode,
-            access_token: vaultToken,
-            meta: { via: 'supabase-oauth' },
-          }),
+          body: JSON.stringify({ provider: mode, access_token: vaultToken, meta: { via: 'supabase-oauth' } }),
         });
+        try {
+          const raw = await SecureStore.getItemAsync('ontrack_provider_tokens');
+          const map = raw ? JSON.parse(raw) : {};
+          map[mode] = vaultToken;
+          await SecureStore.setItemAsync('ontrack_provider_tokens', JSON.stringify(map));
+        } catch {}
         setDone(true);
         router.replace({ pathname: '/(tabs)/settings', params: { connected: mode } });
       } catch (e: any) {

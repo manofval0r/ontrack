@@ -311,44 +311,27 @@ export default function Chat() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
-        <View style={{ padding: Spacing.lg, paddingBottom: 4, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontFamily: Typography.title.fontFamily, fontSize: Typography.title.fontSize, color: Brand.navy, flex: 1 }}>
-            OnTrack coach
-          </Text>
-          <Pressable
-            onPress={toggleAutoplay}
-            accessibilityLabel={autoplay ? 'Turn off voice auto-play' : 'Turn on voice auto-play'}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: autoplay }}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.pill, paddingVertical: 6, paddingHorizontal: 10, backgroundColor: autoplay ? Brand.turquoise : Brand.white, minHeight: 44 }}
-          >
-            <Ionicons name={autoplay ? 'volume-high' : 'volume-mute'} size={16} color={Brand.navy} />
-            <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.navy }}>Auto-voice</Text>
-          </Pressable>
-          {dictation.recording && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Brand.error, borderRadius: Radii.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.white }} />
-              <Text style={{ color: Brand.white, fontSize: Typography.caption.fontSize, fontWeight: '700' }}>
-                {Math.floor(dictation.recSecs / 60)}:{String(dictation.recSecs % 60).padStart(2, '0')}
-              </Text>
-            </View>
-          )}
-        </View>
         <FlatList
           ref={listRef}
           data={messages}
           keyExtractor={(m) => m.id}
           accessibilityLabel="Conversation with OnTrack coach"
-          contentContainerStyle={{ padding: Spacing.lg, gap: 10 }}
+          contentContainerStyle={{ padding: Spacing.lg, gap: 10, paddingTop: Spacing.xl }}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           renderItem={({ item, index }) => (
-            <ChatBubble msg={item} index={index} onActivate={activate} onChip={(chip) => send(chip)} />
+            <ChatBubble
+              msg={item}
+              index={index}
+              compact={index > 0 && messages[index - 1].sender === item.sender}
+              onActivate={activate}
+              onChip={(chip) => send(chip)}
+            />
           )}
         />
         {messages.length <= 2 && (
@@ -356,7 +339,7 @@ export default function Chat() {
             <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.navy, opacity: 0.6, marginBottom: 6 }}>
               STARTERS
             </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, alignItems: 'center' }}>
               {STARTERS.map((s) => (
                 <Pressable
                   key={s.title}
@@ -368,6 +351,16 @@ export default function Chat() {
                   <Text style={{ fontWeight: '700', color: Brand.navy, fontSize: 13 }}>{s.title}</Text>
                 </Pressable>
               ))}
+              <Pressable
+                onPress={toggleAutoplay}
+                accessibilityLabel={autoplay ? 'Turn off voice auto-play' : 'Turn on voice auto-play'}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: autoplay }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.pill, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: autoplay ? Brand.turquoise : Brand.white, minHeight: 44 }}
+              >
+                <Ionicons name={autoplay ? 'volume-high' : 'volume-mute'} size={16} color={Brand.navy} />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.navy }}>Auto-voice</Text>
+              </Pressable>
             </ScrollView>
           </View>
         )}
@@ -382,22 +375,37 @@ export default function Chat() {
             {dictError ?? dictation.error}
           </Text>
         )}
-        <ChatComposer
-          value={input}
-          onChange={(t) => {
-            setInput(t);
-            setDictError(null);
-          }}
-          onSend={() => send()}
-          canSend={!!input.trim() && !busy}
-          recording={dictation.recording}
-          recSecs={dictation.recSecs}
-          transcribing={dictation.transcribing}
-          onToggleDictation={() => {
-            setDictError(null);
-            dictation.toggle();
-          }}
-        />
+        <View style={{ marginBottom: 108 }}>
+          {dictation.recording && (
+            <View style={{ alignItems: 'center', paddingBottom: 6 }}>
+              <View
+                accessibilityLabel={`Recording, ${dictation.recSecs} seconds. Tap stop in the composer to finish.`}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Brand.error, borderRadius: Radii.pill, paddingHorizontal: 12, paddingVertical: 6 }}
+              >
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.white }} />
+                <Text style={{ color: Brand.white, fontSize: Typography.caption.fontSize, fontWeight: '700' }}>
+                  {Math.floor(dictation.recSecs / 60)}:{String(dictation.recSecs % 60).padStart(2, '0')} · Listening…
+                </Text>
+              </View>
+            </View>
+          )}
+          <ChatComposer
+            value={input}
+            onChange={(t) => {
+              setInput(t);
+              setDictError(null);
+            }}
+            onSend={() => send()}
+            canSend={!!input.trim() && !busy}
+            recording={dictation.recording}
+            recSecs={dictation.recSecs}
+            transcribing={dictation.transcribing}
+            onToggleDictation={() => {
+              setDictError(null);
+              dictation.toggle();
+            }}
+          />
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

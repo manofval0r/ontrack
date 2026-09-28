@@ -28,12 +28,14 @@ Updated: 2026-09-28.
 ## Done — revival build (mobile)
 
 - [x] OAuth receiver `app/auth.tsx` + global URL listener (cold/deferred deep links)
+- [x] OAuth separation: login swaps session, integrations vault provider tokens (no more sign-in hijack/hang); exp:// dev URLs accepted; auth screen never hangs
 - [x] Custom `+not-found` ("You are off track" + sitemap) + web NotFound upgrade
 - [x] Floating dock tab bar with joined center action (Duolingo-style)
 - [x] Signup redesign (hero, social-first, pending-goal chip, Original Surfer)
 - [x] Chat intent router (greeting/clarify/status/progress/goal), honesty badges, busy guards, starters, daily brief, TTS autoplay, timestamps
 - [x] Integrations connect (GitHub + Calendar scopes via vault) + full settings map
 - [x] Celebration pass (confetti, streak flicker, TTS equalizer) + Original Surfer display font
+- [x] Round 2: 5-tab dock (Home/Goals/Chat-center/Settings/You), Profile tab, headerless chat, composer dock clearance, expressive type expansion, integration detail screens (repos/commits/PRs, calendar sync, capability toggles, sync-to-goal), staggered lists
 - [x] Mockup updated (dock, signup, 404, font preview)
 
 ## Left — Web (Eniola unless noted)

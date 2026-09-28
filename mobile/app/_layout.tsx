@@ -27,9 +27,11 @@ export default function RootLayout() {
   useEffect(() => {
     SplashScreen.preventAutoHideAsync().catch(() => {});
     // Deferred OAuth intents (cold start / Custom Tab handoff) arrive as
-    // navigation — forward them to the auth receiver instead of 404ing.
+    // navigation on BOTH schemes — forward them to the auth receiver.
     const sub = Linking.addEventListener('url', ({ url }) => {
-      if (url.startsWith('ontrack://auth')) router.replace('/auth' as any);
+      if (url.startsWith('ontrack://auth') || /\/--\/auth([?#]|$)/.test(url)) {
+        router.replace('/auth' as any);
+      }
     });
     // Never trap the user on a blank splash: system fonts after 4s.
     const fallback = setTimeout(() => setReady(true), 4000);
@@ -69,6 +71,10 @@ export default function RootLayout() {
         <Stack.Screen
           name="work-block"
           options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="integration/[provider]"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
         />
       </Stack>
     </GoalsProvider>

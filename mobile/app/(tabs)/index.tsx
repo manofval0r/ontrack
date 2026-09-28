@@ -1,13 +1,13 @@
 /** M5 Home — greeting + streak, Today's Focus, due-soon, goal list, FAB. */
 import { useEffect } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
-import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInUp, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '../../constants/colors';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
-import { Typography } from '../../constants/typography';
+import { FontFamily, Typography } from '../../constants/typography';
 import { GoalCard } from '../../components/GoalCard';
 import { SkeletonCard } from '../../components/Skeleton';
 import { Card } from '../../components/ui';
@@ -56,7 +56,7 @@ export default function Home() {
         ListHeaderComponent={
           <View style={{ gap: 12, marginBottom: 4 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text accessibilityRole="header" style={{ fontFamily: Typography.title.fontFamily, fontSize: Typography.title.fontSize, color: Brand.navy }}>
+              <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 30, color: Brand.navy }}>
                 {greeting()}
               </Text>
               <Text accessibilityLabel={`${streak} day streak`} style={{ fontWeight: '700', color: Brand.navy }}>
@@ -99,7 +99,7 @@ export default function Home() {
             )}
             {active.length === 0 && !loading && (
               <Card>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: Brand.navy }}>Start with one goal.</Text>
+                <Text style={{ fontFamily: FontFamily.expressive, fontSize: 22, color: Brand.navy }}>Start with one goal.</Text>
                 <Text style={{ marginTop: 4, fontSize: 14, color: Brand.navy, opacity: 0.7 }}>
                   Tell the coach what you want to achieve and your tracker appears here.
                 </Text>
@@ -118,8 +118,10 @@ export default function Home() {
             </Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <GoalCard goal={item} onOpen={() => router.push(`/goal/${item.id}`)} />
+        renderItem={({ item, index }) => (
+          <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index, 5) * 70)}>
+            <GoalCard goal={item} onOpen={() => router.push(`/goal/${item.id}`)} />
+          </Animated.View>
         )}
       />
       {/* Goal creation lives in the dock's center action (joined FAB). */}

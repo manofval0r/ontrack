@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../../constants/colors';
 import { Spacing } from '../../constants/spacing';
+import { FontFamily } from '../../constants/typography';
 import { Card, PillButton } from '../../components/ui';
 import { ConfettiBurst } from '../../components/Confetti';
 import { TrackerBody } from '../../components/TrackerBody';
@@ -161,7 +162,7 @@ export default function GoalDetail() {
           <View>
             {celebrating && <ConfettiBurst onDone={() => setCelebrating(false)} />}
             <Card>
-              <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 18, color: Brand.navy }}>Verdict</Text>
+              <Text style={{ fontFamily: FontFamily.expressive, fontSize: 22, color: Brand.navy }}>Verdict</Text>
               <Text style={{ marginTop: 4, color: Brand.navy }}>{String(goal.verdict)}</Text>
               <Pressable
                 onPress={() => Share.share({ message: `OnTrack verdict — ${goal.title}: ${String(goal.verdict)}` })}

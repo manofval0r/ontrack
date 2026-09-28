@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 import { Brand, Colors } from '../constants/colors';
 import { Radii, Spacing } from '../constants/spacing';
-import { Typography } from '../constants/typography';
+import { FontFamily, Typography } from '../constants/typography';
 import { OnboardingArt } from '../components/OnboardingArt';
 import { Card, PillButton } from '../components/ui';
 
@@ -77,7 +77,7 @@ export default function Onboarding() {
           </View>
         </Animated.View>
         <Card>
-          <Text style={{ fontFamily: Typography.title.fontFamily, fontSize: Typography.title.fontSize, color: Brand.navy }}>
+          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 26, color: Brand.navy }}>
             {STEPS[step].title}
           </Text>
           <Text style={{ marginTop: 8, fontSize: Typography.body.fontSize, color: Brand.navy, lineHeight: Typography.body.lineHeight }}>

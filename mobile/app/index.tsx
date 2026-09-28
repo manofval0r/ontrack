@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Brand } from '../constants/colors';
 import { Radii, Spacing } from '../constants/spacing';
-import { Typography } from '../constants/typography';
+import { FontFamily, Typography } from '../constants/typography';
 import { getToken } from '../lib/auth';
 import { useReduceMotion } from '../lib/useReduceMotion';
 
@@ -55,7 +55,7 @@ export default function Splash() {
         accessibilityRole="image"
         accessibilityLabel="OnTrack logo"
       />
-      <Text style={{ fontFamily: Typography.display.fontFamily, fontSize: Typography.display.fontSize, color: Brand.white }}>OnTrack</Text>
+      <Text style={{ fontFamily: FontFamily.expressive, fontSize: 38, color: Brand.white }}>OnTrack</Text>
       <Text style={{ fontSize: Typography.body.fontSize, color: Brand.turquoise, fontWeight: '600' }}>
         Say your goal. Get your tracker.
       </Text>
