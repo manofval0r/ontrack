@@ -256,24 +256,33 @@ def parse_goal(goal_text):
     }
 
 
-def generate_checkin(goal_id, goal_data, current_progress):
-    """Generate 1 statement + 1 question check-in message."""
+def generate_checkin(goal_id, goal_data, current_progress, retrieved_context=None):
+    """Generate 1 statement + 1 question check-in message, grounded in optional retrieved history."""
+    if retrieved_context is None:
+        retrieved_context = []
     goal_data = goal_data if isinstance(goal_data, dict) else {}
     title = goal_data.get("title") or "your goal"
     target = goal_data.get("target")
     target_str = " of %s" % target if target else ""
+    base_content = (
+        "Goal: '%s'. Current progress: %s%s.\n"
+        "Generate an encouraging accountability check-in message.\n"
+        "Constraint: Exactly 1 statement followed by 1 question. "
+        "Maximum 2 sentences total." % (title, current_progress, target_str)
+    )
+    if retrieved_context:
+        history_lines = "\n".join("- %s" % item for item in retrieved_context if str(item).strip())
+        user_content = (
+            "Relevant history for this user:\n%s\n\nNow respond to their message: %s"
+            % (history_lines, base_content)
+        )
+    else:
+        user_content = base_content
+
     content = _chat(
         [
             {"role": "system", "content": "You are OnTrack high-accountability coach."},
-            {
-                "role": "user",
-                "content": (
-                    "Goal: '%s'. Current progress: %s%s.\n"
-                    "Generate an encouraging accountability check-in message.\n"
-                    "Constraint: Exactly 1 statement followed by 1 question. "
-                    "Maximum 2 sentences total." % (title, current_progress, target_str)
-                ),
-            },
+            {"role": "user", "content": user_content},
         ],
         max_tokens=100,
         temperature=0.7,
@@ -281,23 +290,32 @@ def generate_checkin(goal_id, goal_data, current_progress):
     return content[:5000]
 
 
-def generate_verdict(goal_id, goal_data, final_progress):
-    """Generate a final verdict summary (max 2 sentences)."""
+def generate_verdict(goal_id, goal_data, final_progress, retrieved_context=None):
+    """Generate a final verdict summary (max 2 sentences), grounded in optional retrieved history."""
+    if retrieved_context is None:
+        retrieved_context = []
     goal_data = goal_data if isinstance(goal_data, dict) else {}
     title = goal_data.get("title") or "your goal"
     target = goal_data.get("target")
     target_str = " (target: %s)" % target if target else ""
+    base_content = (
+        "Goal: '%s'%s. Final progress recorded: %s.\n"
+        "Generate a brief final verdict evaluating performance.\n"
+        "Constraint: Maximum 2 sentences." % (title, target_str, final_progress)
+    )
+    if retrieved_context:
+        history_lines = "\n".join("- %s" % item for item in retrieved_context if str(item).strip())
+        user_content = (
+            "Relevant history for this user:\n%s\n\nNow respond to their message: %s"
+            % (history_lines, base_content)
+        )
+    else:
+        user_content = base_content
+
     content = _chat(
         [
             {"role": "system", "content": "You are OnTrack evaluation coach."},
-            {
-                "role": "user",
-                "content": (
-                    "Goal: '%s'%s. Final progress recorded: %s.\n"
-                    "Generate a brief final verdict evaluating performance.\n"
-                    "Constraint: Maximum 2 sentences." % (title, target_str, final_progress)
-                ),
-            },
+            {"role": "user", "content": user_content},
         ],
         max_tokens=120,
         temperature=0.5,

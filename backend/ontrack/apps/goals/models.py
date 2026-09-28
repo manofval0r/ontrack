@@ -6,6 +6,7 @@ Django holds no local user table; Supabase is the source of truth).
 import uuid
 
 from django.db import models
+from pgvector.django import VectorField
 
 
 class Goal(models.Model):
@@ -65,6 +66,7 @@ class Goal(models.Model):
     parse_result = models.JSONField(default=dict, blank=True)
     # Last verdict from ai_module.generate_verdict (or the generic fallback).
     verdict = models.TextField(default="", blank=True)
+    embedding = VectorField(dimensions=384, null=True, blank=True)
 
     class Meta:
         ordering = ["-start_at"]
@@ -96,6 +98,7 @@ class ProgressLog(models.Model):
     value = models.IntegerField()
     note = models.CharField(max_length=500, default="", blank=True)
     logged_at = models.DateTimeField(auto_now_add=True)
+    embedding = VectorField(dimensions=384, null=True, blank=True)
 
     class Meta:
         ordering = ["-logged_at"]
