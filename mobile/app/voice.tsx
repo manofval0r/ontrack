@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -103,8 +104,9 @@ export default function VoiceModal() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl }} edges={['top']}>
-      <Pressable onPress={() => router.back()} hitSlop={12}>
-        <Text style={{ fontWeight: '700', color: Brand.navy }}>✕ Close</Text>
+      <Pressable onPress={() => router.back()} hitSlop={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <Ionicons name="close" size={20} color={Brand.navy} />
+        <Text style={{ fontWeight: '700', color: Brand.navy }}>Close</Text>
       </Pressable>
       <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
         <View style={{ alignItems: 'center', gap: 8 }}>
@@ -124,7 +126,7 @@ export default function VoiceModal() {
               opacity: busy ? 0.6 : 1,
             }}
           >
-            <Text style={{ fontSize: 36 }}>🎤</Text>
+            <Ionicons name="mic" size={36} color={isRecording ? '#fff' : Brand.navy} />
           </Pressable>
           </Animated.View>
           <Text style={{ fontWeight: '700', color: Brand.navy }}>
@@ -158,7 +160,7 @@ export default function VoiceModal() {
             <PillButton title="Re-record" onPress={() => { setTranscript(''); start(); }} disabled={isRecording || busy} />
           </View>
           <View style={{ flex: 1 }}>
-            <PillButton title="Sounds good →" primary onPress={submit} disabled={!transcript.trim() || busy} />
+            <PillButton title="Sounds good" primary onPress={submit} disabled={!transcript.trim() || busy} />
           </View>
         </View>
       </View>

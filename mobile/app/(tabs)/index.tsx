@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '../../constants/colors';
 import { Spacing, Touch } from '../../constants/spacing';
 import { GoalCard } from '../../components/GoalCard';
@@ -39,7 +40,9 @@ export default function Home() {
               <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 24, color: Brand.navy }}>
                 {greeting()}
               </Text>
-              <Text style={{ fontWeight: '700', color: Brand.navy }}>🔥 {streak}</Text>
+              <Text style={{ fontWeight: '700', color: Brand.navy }}>
+                <Ionicons name="flame" size={16} color="#F59E0B" /> {streak}
+              </Text>
             </View>
             {focus && (
               <Card>
@@ -81,12 +84,12 @@ export default function Home() {
         )}
       />
       <Pressable
-        onPress={() => router.push('/voice')}
-        accessibilityLabel="Create a new goal with voice or text"
+        onPress={() => router.push('/(tabs)/chat')}
+        accessibilityLabel="Open coach chat to create a goal"
         style={{
           position: 'absolute',
           right: 20,
-          bottom: 24,
+          bottom: 104,
           minWidth: 56,
           minHeight: 56,
           borderRadius: 999,
@@ -98,7 +101,7 @@ export default function Home() {
           elevation: 4,
         }}
       >
-        <Text style={{ fontSize: 28, color: Brand.navy, fontWeight: '700' }}>+</Text>
+        <Ionicons name="add" size={30} color={Brand.navy} />
       </Pressable>
       <View style={{ height: Touch.min }} />
     </SafeAreaView>

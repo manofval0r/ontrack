@@ -30,7 +30,23 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
         api.getGoals().catch(() => []),
         api.getDashboard().catch(() => null),
       ]);
-      setGoals(g);
+      // Enrich bare goal rows with dashboard progress (backend stores no
+      // current_value — progress_pct per goal is the source of truth).
+      const pctById = new Map<string, number>();
+      const tplById = new Map<string, string>();
+      for (const a of d?.active_goals ?? []) {
+        if (a?.id != null) {
+          if (typeof a.progress_pct === 'number') pctById.set(String(a.id), a.progress_pct);
+          if (typeof a.goal_template === 'string') tplById.set(String(a.id), a.goal_template);
+        }
+      }
+      setGoals(
+        (g as any[]).map((goal) => ({
+          ...goal,
+          progress_pct: pctById.get(String(goal.id)) ?? goal.progress_pct,
+          goal_template: goal.goal_template ?? tplById.get(String(goal.id)) ?? 'generic',
+        }))
+      );
       setDashboard(d);
     } catch (e: any) {
       setError(e?.error ?? 'Failed to load goals.');
@@ -51,11 +67,13 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
   const logProgress = useCallback(
     async (goalId: string, value: number, note?: string) => {
       await api.logProgress(goalId, value, note);
+      // Re-read the goal, then re-merge dashboard progress (detail payload
+      // carries no progress value on its own).
       const updated = await api.getGoal(goalId);
-      setGoals((prev) => prev.map((g) => (String(g.id) === String(goalId) ? updated : g)));
+      await refresh();
       return updated;
     },
-    []
+    [refresh]
   );
 
   const finalizeGoal = useCallback(

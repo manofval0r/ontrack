@@ -88,7 +88,7 @@ export default function Onboarding() {
         ) : (
           <View style={{ gap: 12 }}>
             <PillButton
-              title={draft.trim() ? 'Preview my tracker →' : 'Create account'}
+              title={draft.trim() ? 'Preview my tracker' : 'Create account'}
               primary
               onPress={() => goAuth(false)}
             />

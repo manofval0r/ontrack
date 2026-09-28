@@ -66,7 +66,7 @@
   /* Home */
   .greet{font-family:"Fraunces",Georgia,serif; font-size:23px;}
   .goalrow{background:#fff; border:2px solid var(--navy); border-radius:20px; box-shadow:4px 4px 0 var(--navy); padding:14px;}
-  .fab{position:absolute; right:16px; bottom:16px; width:54px; height:54px; border-radius:999px; background:var(--turquoise);
+  .fab{position:absolute; right:16px; bottom:100px; width:54px; height:54px; border-radius:999px; background:var(--turquoise);
     border:2px solid var(--navy); font-size:26px; font-weight:700; color:var(--navy); display:flex; align-items:center; justify-content:center; box-shadow:3px 3px 0 var(--navy);}
   /* Tabs */
   .tabbar{margin-top:auto; display:flex; background:#fff; border:2px solid var(--navy); border-radius:18px; box-shadow:3px 3px 0 var(--navy); overflow:hidden;}
@@ -102,6 +102,19 @@
   .switch{width:44px; height:26px; border-radius:999px; background:var(--turquoise); border:2px solid var(--navy); position:relative;}
   .switch::after{content:""; position:absolute; right:2px; top:1.5px; width:18px; height:18px; border-radius:999px; background:#fff; border:2px solid var(--navy);}
   .note{font-size:12px; opacity:.55; text-align:center; max-width:640px; margin:26px auto 0; line-height:1.6;}
+  .obpane{display:none; flex-direction:column; gap:12px; flex:1;}
+  .obpane.on{display:flex;}
+  .checkrow{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:13px; font-weight:600;}
+  .checkbox{width:22px; height:22px; border-radius:7px; border:2px solid var(--navy); background:var(--turquoise); color:var(--navy);
+    font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;}
+  .recdot{display:inline-flex; align-items:center; gap:5px; background:#dc2626; color:#fff; border-radius:999px; padding:4px 10px; font-size:11px; font-weight:700;}
+  .recdot i{width:8px; height:8px; border-radius:4px; background:#fff; display:block;}
+  .ghpanel{background:var(--navy); border:2px solid var(--navy); border-radius:20px; padding:16px; color:#fff; display:flex; flex-direction:column; gap:12px;}
+  .ghstat{flex:1; background:rgba(255,255,255,.08); border-radius:12px; padding:10px 0; text-align:center;}
+  .ghstat b{font-family:"Fraunces",Georgia,serif; font-size:20px; display:block;}
+  .ghstat span{font-size:11px; font-weight:600; color:var(--turquoise);}
+  .strip{display:flex; gap:6px;}
+  .strip i{flex:1; height:26px; border-radius:6px; border:1px solid rgba(255,255,255,.25); display:block;}
 </style>
 </head>
 <body>
@@ -122,27 +135,42 @@
       </div></div>
       <div class="cap">M1 · Splash<small>logo + tagline + progress → routes by session</small></div></div>
 
-    <!-- ONBOARDING -->
+    <!-- ONBOARDING (interactive: click Continue) -->
     <div class="shot"><div class="phone"><div class="notch"></div>
-      <div class="screen">
+      <div class="screen" id="obscreen">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div class="dots"><i class="on"></i><i></i><i></i></div>
           <span style="font-weight:700;color:var(--teal);font-size:13px;">Skip</span>
         </div>
-        <div class="art">
-          <svg width="170" height="130" viewBox="0 0 200 160">
-            <path class="draw" d="M45 62 C 80 62, 105 50, 140 30 M140 30 l-14 4 M140 30 l-2 14" fill="none" stroke="#071E2D" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-            <path class="draw d2" d="M60 130 C 95 130, 120 118, 155 98 M155 98 l-14 4 M155 98 l-2 14" fill="none" stroke="#071E2D" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+        <div class="obpane on" data-ob="0" style="justify-content:center;">
+          <div class="art">
+            <svg width="170" height="130" viewBox="0 0 200 160">
+              <path class="draw" d="M45 62 C 80 62, 105 50, 140 30 M140 30 l-14 4 M140 30 l-2 14" fill="none" stroke="#071E2D" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="draw d2" d="M60 130 C 95 130, 120 118, 155 98 M155 98 l-14 4 M155 98 l-2 14" fill="none" stroke="#071E2D" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </div>
-        <div class="card">
+        <div class="obpane" data-ob="1" style="justify-content:center;">
+          <div class="card">
+            <div class="bar"><div></div></div>
+            <div class="checkrow"><span class="checkbox tick">✓</span>Morning run</div>
+            <div class="checkrow"><span class="checkbox tick" style="animation-delay:.3s;">✓</span>Read 20 pages</div>
+            <div class="checkrow"><span class="checkbox tick" style="animation-delay:.6s;">✓</span>Ship the demo</div>
+          </div>
+        </div>
+        <div class="obpane" data-ob="2" style="justify-content:center;">
+          <div class="bubble ai">You're at 3 of 5. On pace for Friday?</div>
+          <div class="bubble user">Closed one more — 4 of 5!</div>
+        </div>
+        <div class="card" id="obcard">
           <div class="h-display" style="font-size:21px;">Welcome to OnTrack</div>
-          <p style="font-size:13.5px;margin-top:6px;line-height:1.5;">Chat-first accountability. Say a goal, get a tracker, prove progress.</p>
+          <p style="font-size:13.5px;margin-top:6px;line-height:1.5;" id="obbody">Chat-first accountability. Say a goal, get a tracker, prove progress.</p>
+          <input id="obdraft" style="display:none;margin-top:10px;width:100%;border:2px solid rgba(7,30,45,.2);border-radius:12px;padding:10px;font-size:13px;" placeholder="I want to sell 5 cars this week" />
         </div>
-        <div class="pillbtn primary">Continue</div>
-        <p style="text-align:center;font-size:12px;opacity:.5;">Step 1 of 3</p>
+        <div id="obactions"><div class="pillbtn primary" id="obnext">Continue</div></div>
+        <p style="text-align:center;font-size:12px;opacity:.5;" id="obstep">Step 1 of 3</p>
       </div></div>
-      <div class="cap">M2 · Onboarding<small>self-drawing mark · pager · skip · goal-first draft</small></div></div>
+      <div class="cap">M2 · Onboarding — all 3 steps<small>click Continue to walk through them</small></div></div>
 
     <!-- INTERACTIVE: HOME / CHAT / GOALS / SETTINGS -->
     <div class="shot"><div class="phone"><div class="notch"></div>
@@ -150,7 +178,7 @@
         <!-- HOME -->
         <div class="tabpane on" data-pane="home">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="greet">Good morning</span><b>🔥 14</b>
+            <span class="greet">Good morning</span><b style="display:flex;align-items:center;gap:4px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 22c4.4 0 7-2.8 7-6.5 0-4-3.5-6-4.5-9.5-2.5 1.5-3.5 4-3.5 4S9 7 9 4C6 6.5 5 9.5 5 13.5 5 19.2 7.6 22 12 22z"/></svg>14</b>
           </div>
           <div class="card">
             <div style="font-size:11px;font-weight:700;color:var(--teal);">TODAY'S FOCUS</div>
@@ -164,7 +192,7 @@
             </div>
             <div class="bar" style="margin-top:10px;"><div></div></div>
             <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-weight:600;color:var(--teal);">
-              <span>3/5 deals · 60%</span><span style="font-size:16px;">🔊</span>
+              <span>3/5 deals · 60%</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#071E2D" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="#071E2D"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
             </div>
           </div>
           <div class="goalrow">
@@ -173,7 +201,7 @@
             </div>
             <div class="bar" style="margin-top:10px;"><div></div></div>
             <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-weight:600;color:var(--teal);">
-              <span>30/50 reps · 60%</span><span style="font-size:16px;">🔊</span>
+              <span>30/50 reps · 60%</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#071E2D" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="#071E2D"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
             </div>
           </div>
         </div>
@@ -188,7 +216,7 @@
               <div class="pillbtn primary" style="margin-top:8px;min-height:38px;font-size:13px;">Use this tracker</div>
             </div>
           </div>
-          <div class="composer"><span class="roundbtn" style="background:var(--turquoise);">🎤</span>
+          <div class="composer"><span class="roundbtn" style="background:var(--turquoise);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#071E2D" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3"/></svg></span>
             <span class="field">Message OnTrack…</span><span class="roundbtn" style="background:var(--navy);color:#fff;">↑</span></div>
         </div>
         <!-- GOALS -->
@@ -228,47 +256,68 @@
       </div></div>
       <div class="cap">M5–M7 · M10 — live phone<small>click the tabs: Home · Chat · Goals · Settings</small></div></div>
 
-    <!-- GOAL DETAIL -->
+    <!-- GOAL DETAIL · GITHUB STYLE -->
     <div class="shot"><div class="phone"><div class="notch"></div>
       <div class="fullmodal">
-        <span style="font-weight:700;">← Back</span>
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8;">
-            <b style="font-size:17px;">Close 5 Enterprise Deals</b><span class="status st-track">active</span>
+        <span style="font-weight:700;">‹ Back</span>
+        <div class="ghpanel">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="width:44px;height:44px;border-radius:22px;background:var(--turquoise);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="#071E2D"><path d="M12 2A10 10 0 0 0 2 12c0 4.4 2.9 8.2 6.8 9.5.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.2-.4-1.3.1-2.6 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.3.2 2.4.1 2.6.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 22 12 10 10 0 0 0 12 2z"/></svg>
+            </span>
+            <span style="flex:1;">
+              <b style="font-size:16px;">Ship OnTrack mobile MVP</b>
+              <span style="display:block;font-size:11px;color:var(--turquoise);font-weight:600;margin-top:2px;">manofval0r/ontrack · main · 3 days left</span>
+            </span>
+            <span class="status st-track">active</span>
           </div>
-          <div style="font-size:12px;opacity:.65;margin-top:4px;">3/5 deals · counter tracker · due Oct 05</div>
+          <div style="display:flex;gap:8px;">
+            <div class="ghstat"><b>14</b><span>day streak</span></div>
+            <div class="ghstat"><b>9</b><span>logs this week</span></div>
+            <div class="ghstat"><b>67%</b><span>shipped</span></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;">ACTIVITY · LAST 7 DAYS</div>
+            <div class="strip">
+              <i style="background:#F3F6F8;"></i><i style="background:#99F6E4;"></i><i style="background:#00C4B3;"></i><i style="background:#00C4B3;"></i><i style="background:#F3F6F8;"></i><i style="background:#006D6A;"></i><i style="background:#00C4B3;"></i>
+            </div>
+          </div>
         </div>
-        <div class="card" style="text-align:center;">
-          <div class="h-display" style="font-size:34px;">3 / 5</div>
-          <div class="roundbtn" style="width:62px;height:62px;background:var(--navy);color:#fff;font-size:28px;margin:10px auto;box-shadow:3px 3px 0 var(--turquoise);">+</div>
-          <div class="field" style="border:2px solid rgba(7,30,45,.2);border-radius:12px;padding:10px;font-size:13px;color:#94a3b8;text-align:left;">Note (optional)</div>
+        <div class="card">
+          <div class="checkrow"><span class="checkbox">✓</span>Auth + SecureStore session</div>
+          <div class="checkrow"><span class="checkbox">✓</span>Expo-audio voice pipeline</div>
+          <div class="checkrow"><span class="checkbox" style="background:#fff;"></span>EAS preview APK</div>
         </div>
         <div style="display:flex;gap:10px;">
           <div class="pillbtn" style="flex:1;">Check in</div>
           <div class="pillbtn primary" style="flex:1;">Work-block</div>
         </div>
-        <div class="card"><b style="font-size:13px;color:var(--teal);">Coach check-in</b>
-          <p style="font-size:13px;margin-top:4px;">You're at 3 of 5. On pace for Friday?</p></div>
       </div></div>
-      <div class="cap">M8 · Goal Detail<small>counter +1 · check-in · verdict slot</small></div></div>
+      <div class="cap">M8 · Goal Detail · github template<small>repo · streak · week strip · checklist · activity</small></div></div>
 
-    <!-- VOICE -->
+    <!-- CHAT DICTATION STATE -->
     <div class="shot"><div class="phone"><div class="notch"></div>
       <div class="screen">
-        <b>✕ Close</b>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8;margin-top:26px;">
-          <div class="mic">🎤</div>
-          <b>Listening…</b>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="h-display" style="font-size:21px;">OnTrack coach</div>
+          <span class="recdot"><i></i>0:07</span>
         </div>
-        <div class="card"><b style="font-size:13px;color:var(--teal);">Transcript (editable)</b>
-          <div style="margin-top:8px;border:2px solid rgba(7,30,45,.2);border-radius:12px;padding:10px;font-size:13px;min-height:70px;">
-            I want to sell five cars this week</div></div>
-        <div style="display:flex;gap:10px;margin-top:auto;">
-          <div class="pillbtn" style="flex:1;">Re-record</div>
-          <div class="pillbtn primary" style="flex:1;">Sounds good →</div>
+        <div class="bubble ai">Tell me what you want to make progress on.</div>
+        <div class="bubble user">I want to run every morning</div>
+        <div class="bubble ai">Understood! I structured this as a counter goal (target 7).
+          <div class="proposal"><b>Morning run streak</b>
+            <div style="font-size:11px;color:var(--teal);font-weight:600;">counter tracker</div>
+            <div class="pillbtn primary" style="margin-top:8px;min-height:38px;font-size:13px;">Use this tracker</div>
+          </div>
         </div>
+        <div class="composer">
+          <span class="roundbtn" style="background:#dc2626;border-color:#dc2626;color:#fff;font-size:13px;font-weight:700;">■</span>
+          <span class="field" style="border-color:#dc2626;color:var(--navy);">…five kilometers before work</span>
+          <span class="roundbtn" style="background:var(--navy);color:#fff;opacity:.4;">↑</span>
+        </div>
+        <p style="font-size:11px;color:#dc2626;font-weight:600;">Listening… tap stop when done — dictation lands in the input, stays editable</p>
       </div></div>
-      <div class="cap">Voice input<small>expo-audio record → /api/asr → editable → create</small></div></div>
+      <div class="cap">M6 · Chat dictation<small>inline record → /api/asr → editable input, no separate screen</small></div></div>
 
     <!-- WORK BLOCK -->
     <div class="shot"><div class="phone"><div class="notch"></div>
@@ -294,6 +343,30 @@
     t.classList.add('on');
     document.querySelector(`[data-pane="${t.dataset.tab}"]`).classList.add('on');
   }));
+  // Onboarding walkthrough (all 3 steps)
+  const OB_TITLES = ['Welcome to OnTrack', 'Trackers that build themselves', 'Try your first goal'];
+  const OB_BODIES = [
+    'Chat-first accountability. Say a goal, get a tracker, prove progress.',
+    'Counters, checklists and logs appear from plain words — then update live.',
+    'Type it below to preview — no account needed yet.'
+  ];
+  let obStep = 0;
+  const obNext = document.getElementById('obnext');
+  if (obNext) obNext.addEventListener('click', () => {
+    if (obStep >= 2) return;
+    obStep++;
+    document.querySelectorAll('.obpane').forEach(p => p.classList.toggle('on', p.dataset.ob == obStep));
+    document.querySelectorAll('#obscreen .dots i').forEach((d, i) => d.classList.toggle('on', i === obStep));
+    document.querySelector('#obcard .h-display').textContent = OB_TITLES[obStep];
+    document.getElementById('obbody').textContent = OB_BODIES[obStep];
+    document.getElementById('obdraft').style.display = obStep === 2 ? 'block' : 'none';
+    document.getElementById('obactions').innerHTML = obStep === 2
+      ? '<div class="pillbtn primary">Create account</div><div class="pillbtn" style="margin-top:10px;">I already have an account</div>'
+      : '<div class="pillbtn primary" id="obnext2">Continue</div>';
+    document.getElementById('obstep').textContent = `Step ${obStep + 1} of 3`;
+    const n2 = document.getElementById('obnext2');
+    if (n2) n2.addEventListener('click', () => obNext.click());
+  });
 </script>
 </body>
 </html>

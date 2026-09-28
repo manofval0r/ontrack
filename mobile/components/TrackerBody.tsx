@@ -4,6 +4,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
 import { Radii, Spacing, Touch } from '../constants/spacing';
+import { displayProgress, templateMeta } from '../lib/templates';
 import { useGoals } from '../lib/store';
 import { PillButton } from './ui';
 
@@ -16,9 +17,10 @@ export function TrackerBody({ goal, onChanged }: { goal: any; onChanged: (g: any
     try {
       setBusy(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      const next = (goal.current_value ?? 0) + delta;
+      const next = (goal.current_value ?? displayProgress(goal).current) + delta;
       const updated = await logProgress(String(goal.id), next, text ?? note);
-      onChanged(updated);
+      // Detail payload carries no progress value — keep the merged fields.
+      onChanged({ ...goal, ...updated, progress_pct: goal.progress_pct, goal_template: goal.goal_template });
       setNote('');
     } finally {
       setBusy(false);
@@ -95,10 +97,15 @@ export function TrackerBody({ goal, onChanged }: { goal: any; onChanged: (g: any
   }
 
   // counter (default)
+  const prog = displayProgress(goal);
+  const meta = templateMeta(goal);
   return (
     <View style={{ alignItems: 'center', gap: 12 }}>
       <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 34, fontWeight: '700', color: Brand.navy }}>
-        {goal.current_value ?? 0} / {goal.target ?? '—'}
+        {prog.current} / {prog.target ?? '—'}
+      </Text>
+      <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.teal }}>
+        {prog.pct}% · {meta.unit} · {meta.label}
       </Text>
       <Pressable
         onPress={() => log(1)}
