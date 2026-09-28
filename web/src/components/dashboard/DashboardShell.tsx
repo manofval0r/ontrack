@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
+import { Zap, X } from 'lucide-react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useGoals } from '../../context/GoalContext'
 import { firstName } from '../../utils/auth'
+import { executionPercent } from '../../utils/goalMetrics'
 import { DashboardRail } from './DashboardRail'
 import { DashboardTopNav } from './DashboardTopNav'
 import { DashboardChatPanel } from './DashboardChatPanel'
@@ -142,7 +144,7 @@ export const DashboardShell: React.FC = () => {
             <div className="p-4 border-b-2 border-[#071E2D] dark:border-white/10 flex items-center justify-between bg-[#F8FAFB] dark:bg-[#091824]">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center text-[#071E2D] text-xs font-black shadow-[1px_1px_0px_#071E2D]">
-                  ⚡
+                  <Zap className="w-3.5 h-3.5 fill-[#071E2D]" />
                 </div>
                 <h3
                   className="font-bold text-sm text-[#071E2D] dark:text-white"
@@ -157,7 +159,7 @@ export const DashboardShell: React.FC = () => {
                 className="w-8 h-8 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center text-[#071E2D] dark:text-white hover:bg-[#E6F7F5] dark:hover:bg-white/5 shadow-[1px_1px_0px_#071E2D] dark:shadow-[1px_1px_0px_#000000] transition-colors cursor-pointer"
                 aria-label="Close assistant"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
             <div className="flex-1 p-2 overflow-hidden">
@@ -166,7 +168,7 @@ export const DashboardShell: React.FC = () => {
                 onCreateGoal={createGoal}
                 onLogProgress={logProgress}
                 onUpdateGoal={updateGoal}
-                shippingRate={executionPercentSafe(goals)}
+                shippingRate={executionPercent(goals)}
                 streakDays={streakDays}
               />
             </div>
@@ -175,12 +177,4 @@ export const DashboardShell: React.FC = () => {
       )}
     </div>
   )
-}
-
-function executionPercentSafe(goals: { status: string; target: number; current_value: number }[]): number {
-  const active = goals.filter((g) => g.status === 'active')
-  const pool = active.length ? active : goals
-  if (!pool.length) return 0
-  const rates = pool.map((g) => (g.target > 0 ? Math.min(1, g.current_value / g.target) : 0))
-  return Math.round((rates.reduce((a, b) => a + b, 0) / rates.length) * 100)
 }

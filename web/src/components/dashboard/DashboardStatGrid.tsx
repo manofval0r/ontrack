@@ -1,5 +1,5 @@
 import React from 'react'
-import { Target, Clock, Check, Flame, Zap } from 'lucide-react'
+import { Target, Clock, Check, Flame, Zap, Activity } from 'lucide-react'
 
 interface DashboardStatGridProps {
   completedCount?: number
@@ -49,8 +49,9 @@ export const DashboardStatGrid: React.FC<DashboardStatGridProps> = ({
             >
               {displayTargets}
             </span>
-            <div className="inline-flex items-center gap-1 text-[11px] font-bold text-[#071E2D] mt-1 bg-white/50 border border-[#071E2D]/20 px-2 py-0.5 rounded-full">
-              <span>🎯 Live Radar</span>
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#071E2D] mt-1 bg-white/50 border border-[#071E2D]/20 px-2 py-0.5 rounded-full">
+              <Activity className="w-3.5 h-3.5 text-[#071E2D]" />
+              <span>Live Radar</span>
             </div>
           </div>
         </div>

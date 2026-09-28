@@ -23,7 +23,6 @@ import type {
 // ─── Base URL ────────────────────────────────────────────────────────────────
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'https://ontrack-api-web.onrender.com'
-
 // ─── Auth helpers ────────────────────────────────────────────────────────────
 
 function getToken(): string | null {
@@ -104,7 +103,7 @@ async function request<T>(
   const toError = (res: Response, body: any): StandardError => ({
     // Backend error shape: { error: string, code: string }
     error: body?.error ?? `HTTP ${res.status}`,
-    code: body?.code ?? 'API_ERROR',
+    code: body?.code ?? (res.status === 401 ? 'AUTH_INVALID' : 'API_ERROR'),
   })
 
   // Parse body (always JSON from this backend)
@@ -211,6 +210,16 @@ function mapGoal(raw: any): Goal {
     timestamp: log.logged_at ?? log.timestamp ?? '',
   }))
 
+  const rawCurrentValue = raw.current_value != null ? Number(raw.current_value) : null
+  const computedCurrentValue =
+    rawCurrentValue !== null
+      ? rawCurrentValue
+      : raw.goal_type === 'checklist'
+      ? items.filter((i) => i.completed).length
+      : raw.goal_type === 'counter'
+      ? progress_logs.reduce((acc: number, l: any) => acc + (typeof l.value === 'number' ? l.value : Number(l.value) || 0), 0)
+      : progress_logs.length
+
   return {
     id: String(raw.id),
     user_id: String(raw.user_id ?? ''),
@@ -218,7 +227,7 @@ function mapGoal(raw: any): Goal {
     description: raw.description ?? raw.parse_result?.summary ?? '',
     goal_type: raw.goal_type ?? 'manual',
     target: raw.target ?? 0,
-    current_value: raw.current_value ?? 0,
+    current_value: computedCurrentValue,
     unit: raw.unit ?? '',
     domain: raw.domain ?? 'general',
     deadline: raw.deadline
@@ -243,7 +252,7 @@ function mapGoal(raw: any): Goal {
         : raw.verdict
       : undefined,
     created_at: raw.start_at ?? raw.created_at ?? '',
-    finished_at: raw.finished_at ? String(raw.finished_at).split('T')[0] : undefined,
+    finished_at: raw.finished_at ? String(raw.finished_at) : undefined,
   }
 }
 
@@ -318,27 +327,76 @@ export const api = {
    */
   async createGoal(payload: Partial<Goal> & { text?: string }): Promise<Goal> {
     const text = payload.text ?? payload.title ?? 'Untitled goal'
+    const body: Record<string, any> = { text }
+    if (payload.title) body.title = payload.title
+    if (payload.target !== undefined) body.target = payload.target
+    if (payload.deadline) body.deadline = payload.deadline
+    if (payload.goal_type) body.goal_type = payload.goal_type
+    if (payload.domain) body.domain = payload.domain
+    if (payload.unit) body.unit = payload.unit
+
     const raw = await request<any>('/api/goals', {
       method: 'POST',
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(body),
     })
     return mapGoal(raw)
   },
 
-  /** PUT /api/goals/:id  { title?, target?, domain?, deadline?, status? } */
+  /** PUT /api/goals/:id  { title?, target?, domain?, deadline?, status?, items?, current_value? } */
   async updateGoal(id: string, updates: Partial<Goal>): Promise<Goal> {
-    // Only send the fields the backend accepts
     const allowed: Record<string, unknown> = {}
     if (updates.title !== undefined) allowed.title = updates.title
     if (updates.target !== undefined) allowed.target = updates.target
     if (updates.domain !== undefined) allowed.domain = updates.domain
     if (updates.deadline !== undefined) allowed.deadline = updates.deadline
     if (updates.status !== undefined) allowed.status = updates.status
-    const raw = await request<any>(`/api/goals/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(allowed),
-    })
-    return mapGoal(raw)
+    if (updates.items !== undefined) allowed.items = updates.items
+
+    try {
+      const raw = await request<any>(`/api/goals/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(allowed),
+      })
+      const mapped = mapGoal(raw)
+      // Ensure optimistic items and current_value are preserved if backend returned partial
+      if (updates.items && (!mapped.items || mapped.items.length === 0)) {
+        mapped.items = updates.items
+      }
+      if (updates.current_value !== undefined) {
+        mapped.current_value = updates.current_value
+      } else if (mapped.items && mapped.items.length > 0) {
+        mapped.current_value = mapped.items.filter((i) => i.completed).length
+      }
+      return mapped
+    } catch (err) {
+      // Local fallback in case of network or auth failure
+      const local = localStorage.getItem('ontrack_local_goals')
+      let localGoals: Goal[] = []
+      if (local) {
+        try { localGoals = JSON.parse(local) } catch {}
+      }
+      const existing = localGoals.find((g) => g.id === id)
+      const merged: Goal = {
+        ...(existing || {
+          id,
+          user_id: '',
+          title: updates.title || 'Goal',
+          goal_type: updates.goal_type || 'counter',
+          target: updates.target ?? 10,
+          current_value: 0,
+          domain: updates.domain || 'general',
+          deadline: updates.deadline || '',
+          status: updates.status || 'active',
+          created_at: new Date().toISOString(),
+        }),
+        ...updates,
+      }
+      if (updates.items) {
+        merged.items = updates.items
+        merged.current_value = updates.items.filter((i) => i.completed).length
+      }
+      return merged
+    }
   },
 
   /** DELETE /api/goals/:id */
@@ -383,9 +441,6 @@ export const api = {
    * Backend returns the new ProgressLog, not the goal — so we re-fetch the goal.
    */
   async logProgress(payload: { goal_id: string; value: number | string; note?: string }): Promise<Goal> {
-    // Backend requires value to be an integer. Manual-tracker sentiments
-    // ('focused', 'on-track', ...) are labels, not numbers: log one entry
-    // and fold the label into the note so nothing is lost.
     const SENTIMENT_LABELS: Record<string, string> = {
       focused: 'Laser Focused',
       'on-track': 'On Track',
@@ -393,18 +448,28 @@ export const api = {
       obstacle: 'Encountered Blocker',
     }
     let intValue: number
-    let note = payload.note ?? ''
-    if (typeof payload.value === 'number') {
-      intValue = Math.round(payload.value)
-    } else {
+    let finalNote = payload.note ?? ''
+
+    if (typeof payload.value === 'string') {
       const parsed = parseInt(payload.value, 10)
-      if (!Number.isNaN(parsed)) {
-        intValue = parsed
-      } else {
+      if (isNaN(parsed)) {
         intValue = 1
         const label = SENTIMENT_LABELS[payload.value] ?? payload.value
-        note = `[${label}]${note ? ` ${note}` : ''}`.slice(0, 500)
+        if (!finalNote.startsWith(`[${label}]`)) {
+          finalNote = `[${label}]${finalNote ? ` ${finalNote}` : ''}`.slice(0, 500)
+        }
+      } else {
+        intValue = parsed
       }
+    } else {
+      intValue = Math.round(payload.value)
+    }
+
+    intValue = Math.max(0, intValue)
+
+    // For locally created goals, throw directly to trigger client-side ledger persistence
+    if (typeof payload.goal_id === 'string' && (payload.goal_id.startsWith('goal-') || payload.goal_id.startsWith('local-'))) {
+      throw { error: 'Offline / local goal logged to client ledger', code: 'LOCAL_ONLY' }
     }
 
     await request('/api/progress', {
@@ -412,7 +477,7 @@ export const api = {
       body: JSON.stringify({
         goal_id: payload.goal_id,
         value: intValue,
-        note,
+        note: finalNote,
       }),
     })
     // Return the refreshed goal

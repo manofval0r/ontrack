@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Check, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, Plus, Calendar } from 'lucide-react'
 import { useGoals } from '../../../context/GoalContext'
 import type { Goal } from '../../../types'
 
@@ -262,7 +262,7 @@ export const CalendarPanel: React.FC = () => {
         <div className="flex items-center justify-between border-b-2 border-[#071E2D]/10 dark:border-white/10 pb-3">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center text-[#071E2D] text-xs font-bold">
-              📅
+              <Calendar className="w-3.5 h-3.5" />
             </div>
             <h3 className="font-bold text-sm text-[#071E2D] dark:text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
               Agenda for {selectedDateStr}

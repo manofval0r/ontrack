@@ -2,12 +2,59 @@ import type { Goal, ProgressLog, WeeklyActivityDay } from '../types'
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
+export function goalProgressFraction(g: Goal): number {
+  if (g.status === 'completed') return 1
+
+  // 1. Checklist tracker: evaluate completed items directly
+  if (g.items && g.items.length > 0) {
+    const done = g.items.filter((i) => i.completed).length
+    return Math.min(1, Math.max(0, done / g.items.length))
+  }
+
+  // 2. Numeric / Counter tracker or checklist with current_value
+  if (g.target > 0) {
+    const current = typeof g.current_value === 'number' ? g.current_value : Number(g.current_value) || 0
+    return Math.min(1, Math.max(0, current / g.target))
+  }
+
+  // 3. Fallback for logs / manual reflection
+  if (g.progress_logs && g.progress_logs.length > 0) {
+    const target = g.target > 0 ? g.target : 5
+    return Math.min(1, g.progress_logs.length / target)
+  }
+
+  if (g.current_value > 0) {
+    return Math.min(1, g.current_value / (g.target || 5))
+  }
+
+  return 0
+}
+
 export function executionPercent(goals: Goal[]): number {
-  const active = goals.filter((g) => g.status === 'active')
-  const pool = active.length ? active : goals
-  if (!pool.length) return 0
-  const rates = pool.map((g) => (g.target > 0 ? Math.min(1, g.current_value / g.target) : g.status === 'completed' ? 1 : 0))
-  return Math.round((rates.reduce((a, b) => a + b, 0) / rates.length) * 1000) / 10
+  if (!goals || goals.length === 0) return 0
+  const rates = goals.map(goalProgressFraction)
+  const sum = rates.reduce((acc, r) => acc + r, 0)
+  return Math.round((sum / goals.length) * 100)
+}
+
+export function totalTasksProgress(goals: Goal[]): { completed: number; total: number; hasTasks: boolean } {
+  let completed = 0
+  let total = 0
+  let hasTasks = false
+
+  for (const g of goals) {
+    if (g.items && g.items.length > 0) {
+      hasTasks = true
+      total += g.items.length
+      completed += g.items.filter((i) => i.completed).length
+    } else if (g.target > 0) {
+      total += g.target
+      const cur = typeof g.current_value === 'number' ? g.current_value : Number(g.current_value) || 0
+      completed += Math.min(g.target, cur)
+    }
+  }
+
+  return { completed, total, hasTasks }
 }
 
 export function allProgressLogs(goals: Goal[]): Array<ProgressLog & { goalTitle: string; goalStatus: Goal['status'] }> {

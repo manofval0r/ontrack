@@ -26,6 +26,7 @@ NVIDIA_BASE_URL + NVIDIA_API_KEY ({base}/audio/speech,
 {base}/audio/transcriptions). Any failure raises and views map it to 503 —
 no fixed-string stub, so ASR always echoes the actual audio bytes.
 """
+from datetime import datetime, timedelta
 import json
 import logging
 import re
@@ -136,12 +137,67 @@ def _clean_json_response(raw_text):
     return text
 
 
+def parse_relative_deadline(text: str) -> str:
+    """Parse relative expressions like 'before Saturday', 'by Friday', 'tomorrow'
+    into an ISO date string (YYYY-MM-DD) based on current server date."""
+    if not text:
+        return None
+    now = datetime.now()
+    lower = text.lower()
+
+    weekdays = {
+        "monday": 0,
+        "tuesday": 1,
+        "wednesday": 2,
+        "thursday": 3,
+        "friday": 4,
+        "saturday": 5,
+        "sunday": 6,
+    }
+
+    for name, target_idx in weekdays.items():
+        if re.search(r"\b" + name + r"\b", lower):
+            current_idx = now.weekday()
+            days_ahead = (target_idx - current_idx) % 7
+            if days_ahead == 0:
+                days_ahead = 7
+            target_date = now + timedelta(days=days_ahead)
+            return target_date.strftime("%Y-%m-%d")
+
+    if re.search(r"\btomorrow\b", lower):
+        return (now + timedelta(days=1)).strftime("%Y-%m-%d")
+
+    if re.search(r"\bday after tomorrow\b", lower):
+        return (now + timedelta(days=2)).strftime("%Y-%m-%d")
+
+    if re.search(r"\b(this weekend|end of (this )?week)\b", lower):
+        days_to_sun = (6 - now.weekday()) % 7
+        if days_to_sun == 0:
+            days_to_sun = 7
+        return (now + timedelta(days=days_to_sun)).strftime("%Y-%m-%d")
+
+    if re.search(r"\bnext week\b", lower):
+        return (now + timedelta(days=7)).strftime("%Y-%m-%d")
+
+    m = re.search(r"\bin (\d+)\s+days?\b", lower)
+    if m:
+        return (now + timedelta(days=int(m.group(1)))).strftime("%Y-%m-%d")
+
+    m_weeks = re.search(r"\bin (\d+)\s+weeks?\b", lower)
+    if m_weeks:
+        return (now + timedelta(days=int(m_weeks.group(1)) * 7)).strftime("%Y-%m-%d")
+
+    return None
+
+
 def parse_goal(goal_text):
     """Parse goal_text into structured JSON dictionary for OnTrack trackers."""
     if not isinstance(goal_text, str) or not goal_text.strip():
         raise ValueError("goal_text must be a non-empty string")
+    now = datetime.now()
     system_prompt = (
-        "You are OnTrack AI goal parser. Parse the user input into strict JSON.\n"
+        f"You are OnTrack AI goal parser. Today's date is {now.strftime('%Y-%m-%d')} ({now.strftime('%A')}).\n"
+        "Parse the user input into strict JSON.\n"
         "Respond ONLY with valid JSON. Do not include introductory or explanatory text.\n"
         "Required JSON schema:\n"
         "{\n"
@@ -151,7 +207,8 @@ def parse_goal(goal_text):
         '  "domain": string (e.g. "sales", "fitness", "career", "study", "general"),\n'
         '  "deadline": string in ISO format YYYY-MM-DD or null,\n'
         '  "summary": string (concise 1-sentence summary of the goal)\n'
-        "}"
+        "}\n"
+        "Important: Calculate relative deadlines accurately (e.g. 'before Saturday', 'by Friday', 'tomorrow') based on today's date."
     )
     content = _chat(
         [
@@ -181,8 +238,8 @@ def parse_goal(goal_text):
     items = [str(it).strip() for it in items if str(it).strip()][:20]
     domain = str(parsed.get("domain") or "general")[:100]
     deadline = parsed.get("deadline")
-    if not isinstance(deadline, str):
-        deadline = None
+    if not isinstance(deadline, str) or not deadline.strip():
+        deadline = parse_relative_deadline(goal_text)
     summary = str(parsed.get("summary") or "")[:500]
     template = parsed.get("goal_template")
     if template not in GOAL_TEMPLATES:

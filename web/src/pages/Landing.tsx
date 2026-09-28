@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Star, Check, Sparkles, PenLine } from 'lucide-react'
 import { Logo } from '../components/Logo'
 import { FeaturePill } from '../components/FeaturePill'
 import { Navbar } from '../components/Navbar'
@@ -171,18 +172,24 @@ const Hero: React.FC = () => {
             <div className="flex-1 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-4 sm:p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
               <div className="flex items-center justify-between pb-2.5 border-b border-[#071E2D]/10 dark:border-white/10">
                 <span className="font-sans font-bold text-sm text-[#071E2D] dark:text-white">Tips For Success</span>
-                <span className="w-6 h-6 rounded-full bg-[#00C4B3] text-[#071E2D] flex items-center justify-center font-bold text-xs shadow-sm">★</span>
+                <span className="w-6 h-6 rounded-full bg-[#00C4B3] text-[#071E2D] flex items-center justify-center font-bold text-xs shadow-sm">
+                  <Star className="w-3.5 h-3.5 fill-[#071E2D]" />
+                </span>
               </div>
               <div className="flex flex-col gap-2 text-xs font-sans mt-3">
                 <div className="flex items-start gap-2 bg-[#F8FAFB] dark:bg-[#081723] p-2.5 rounded-xl border border-[#071E2D]/15 dark:border-white/10">
-                  <span className="text-[#006D6A] dark:text-[#00C4B3] font-bold mt-0.5 flex-shrink-0">✓</span>
+                  <span className="text-[#006D6A] dark:text-[#00C4B3] font-bold mt-0.5 flex-shrink-0">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </span>
                   <div>
                     <p className="font-bold text-[#071E2D] dark:text-white text-xs">Follow your daily streak</p>
                     <p className="text-[11px] text-[#071E2D]/65 dark:text-slate-400 leading-tight mt-0.5">Short, daily logs keep friction at zero.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2 bg-[#F8FAFB] dark:bg-[#081723] p-2.5 rounded-xl border border-[#071E2D]/15 dark:border-white/10">
-                  <span className="text-[#006D6A] dark:text-[#00C4B3] font-bold mt-0.5 flex-shrink-0">✦</span>
+                  <span className="text-[#006D6A] dark:text-[#00C4B3] font-bold mt-0.5 flex-shrink-0">
+                    <Sparkles className="w-3.5 h-3.5" />
+                  </span>
                   <div>
                     <p className="font-bold text-[#071E2D] dark:text-white text-xs">Midpoint Check-in</p>
                     <p className="text-[11px] text-[#071E2D]/65 dark:text-slate-400 leading-tight mt-0.5">Nemotron verifies milestone 2 on Wednesday.</p>
@@ -281,7 +288,7 @@ const HowItWorks: React.FC = () => (
                   {s.n}
                 </span>
                 <span className="w-8 h-8 rounded-full border border-[#071E2D] dark:border-[#1E3A52] bg-[#F8FAFB] dark:bg-[#142B3C] flex items-center justify-center font-bold text-xs text-[#071E2D] dark:text-white">
-                  ✓
+                  <Check className="w-4 h-4 text-[#006D6A] dark:text-[#00C4B3] stroke-[3]" />
                 </span>
               </div>
 
@@ -405,7 +412,7 @@ const TrackerTypes: React.FC = () => {
           <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
             <div>
               <div className="w-12 h-12 rounded-xl bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] flex items-center justify-center font-bold text-lg mb-5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] border-2 border-[#071E2D] dark:border-[#00C4B3]">
-                ✓
+                <Check className="w-5 h-5 text-white stroke-[3]" />
               </div>
               <h3 className="font-sans font-bold text-[#071E2D] dark:text-white text-xl mb-3">Checklist</h3>
               <p className="font-sans text-sm text-[#071E2D]/70 dark:text-slate-300 leading-relaxed mb-6">
@@ -450,7 +457,7 @@ const TrackerTypes: React.FC = () => {
           <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
             <div>
               <div className="w-12 h-12 rounded-xl bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] flex items-center justify-center font-bold text-lg mb-5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] border-2 border-[#071E2D] dark:border-[#00C4B3]">
-                ✎
+                <PenLine className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-sans font-bold text-[#071E2D] dark:text-white text-xl mb-3">Log</h3>
               <p className="font-sans text-sm text-[#071E2D]/70 dark:text-slate-300 leading-relaxed mb-6">
@@ -607,8 +614,9 @@ const FinalCTA: React.FC = () => (
             </div>
             <div className="mt-3 w-full bg-white/10 border border-white/15 rounded-xl px-3 sm:px-3.5 py-2.5 flex items-center justify-between text-xs text-white gap-2">
               <span className="font-sans font-semibold truncate">Goal: Launch Follow-Through</span>
-              <span className="font-sans font-bold text-[#00C4B3] bg-[#00C4B3]/15 px-2.5 py-0.5 rounded-full border border-[#00C4B3]/30 whitespace-nowrap flex-shrink-0">
-                On track ✓
+              <span className="font-sans font-bold text-[#00C4B3] bg-[#00C4B3]/15 px-2.5 py-0.5 rounded-full border border-[#00C4B3]/30 whitespace-nowrap flex-shrink-0 inline-flex items-center gap-1">
+                <span>On track</span>
+                <Check className="w-3 h-3 stroke-[3]" />
               </span>
             </div>
           </div>

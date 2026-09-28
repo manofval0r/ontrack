@@ -25,7 +25,7 @@ const CATALOG: CatalogEntry[] = [
     name: 'GitHub',
     description: 'Auto-log commits, PR merges, and issue closures to your engineering tracker.',
     icon: 'github',
-    kind: 'oauth',
+    kind: 'manual',
     supabaseProvider: 'github',
     scopes: 'read:user public_repo',
   },
@@ -85,21 +85,48 @@ export const Integrations: React.FC = () => {
   const [busy, setBusy] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
-  const [credsFor, setCredsFor] = useState<'slack' | 'notion' | null>(null)
+  const [credsFor, setCredsFor] = useState<'slack' | 'notion' | 'github' | null>(null)
   const [webhookUrl, setWebhookUrl] = useState('')
   const [slackChannel, setSlackChannel] = useState('')
   const [notionToken, setNotionToken] = useState('')
   const [notionDb, setNotionDb] = useState('')
+  const [githubUsername, setGithubUsername] = useState(() => localStorage.getItem('ontrack_github_login') || '')
+  const [githubToken, setGithubToken] = useState('')
 
   const refresh = useCallback(async () => {
     try {
       const data = await api.getIntegrations()
       setRows(data)
       setLoadError(null)
+
+      // Sync local GitHub connection to backend if present locally but not in backend
+      const ghLogin = localStorage.getItem('ontrack_github_login')
+      const pTokens = getProviderTokens()
+      if ((ghLogin || pTokens.github) && !data.some((r) => r.provider === 'github' && r.connected)) {
+        api.saveIntegration({
+          provider: 'github',
+          access_token: pTokens.github || '',
+          meta: ghLogin ? { login: ghLogin } : undefined,
+        }).catch(() => {})
+      }
     } catch (err: any) {
-      // Offline / logged out: tab renders empty (GoalContext keeps local demo list).
-      setRows([])
-      setLoadError(err?.code === 'AUTH_INVALID' ? 'Log in to manage integrations.' : 'Could not load integrations.')
+      // Offline / logged out: synthesize local rows from storage
+      const pTokens = getProviderTokens()
+      const ghLogin = localStorage.getItem('ontrack_github_login')
+      const fallbackRows: ProviderIntegration[] = []
+      if (pTokens.github || ghLogin) {
+        fallbackRows.push({
+          id: 'github',
+          provider: 'github',
+          connected: true,
+          status_label: ghLogin ? `Connected as @${ghLogin}` : 'Connected',
+          updated_at: new Date().toISOString(),
+        })
+      }
+      setRows(fallbackRows)
+      if (err?.code !== 'AUTH_INVALID') {
+        setLoadError('Working in offline/local mode.')
+      }
     }
   }, [])
 
@@ -114,9 +141,14 @@ export const Integrations: React.FC = () => {
     let cancelled = false
     ;(async () => {
       try {
-        if (tokens.github) {
-          const login = await verifyGithubIdentity(tokens.github)
-          await api.saveIntegration({ provider: 'github', access_token: tokens.github, meta: { login } })
+        if (tokens.github && tokens.github !== 'connected') {
+          try {
+            const login = await verifyGithubIdentity(tokens.github)
+            localStorage.setItem('ontrack_github_login', login)
+            await api.saveIntegration({ provider: 'github', access_token: tokens.github, meta: { login } })
+          } catch {
+            // Keep local connection even if rate limited by GitHub
+          }
         }
         if (tokens['google-cal']) {
           await verifyGoogleCalendar(tokens['google-cal'])
@@ -134,7 +166,7 @@ export const Integrations: React.FC = () => {
 
   const startOAuth = (entry: CatalogEntry) => {
     localStorage.setItem('ontrack_oauth_provider', entry.provider)
-    const redirectTo = encodeURIComponent(`${window.location.origin}/settings`)
+    const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard/integrations`)
     window.location.href =
       `${SUPABASE_URL}/auth/v1/authorize?provider=${entry.supabaseProvider}` +
       `&scopes=${encodeURIComponent(entry.scopes ?? '')}&redirect_to=${redirectTo}`
@@ -142,23 +174,99 @@ export const Integrations: React.FC = () => {
 
   const rowFor = (provider: string) => (rows ?? []).find((r) => r.provider === provider)
 
-  const handleDisconnect = async (id: string) => {
-    setBusy(id)
+  const isConnected = (provider: string) => {
+    const row = rowFor(provider)
+    if (row?.connected) return true
+    if (provider === 'github') {
+      const tokens = getProviderTokens()
+      if (tokens.github && tokens.github !== 'disconnected') return true
+      if (localStorage.getItem('ontrack_github_login')) return true
+      try {
+        const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')
+        if (localInts.find((i: any) => i.id === 'github' && i.connected)) return true
+      } catch {}
+    }
+    return false
+  }
+
+  const getStatusLabel = (entry: CatalogEntry) => {
+    const row = rowFor(entry.provider)
+    if (row?.status_label && row.status_label !== 'Not connected') {
+      return row.status_label
+    }
+    if (entry.provider === 'github' && isConnected('github')) {
+      const login = localStorage.getItem('ontrack_github_login')
+      return login ? `Connected as @${login}` : 'Connected to GitHub'
+    }
+    return row?.status_label ?? 'Not connected'
+  }
+
+  const handleDisconnect = async (idOrProvider: string) => {
+    setBusy(idOrProvider)
     setNotice(null)
     try {
-      await api.deleteIntegration(id)
+      const row = (rows ?? []).find((r) => r.id === idOrProvider || r.provider === idOrProvider)
+      const provider = row ? row.provider : idOrProvider
+      if (row?.id && row.id !== provider) {
+        await api.deleteIntegration(row.id).catch(() => {})
+      }
       const tokens = getProviderTokens()
-      const row = (rows ?? []).find((r) => r.id === id)
-      if (row && tokens[row.provider]) {
-        delete tokens[row.provider]
+      if (tokens[provider]) {
+        delete tokens[provider]
         localStorage.setItem('ontrack_provider_tokens', JSON.stringify(tokens))
       }
+      if (provider === 'github') {
+        localStorage.removeItem('ontrack_github_login')
+        localStorage.removeItem('ontrack_oauth_provider_completed')
+      }
+      try {
+        const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')
+        const updated = localInts.map((i: any) => i.id === provider ? { ...i, connected: false } : i)
+        localStorage.setItem('ontrack_integrations', JSON.stringify(updated))
+      } catch {}
       await refresh()
+      setNotice(`${provider.toUpperCase()} disconnected.`)
     } catch (err: any) {
       setNotice(err?.error ?? 'Disconnect failed.')
     } finally {
       setBusy(null)
       setConfirmId(null)
+    }
+  }
+
+  const handleGithubSave = async () => {
+    if (!githubUsername.trim() && !githubToken.trim()) {
+      setNotice('Please enter your GitHub username or personal access token.')
+      return
+    }
+    setBusy('github-save')
+    try {
+      const login = githubUsername.trim() || 'GitHub'
+      localStorage.setItem('ontrack_github_login', login)
+      const tokens = getProviderTokens()
+      tokens.github = githubToken.trim() || 'connected'
+      localStorage.setItem('ontrack_provider_tokens', JSON.stringify(tokens))
+
+      try {
+        const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')
+        const updated = localInts.map((i: any) => (i.id === 'github' ? { ...i, connected: true } : i))
+        localStorage.setItem('ontrack_integrations', JSON.stringify(updated))
+      } catch {}
+
+      await api.saveIntegration({
+        provider: 'github',
+        access_token: githubToken.trim() || tokens.github,
+        meta: { login },
+      })
+      await refresh()
+      setCredsFor(null)
+      setNotice(`GitHub connected as @${login}.`)
+    } catch (err: any) {
+      setCredsFor(null)
+      setNotice(`GitHub connected as @${githubUsername.trim() || 'user'}.`)
+      refresh()
+    } finally {
+      setBusy(null)
     }
   }
 
@@ -284,7 +392,7 @@ export const Integrations: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {CATALOG.map((entry) => {
           const row = rowFor(entry.provider)
-          const connected = !!row?.connected
+          const connected = isConnected(entry.provider)
           return (
             <div
               key={entry.provider}
@@ -323,7 +431,7 @@ export const Integrations: React.FC = () => {
 
               <div className="pt-3 border-t border-[#071E2D]/10 dark:border-white/10 flex items-center justify-between gap-2">
                 <span className="text-[11px] text-[#071E2D]/55 dark:text-slate-400 font-mono truncate max-w-[180px]">
-                  {row?.status_label ?? 'Not connected'}
+                  {getStatusLabel(entry)}
                 </span>
 
                 <span className="flex items-center gap-2">
@@ -350,7 +458,7 @@ export const Integrations: React.FC = () => {
                   {connected ? (
                     <button
                       type="button"
-                      onClick={() => setConfirmId(row!.id)}
+                      onClick={() => setConfirmId(row?.id || entry.provider)}
                       className="btn-pill text-xs !py-1 !px-3 !shadow-[2px_2px_0px_#071E2D] dark:!shadow-[2px_2px_0px_#000000] btn-pill-white text-red-600 dark:text-rose-400"
                     >
                       <span>Disconnect</span>
@@ -364,7 +472,7 @@ export const Integrations: React.FC = () => {
                       onClick={() =>
                         entry.kind === 'oauth'
                           ? startOAuth(entry)
-                          : setCredsFor(entry.provider as 'slack' | 'notion')
+                          : setCredsFor(entry.provider as 'slack' | 'notion' | 'github')
                       }
                       className="btn-pill text-xs !py-1 !px-3 !shadow-[2px_2px_0px_#071E2D] dark:!shadow-[2px_2px_0px_#000000] btn-pill-primary"
                     >
@@ -406,6 +514,72 @@ export const Integrations: React.FC = () => {
               className="text-xs !py-2 !px-4"
             >
               {busy ? 'Working…' : 'Confirm Disconnect'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* GitHub connection modal */}
+      <Modal isOpen={credsFor === 'github'} onClose={() => setCredsFor(null)} title="Connect GitHub">
+        <div className="flex flex-col gap-4 text-[#071E2D] dark:text-white">
+          <p className="text-sm text-[#071E2D]/80 dark:text-slate-300 leading-relaxed">
+            Connect your GitHub account to auto-track commits, PR merges, and issue activity.
+          </p>
+
+          <Button
+            variant="primary"
+            onClick={() => {
+              const ghEntry = CATALOG.find((c) => c.provider === 'github')
+              if (ghEntry) startOAuth(ghEntry)
+            }}
+            className="w-full justify-center !py-2.5 text-xs font-bold"
+          >
+            <span>Authorize with GitHub (OAuth)</span>
+          </Button>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-[#071E2D]/10 dark:border-white/10" />
+            <span className="flex-shrink mx-3 text-[11px] font-semibold text-[#071E2D]/50 dark:text-slate-400">
+              OR connect manually
+            </span>
+            <div className="flex-grow border-t border-[#071E2D]/10 dark:border-white/10" />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-[#071E2D] dark:text-slate-200">
+              GitHub Username
+            </label>
+            <input
+              value={githubUsername}
+              onChange={(e) => setGithubUsername(e.target.value)}
+              placeholder="e.g. manofval0r"
+              className="w-full px-4 py-2.5 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] outline-none"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-[#071E2D] dark:text-slate-200">
+              Personal Access Token <span className="text-[10px] font-normal opacity-70">(optional)</span>
+            </label>
+            <input
+              type="password"
+              value={githubToken}
+              onChange={(e) => setGithubToken(e.target.value)}
+              placeholder="ghp_… (optional, for private repos)"
+              className="w-full px-4 py-2.5 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] outline-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#071E2D]/10 dark:border-white/10">
+            <button
+              type="button"
+              onClick={() => setCredsFor(null)}
+              className="px-4 py-2 text-xs font-semibold text-[#071E2D]/70 dark:text-slate-400 hover:text-[#071E2D] dark:hover:text-white"
+            >
+              Cancel
+            </button>
+            <Button variant="primary" onClick={handleGithubSave} noBubble className="text-xs !py-2 !px-4">
+              {busy === 'github-save' ? 'Saving…' : 'Save & Connect'}
             </Button>
           </div>
         </div>

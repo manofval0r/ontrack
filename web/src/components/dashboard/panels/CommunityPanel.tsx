@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
-import { Flame, Heart, Award, Trophy } from 'lucide-react'
+import { Flame, Heart, Award, Trophy, Rocket, Code2, Zap, Palette, Check, UserPlus, Users, Share2 } from 'lucide-react'
 import { useGoals } from '../../../context/GoalContext'
+import { Modal } from '../../common/Modal'
+import { Button } from '../../Button'
 
-interface CommunityMember {
+interface Partner {
   id: string
   name: string
   initial: string
@@ -15,75 +17,82 @@ interface CommunityMember {
 }
 
 const COMMUNITY_SQUADS = [
-  { id: 'founders', name: 'Founders & Scale', members: 128, pace: '+34% Velocity', icon: '🚀' },
-  { id: 'builders', name: 'Software Engineers', members: 214, pace: '+28% Velocity', icon: '💻' },
-  { id: 'fitness', name: 'Daily Habits & Health', members: 176, pace: '+42% Velocity', icon: '⚡' },
-  { id: 'creators', name: 'Product & Design', members: 92, pace: '+19% Velocity', icon: '🎨' },
+  { id: 'founders', name: 'Founders & Scale', focus: 'Enterprise growth & fundraising', icon: Rocket },
+  { id: 'builders', name: 'Software Engineers', focus: 'Shipping code & architecture', icon: Code2 },
+  { id: 'fitness', name: 'Daily Habits & Health', focus: 'Physical fitness & routines', icon: Zap },
+  { id: 'creators', name: 'Product & Design', focus: 'User research & interface polish', icon: Palette },
 ]
 
 export const CommunityPanel: React.FC = () => {
   const { user, goals, dashboardData } = useGoals()
-  const [selectedSquad, setSelectedSquad] = useState('founders')
+  const [selectedSquad, setSelectedSquad] = useState(() => localStorage.getItem('ontrack_user_squad') || 'founders')
   const [cheeredMembers, setCheeredMembers] = useState<Record<string, boolean>>({})
+  const [showAddPartner, setShowAddPartner] = useState(false)
+  const [partnerName, setPartnerName] = useState('')
+  const [partnerDomain, setPartnerDomain] = useState('')
+  const [copiedInvite, setCopiedInvite] = useState(false)
 
+  // Real user data
   const userStreak = dashboardData?.stats.streak_days || 0
   const userCompleted = goals.filter((g) => g.status === 'completed').length
   const userRate = goals.length > 0 ? Math.round((userCompleted / goals.length) * 100) : 0
 
-  const [members, setMembers] = useState<CommunityMember[]>([
-    {
-      id: 'usr-1',
-      name: 'Chioma N.',
-      initial: 'C',
-      streak: 21,
-      completionRate: 94,
-      domain: 'Engineering',
-      lastActivity: 'Shipped v1.2 API integration',
-      squad: 'builders',
-      cheers: 14,
-    },
-    {
-      id: 'usr-2',
-      name: 'Eniola B.',
-      initial: 'E',
-      streak: 18,
-      completionRate: 88,
-      domain: 'Growth',
-      lastActivity: 'Closed 3 enterprise trials',
-      squad: 'founders',
-      cheers: 9,
-    },
-    {
-      id: 'usr-3',
-      name: 'David O.',
-      initial: 'D',
-      streak: 14,
-      completionRate: 85,
-      domain: 'AI / Prompting',
-      lastActivity: 'Trained Nemotron check-in pipeline',
-      squad: 'builders',
-      cheers: 22,
-    },
-    {
-      id: 'usr-4',
-      name: 'Sarah K.',
-      initial: 'S',
-      streak: 12,
-      completionRate: 80,
-      domain: 'Fitness',
-      lastActivity: 'Completed 5km morning run',
-      squad: 'fitness',
-      cheers: 7,
-    },
-  ])
+  // Real user-added accountability partners (no mock people)
+  const [partners, setPartners] = useState<Partner[]>(() => {
+    try {
+      const stored = localStorage.getItem('ontrack_partners')
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  })
+
+  const handleSelectSquad = (id: string) => {
+    setSelectedSquad(id)
+    localStorage.setItem('ontrack_user_squad', id)
+  }
 
   const handleCheer = (id: string) => {
     if (cheeredMembers[id]) return
     setCheeredMembers((prev) => ({ ...prev, [id]: true }))
-    setMembers((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, cheers: m.cheers + 1 } : m))
-    )
+    setPartners((prev) => {
+      const updated = prev.map((m) => (m.id === id ? { ...m, cheers: m.cheers + 1 } : m))
+      localStorage.setItem('ontrack_partners', JSON.stringify(updated))
+      return updated
+    })
   }
+
+  const handleAddPartner = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!partnerName.trim()) return
+    const newPartner: Partner = {
+      id: `partner-${Date.now()}`,
+      name: partnerName.trim(),
+      initial: partnerName.trim()[0].toUpperCase(),
+      streak: 1,
+      completionRate: 100,
+      domain: partnerDomain.trim() || 'General',
+      lastActivity: 'Joined accountability circle',
+      squad: selectedSquad,
+      cheers: 0,
+    }
+    const updated = [...partners, newPartner]
+    setPartners(updated)
+    localStorage.setItem('ontrack_partners', JSON.stringify(updated))
+    setPartnerName('')
+    setPartnerDomain('')
+    setShowAddPartner(false)
+  }
+
+  const handleCopyInvite = () => {
+    const inviteLink = `${window.location.origin}/signup?ref=squad-${selectedSquad}`
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      setCopiedInvite(true)
+      setTimeout(() => setCopiedInvite(false), 2500)
+    })
+  }
+
+  const challengeProgress = Math.min(100, Math.round((userStreak / 14) * 100))
 
   return (
     <div className="flex flex-col gap-6 animate-fadeIn pb-12">
@@ -97,7 +106,7 @@ export const CommunityPanel: React.FC = () => {
             Accountability Community & Squads
           </h2>
           <p className="text-xs sm:text-sm text-[#071E2D]/60 dark:text-slate-400 mt-0.5 font-medium">
-            Join squads, view live momentum on the peer leaderboard, and cheer your accountability partners.
+            Select your focus squad, track personal velocity against daily milestones, and partner up for accountability.
           </p>
         </div>
 
@@ -105,7 +114,7 @@ export const CommunityPanel: React.FC = () => {
         <div className="flex items-center gap-2 px-4 py-2 bg-[#E6F7F5] dark:bg-[#00C4B3]/15 border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-full shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000]">
           <Trophy className="w-4 h-4 text-[#006D6A] dark:text-[#00C4B3]" />
           <span className="text-xs font-bold text-[#071E2D] dark:text-white">
-            Your Rank: Top 10% ({userStreak}d Streak · {userRate}% Done)
+            Active Streak: {userStreak}d · {userRate}% Goals Completed
           </span>
         </div>
       </div>
@@ -117,7 +126,7 @@ export const CommunityPanel: React.FC = () => {
           return (
             <div
               key={squad.id}
-              onClick={() => setSelectedSquad(squad.id)}
+              onClick={() => handleSelectSquad(squad.id)}
               className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
                 isSelected
                   ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D] shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000]'
@@ -125,15 +134,15 @@ export const CommunityPanel: React.FC = () => {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xl">{squad.icon}</span>
+                <squad.icon className="w-5 h-5 text-current" />
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/40 dark:bg-white/10 border border-[#071E2D]/20">
-                  {squad.members} Peers
+                  {isSelected ? 'Active Squad' : 'Select Track'}
                 </span>
               </div>
               <div className="mt-3">
                 <h4 className="font-bold text-sm leading-tight">{squad.name}</h4>
                 <span className="text-[11px] font-semibold opacity-80 mt-1 block">
-                  {squad.pace}
+                  {squad.focus}
                 </span>
               </div>
             </div>
@@ -149,39 +158,55 @@ export const CommunityPanel: React.FC = () => {
             <div className="flex items-center gap-2">
               <Award className="w-5 h-5 text-[#006D6A] dark:text-[#00C4B3]" />
               <h3 className="font-bold text-base text-[#071E2D] dark:text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
-                Velocity Leaderboard
+                Squad Momentum Board
               </h3>
             </div>
-            <span className="text-xs text-[#071E2D]/60 dark:text-slate-400 font-semibold">
-              Live updates
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAddPartner(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-[#071E2D] dark:border-[#00C4B3] text-xs font-bold bg-[#E6F7F5] dark:bg-[#00C4B3]/20 text-[#071E2D] dark:text-white hover:bg-[#00C4B3] transition-colors"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Add Partner</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyInvite}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-white/20 text-xs font-bold bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-slate-200 hover:border-[#071E2D] transition-colors"
+                title="Copy squad invite link"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>{copiedInvite ? 'Copied Link!' : 'Invite'}</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col divide-y divide-[#071E2D]/10 dark:divide-white/10">
             {/* User Row Highlight */}
-            <div className="py-3 flex items-center justify-between gap-3 bg-[#E6F7F5]/50 dark:bg-[#00C4B3]/10 px-3 rounded-2xl border border-[#00C4B3]/40">
+            <div className="py-3.5 flex items-center justify-between gap-3 bg-[#E6F7F5]/50 dark:bg-[#00C4B3]/10 px-3.5 rounded-2xl border border-[#00C4B3]/40">
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-[#00C4B3] border border-[#071E2D] flex items-center justify-center font-extrabold text-xs text-[#071E2D]">
+                <div className="w-8 h-8 rounded-full bg-[#00C4B3] border border-[#071E2D] flex items-center justify-center font-extrabold text-xs text-[#071E2D]">
                   {user.name ? user.name[0].toUpperCase() : 'U'}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs text-[#071E2D] dark:text-white">
+                    <span className="font-bold text-xs sm:text-sm text-[#071E2D] dark:text-white">
                       {user.name || 'You'} (Current Workspace)
                     </span>
-                    <span className="px-2 py-0.2 rounded-full bg-[#071E2D] text-white text-[9px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-[#071E2D] text-white text-[9px] font-bold">
                       You
                     </span>
                   </div>
                   <span className="text-[11px] text-[#071E2D]/70 dark:text-slate-300">
-                    {goals.length} Trackers · {userCompleted} Completed
+                    {goals.length} Active {goals.length === 1 ? 'Goal' : 'Goals'} · {userCompleted} Completed
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-4 text-right">
                 <div>
                   <span className="text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] block">
-                    {userRate}% Completion
+                    {userRate}% Completed
                   </span>
                   <span className="text-[10px] text-[#071E2D]/60 dark:text-slate-400 font-mono">
                     {userStreak} Day Streak
@@ -190,51 +215,71 @@ export const CommunityPanel: React.FC = () => {
               </div>
             </div>
 
-            {/* Peer Rows */}
-            {members.map((m, idx) => (
-              <div key={m.id} className="py-3.5 flex items-center justify-between gap-3 hover:bg-[#F8FAFB] dark:hover:bg-white/5 px-2 rounded-xl transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono font-bold text-[#071E2D]/40 dark:text-slate-500 w-4">
-                    #{idx + 1}
-                  </span>
-                  <div className="w-7 h-7 rounded-full bg-[#071E2D] dark:bg-[#00C4B3] border border-[#071E2D] dark:border-[#00C4B3] flex items-center justify-center font-bold text-xs text-white dark:text-[#071E2D]">
-                    {m.initial}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-xs text-[#071E2D] dark:text-white truncate">{m.name}</p>
-                    <p className="text-[11px] text-[#071E2D]/60 dark:text-slate-400 truncate mt-0.5">
-                      {m.lastActivity}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="text-right hidden sm:block">
-                    <span className="text-xs font-bold text-[#071E2D] dark:text-white block">
-                      {m.completionRate}%
+            {partners.length > 0 ? (
+              partners.map((partner, index) => (
+                <div key={partner.id} className="py-3.5 flex items-center justify-between gap-3 hover:bg-[#F8FAFB] dark:hover:bg-white/5 px-2 rounded-xl transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xs font-mono font-bold text-[#071E2D]/40 dark:text-slate-500 w-4">
+                      #{index + 2}
                     </span>
-                    <span className="text-[10px] text-[#006D6A] dark:text-[#00C4B3] font-bold">
-                      {m.streak}d streak
-                    </span>
+                    <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 border border-[#071E2D]/30 flex items-center justify-center font-bold text-xs text-[#071E2D] dark:text-white">
+                      {partner.initial}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs sm:text-sm text-[#071E2D] dark:text-white truncate">{partner.name}</p>
+                      <p className="text-[11px] text-[#071E2D]/60 dark:text-slate-400 truncate mt-0.5">
+                        {partner.domain} · {partner.lastActivity}
+                      </p>
+                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleCheer(m.id)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full border-2 text-[11px] font-bold transition-all cursor-pointer min-h-[44px] ${
-                      cheeredMembers[m.id]
-                        ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D]'
-                        : 'bg-white dark:bg-[#091824] text-[#071E2D] dark:text-white border-[#071E2D] dark:border-[#1E3A52] hover:bg-[#E6F7F5]'
-                    }`}
-                    aria-pressed={!!cheeredMembers[m.id]}
-                    aria-label={`Cheer for ${m.name}`}
-                  >
-                    <Heart className="w-3 h-3 fill-current" />
-                    <span>{m.cheers}</span>
-                  </button>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right hidden sm:block">
+                      <span className="text-xs font-bold text-[#071E2D] dark:text-white block">
+                        {partner.completionRate}%
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[10px] text-[#006D6A] dark:text-[#00C4B3] font-bold">
+                        <Flame className="w-3 h-3 text-[#006D6A] dark:text-[#00C4B3]" />
+                        <span>{partner.streak}d streak</span>
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCheer(partner.id)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-full border-2 text-[11px] font-bold transition-all cursor-pointer min-h-[44px] ${cheeredMembers[partner.id] ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D]' : 'bg-white dark:bg-[#091824] text-[#071E2D] dark:text-white border-[#071E2D] dark:border-[#1E3A52] hover:bg-[#E6F7F5]'}`}
+                      aria-pressed={!!cheeredMembers[partner.id]}
+                      aria-label={`Cheer for ${partner.name}`}
+                    >
+                      <Heart className="w-3 h-3 fill-current" />
+                      <span>{partner.cheers}</span>
+                    </button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="py-8 text-center flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#E6F7F5] dark:bg-[#00C4B3]/10 border-2 border-[#071E2D]/20 dark:border-[#00C4B3]/40 flex items-center justify-center text-[#006D6A] dark:text-[#00C4B3]">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-[#071E2D] dark:text-white">
+                    No Accountability Partners Added Yet
+                  </h4>
+                  <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                    Pair up with a colleague, friend, or accountability partner to share daily check-in momentum and celebrate wins.
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  onClick={() => setShowAddPartner(true)}
+                  className="text-xs !py-2 !px-4 mt-1"
+                >
+                  <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+                  <span>Add Accountability Partner</span>
+                </Button>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -244,37 +289,51 @@ export const CommunityPanel: React.FC = () => {
             <div className="flex items-center gap-2">
               <Flame className="w-5 h-5 text-[#00C4B3]" />
               <h4 className="font-bold text-base" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
-                Active Squad Challenge
+                14-Day Consistency Challenge
               </h4>
             </div>
             <p className="text-xs text-white/80 leading-relaxed">
-              Every member in the squad commits to 1 check-in per day for 14 straight days. Nemotron tracks group momentum and announces daily milestones.
+              Build unshakeable daily momentum. Log at least one truthful check-in every day for 14 straight days to unlock your coach verdict.
             </p>
             <div className="p-3 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-between text-xs font-bold">
               <span>Challenge Progress:</span>
-              <span className="text-[#00C4B3]">84% Completed</span>
+              <span className="text-[#00C4B3]">{userStreak} / 14 Days ({challengeProgress}%)</span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden border border-white/10">
+              <div className="bg-[#00C4B3] h-full transition-all duration-500 rounded-full" style={{ width: `${challengeProgress}%` }} />
             </div>
           </div>
 
           <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-5 shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] flex flex-col gap-3">
             <h4 className="font-bold text-sm text-[#071E2D] dark:text-white">Community Principles</h4>
             <ul className="text-xs text-[#071E2D]/70 dark:text-slate-300 space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="text-[#00C4B3] font-bold">✓</span>
-                <span>Honest, unvarnished progress logging.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-[#00C4B3] font-bold">✓</span>
-                <span>Proactive support and peer cheers.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-[#00C4B3] font-bold">✓</span>
-                <span>Consistent check-ins beat occasional heroics.</span>
-              </li>
+              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-[#00C4B3] mt-0.5 shrink-0 stroke-[3]" /><span>Honest, unvarnished progress logging.</span></li>
+              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-[#00C4B3] mt-0.5 shrink-0 stroke-[3]" /><span>Proactive support and peer cheers.</span></li>
+              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-[#00C4B3] mt-0.5 shrink-0 stroke-[3]" /><span>Consistent check-ins beat occasional heroics.</span></li>
             </ul>
           </div>
         </div>
       </div>
+
+      <Modal isOpen={showAddPartner} onClose={() => setShowAddPartner(false)} title="Add Accountability Partner">
+        <form onSubmit={handleAddPartner} className="flex flex-col gap-4 text-[#071E2D] dark:text-white">
+          <p className="text-sm text-[#071E2D]/80 dark:text-slate-300 leading-relaxed">
+            Add a partner or teammate to your squad to keep each other on track and celebrate wins.
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="partner-name" className="text-xs font-bold text-[#071E2D] dark:text-slate-200">Partner Name or Handle</label>
+            <input id="partner-name" type="text" required value={partnerName} onChange={(e) => setPartnerName(e.target.value)} placeholder="e.g. Alex M." className="w-full px-4 py-2.5 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] outline-none" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="partner-domain" className="text-xs font-bold text-[#071E2D] dark:text-slate-200">Focus Domain / Shared Goal</label>
+            <input id="partner-domain" type="text" value={partnerDomain} onChange={(e) => setPartnerDomain(e.target.value)} placeholder="e.g. Daily workout, Q3 Product Launch" className="w-full px-4 py-2.5 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] outline-none" />
+          </div>
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#071E2D]/10 dark:border-white/10">
+            <button type="button" onClick={() => setShowAddPartner(false)} className="px-4 py-2 text-xs font-semibold text-[#071E2D]/70 dark:text-slate-400 hover:text-[#071E2D] dark:hover:text-white">Cancel</button>
+            <Button variant="primary" type="submit" noBubble className="text-xs !py-2 !px-4">Save Partner</Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }

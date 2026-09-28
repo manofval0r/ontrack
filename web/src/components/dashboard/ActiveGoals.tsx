@@ -2,7 +2,9 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Goal, TrackerType } from '../../types'
 import { GoalCard } from '../goals/GoalCard'
+import { EditGoalModal } from '../goals/EditGoalModal'
 import { EmptyState } from '../common/EmptyState'
+import { useGoals } from '../../context/GoalContext'
 
 interface ActiveGoalsProps {
   goals: Goal[]
@@ -11,8 +13,11 @@ interface ActiveGoalsProps {
 }
 
 export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, onSelectGoal }) => {
+  const { updateGoal, deleteGoal } = useGoals()
   const [filter, setFilter] = useState<'all' | TrackerType>('all')
   const [search, setSearch] = useState('')
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const filteredGoals = goals.filter((g) => {
     const matchesFilter = filter === 'all' || g.goal_type === filter
@@ -47,21 +52,24 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
           />
 
           {/* Tracker Type Filters */}
-          {(['all', 'counter', 'checklist', 'manual'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setFilter(t)}
-              className={`
-                px-3 py-1 rounded-full text-xs font-bold capitalize transition-all border-2
-                ${filter === t
-                  ? 'bg-[#071E2D] text-white border-[#071E2D] shadow-[2px_2px_0px_#00C4B3]'
-                  : 'bg-white text-[#071E2D] border-[#071E2D]/20 hover:border-[#071E2D]'
-                }
-              `.trim()}
-            >
-              {t === 'all' ? 'All Types' : t}
-            </button>
-          ))}
+          {(['all', 'counter', 'checklist', 'manual'] as const).map((t) => {
+            const label = t === 'all' ? 'All Trackers' : t === 'counter' ? 'Counter' : t === 'checklist' ? 'Checklist' : 'Daily Reflection'
+            return (
+              <button
+                key={t}
+                onClick={() => setFilter(t)}
+                className={`
+                  px-3 py-1 rounded-full text-xs font-bold transition-all border-2
+                  ${filter === t
+                    ? 'bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] border-[#071E2D] dark:border-[#00C4B3] shadow-[2px_2px_0px_#00C4B3] dark:shadow-[2px_2px_0px_#000000]'
+                    : 'bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/20 dark:border-[#1E3A52] hover:border-[#071E2D] dark:hover:border-slate-400'
+                  }
+                `.trim()}
+              >
+                {label}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -90,7 +98,17 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
               }}
               className="cursor-pointer"
             >
-              <GoalCard goal={g} />
+              <GoalCard
+                goal={g}
+                onEdit={(goalToEdit) => {
+                  setEditingGoal(goalToEdit)
+                  setIsEditModalOpen(true)
+                }}
+                onDelete={(goalToDelete) => {
+                  setEditingGoal(goalToDelete)
+                  setIsEditModalOpen(true)
+                }}
+              />
             </div>
           ))}
 
@@ -117,6 +135,22 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
           </Link>
         </div>
       )}
+
+      {/* Edit & Delete Goal Modal */}
+      <EditGoalModal
+        goal={editingGoal}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingGoal(null)
+        }}
+        onSave={async (id, updates) => {
+          await updateGoal(id, updates)
+        }}
+        onDelete={async (id) => {
+          await deleteGoal(id)
+        }}
+      />
     </div>
   )
 }

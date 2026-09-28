@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { Landing } from './pages/Landing'
 import { Login } from './pages/Login'
 import { Signup } from './pages/Signup'
+import { ResetPassword } from './pages/ResetPassword'
 import { Onboarding } from './pages/Onboarding'
 import { Docs } from './pages/Docs'
 import { DashboardOverview } from './pages/DashboardOverview'
@@ -44,6 +45,7 @@ function App() {
             <Route path="/docs" element={<Docs />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<Onboarding />} />
 
             {/* Core Authenticated App Flow */}
@@ -68,7 +70,7 @@ function App() {
               <Route path="goal/:id" element={<GoalWorkspace />} />
             </Route>
 
-            <Route path="/settings" element={<Navigate to="/dashboard/account" replace />} />
+            <Route path="/settings" element={<Navigate to="/dashboard/integrations" replace />} />
             <Route path="/chat" element={<Navigate to="/dashboard/chat" replace />} />
             <Route path="/goal/:id" element={<GoalIdRedirect />} />
 

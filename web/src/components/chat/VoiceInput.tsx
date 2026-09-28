@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { Check, X } from 'lucide-react'
 
 interface VoiceInputProps {
   isRecording: boolean
@@ -132,18 +133,19 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
             completeRef.current(heard)
           }
         }}
-        className="px-3 py-1 bg-white text-xs font-bold text-[#071E2D] border border-[#071E2D] rounded-full shadow-sm hover:bg-[#F3F6F8]"
+        className="px-3 py-1 bg-white text-xs font-bold text-[#071E2D] border border-[#071E2D] rounded-full shadow-sm hover:bg-[#F3F6F8] inline-flex items-center gap-1"
       >
-        Done ✓
+        <span>Done</span>
+        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
       </button>
 
       <button
         type="button"
         onClick={onCancel}
         aria-label="Cancel voice recording"
-        className="text-xs font-bold text-red-700 dark:text-red-400 hover:text-red-800 min-h-[44px] px-2"
+        className="text-xs font-bold text-red-700 dark:text-red-400 hover:text-red-800 min-h-[44px] px-2 flex items-center justify-center"
       >
-        ✕
+        <X className="w-4 h-4" />
       </button>
     </div>
   )

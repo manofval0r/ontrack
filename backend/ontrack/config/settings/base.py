@@ -32,10 +32,11 @@ if INSTANCE_NAME not in ("web", "mobile"):
     raise ValueError('INSTANCE_NAME must be "web" or "mobile", got %r' % INSTANCE_NAME)
 
 SUPABASE_JWT_SECRET = env("SUPABASE_JWT_SECRET", default="")
-SUPABASE_URL = env("SUPABASE_URL", default="")
+SUPABASE_URL = env("SUPABASE_URL", default="https://destcakvqdzhkzemdugo.supabase.co")
 SUPABASE_PUBLISHABLE_KEY = env("SUPABASE_PUBLISHABLE_KEY", default="")
 SUPABASE_SECRET_KEY = env("SUPABASE_SECRET_KEY", default="")
-SUPABASE_JWKS_URL = env("SUPABASE_JWKS_URL", default="")
+_default_jwks = f"{SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json" if SUPABASE_URL else "https://destcakvqdzhkzemdugo.supabase.co/auth/v1/.well-known/jwks.json"
+SUPABASE_JWKS_URL = env("SUPABASE_JWKS_URL", default=_default_jwks)
 DEBUG_ACCESS_KEY = env("DEBUG_ACCESS_KEY", default="")
 
 # --- AI (David owns the bodies in apps/ai_module.py; backend reads config) ---

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Bell, Zap, Flame, Sparkles, X, ChevronRight } from 'lucide-react'
+import { Search, Bell, Zap, Flame, Sparkles, X, ChevronRight, LayoutDashboard, Target, Calendar, MessageSquare, Settings } from 'lucide-react'
 import type { UserProfile, Goal } from '../../types'
 import { Logo } from '../Logo'
 import { firstName } from '../../utils/auth'
@@ -137,12 +137,12 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
   }, [goals, searchQuery])
 
   const quickLinks = [
-    { label: 'Overview', path: '/dashboard', icon: '📊' },
-    { label: 'Trackers / Manage', path: '/dashboard/goals', icon: '🎯' },
-    { label: 'Activity Logs', path: '/dashboard/activity', icon: '⚡' },
-    { label: 'Calendar Schedule', path: '/dashboard/calendar', icon: '📅' },
-    { label: 'AI Partner Chat', path: '/dashboard/chat', icon: '💬' },
-    { label: 'Account & Settings', path: '/dashboard/account', icon: '⚙️' },
+    { label: 'Overview', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Trackers / Manage', path: '/dashboard/goals', icon: Target },
+    { label: 'Activity Logs', path: '/dashboard/activity', icon: Zap },
+    { label: 'Calendar Schedule', path: '/dashboard/calendar', icon: Calendar },
+    { label: 'AI Partner Chat', path: '/dashboard/chat', icon: MessageSquare },
+    { label: 'Account & Settings', path: '/dashboard/account', icon: Settings },
   ]
 
   const unreadCount = notifications.filter((n) => !n.read).length
@@ -456,7 +456,7 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
                       }}
                       className="flex items-center gap-2 p-2.5 rounded-2xl border-2 border-[#071E2D]/15 dark:border-[#1E3A52] hover:border-[#071E2D] dark:hover:border-[#00C4B3] hover:bg-[#E6F7F5]/40 dark:hover:bg-white/5 text-left text-xs font-bold text-[#071E2D] dark:text-white transition-all cursor-pointer"
                     >
-                      <span>{link.icon}</span>
+                      <link.icon className="w-4 h-4 text-[#006D6A] dark:text-[#00C4B3] shrink-0" />
                       <span className="truncate">{link.label}</span>
                     </button>
                   ))}

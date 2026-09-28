@@ -10,19 +10,6 @@ class GoalItemSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "completed"]
 
 
-class GoalSerializer(serializers.ModelSerializer):
-    items = GoalItemSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Goal
-        fields = [
-            "id", "title", "goal_type", "goal_template", "target", "domain", "status",
-            "deadline", "start_at", "result_value", "finished_at",
-            "parse_result", "verdict", "items",
-        ]
-        read_only_fields = fields
-
-
 class ProgressLogSerializer(serializers.ModelSerializer):
     goal_id = serializers.UUIDField(source="goal.id", read_only=True)
 
@@ -30,3 +17,27 @@ class ProgressLogSerializer(serializers.ModelSerializer):
         model = ProgressLog
         fields = ["id", "goal_id", "value", "note", "logged_at"]
         read_only_fields = fields
+
+
+class GoalSerializer(serializers.ModelSerializer):
+    items = GoalItemSerializer(many=True, read_only=True)
+    progress_logs = ProgressLogSerializer(many=True, read_only=True)
+    current_value = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Goal
+        fields = [
+            "id", "title", "goal_type", "goal_template", "target", "domain", "status",
+            "deadline", "start_at", "result_value", "finished_at",
+            "parse_result", "verdict", "items", "progress_logs", "current_value",
+        ]
+        read_only_fields = fields
+
+    def get_current_value(self, obj):
+        if obj.goal_type == Goal.GOAL_TYPE_CHECKLIST:
+            return sum(1 for item in obj.items.all() if item.completed)
+        if obj.goal_type == Goal.GOAL_TYPE_COUNTER:
+            return sum(log.value for log in obj.progress_logs.all())
+        if obj.goal_type == Goal.GOAL_TYPE_MANUAL:
+            return obj.progress_logs.count()
+        return 0

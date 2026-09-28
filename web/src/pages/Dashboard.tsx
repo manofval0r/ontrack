@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Zap, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useGoals } from '../context/GoalContext'
 import type { Goal } from '../types'
@@ -25,6 +26,7 @@ export const Dashboard: React.FC = () => {
     dashboardData,
     createGoal,
     updateGoal,
+    deleteGoal,
     logProgress,
     finalizeGoal,
   } = useGoals()
@@ -172,6 +174,8 @@ export const Dashboard: React.FC = () => {
               {/* Row 2: Recent Activities Table */}
               <div className="w-full min-w-0">
                 <DashboardRecentActivity
+                  goals={goals}
+                  onDeleteGoal={deleteGoal}
                   onSelectGoal={(id) => {
                     const g = goals.find((item) => item.id === id)
                     if (g) handleOpenDetail(g)
@@ -216,7 +220,7 @@ export const Dashboard: React.FC = () => {
             <div className="p-4 border-b-2 border-[#071E2D] dark:border-white/10 flex items-center justify-between bg-[#F8FAFB] dark:bg-[#091824]">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center text-[#071E2D] text-xs font-black shadow-[2px_2px_0px_#071E2D]" aria-hidden="true">
-                  AI
+                  <Zap className="w-3.5 h-3.5 fill-[#071E2D]" />
                 </div>
                 <h3
                   className="font-bold text-sm text-[#071E2D] dark:text-white"
@@ -231,7 +235,7 @@ export const Dashboard: React.FC = () => {
                 className="w-11 h-11 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] flex items-center justify-center text-[#071E2D] dark:text-white hover:bg-[#E6F7F5] dark:hover:bg-white/5 shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] transition-colors cursor-pointer"
                 aria-label="Close assistant"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -257,6 +261,10 @@ export const Dashboard: React.FC = () => {
         onUpdateGoal={async (id, updates) => {
           const updated = await updateGoal(id, updates)
           if (selectedGoal?.id === id) setSelectedGoal(updated)
+        }}
+        onDeleteGoal={async (id) => {
+          await deleteGoal(id)
+          handleCloseDetail()
         }}
         onLogProgress={async (goalId, value, note) => {
           const updated = await logProgress(goalId, value, note)

@@ -135,20 +135,33 @@ def parse_goal_safely(text):
     The template still comes from local keyword rules even on fallback,
     so the tracker renders sensibly without an LLM round-trip.
     """
+    rel_deadline_str = ai_module.parse_relative_deadline(text)
+    rel_deadline = None
+    if rel_deadline_str:
+        try:
+            rel_deadline = datetime.fromisoformat(rel_deadline_str)
+        except Exception:
+            rel_deadline = None
+
     try:
         parsed = coerce_parse_result(ai_module.parse_goal(text))
     except Exception:
         logger.warning("ai_module.parse_goal failed; using manual fallback", exc_info=True)
         return (
-            Goal.GOAL_TYPE_MANUAL, None, [], "", None, None,
+            Goal.GOAL_TYPE_MANUAL, None, [], "", rel_deadline, None,
             ai_module.infer_goal_template(text), True,
         )
     if parsed[-1]:
         logger.warning("ai_module.parse_goal returned malformed data; using manual fallback")
         return (
-            Goal.GOAL_TYPE_MANUAL, None, [], "", None, None,
+            Goal.GOAL_TYPE_MANUAL, None, [], "", rel_deadline, None,
             ai_module.infer_goal_template(text), True,
         )
+    # If the parser did not determine a deadline, use the relative expression parser
+    if not parsed[4] and rel_deadline:
+        parsed_list = list(parsed)
+        parsed_list[4] = rel_deadline
+        parsed = tuple(parsed_list)
     return parsed
 
 
@@ -161,7 +174,7 @@ class GoalListCreateView(APIView):
             raise ApiError(
                 f"status must be one of {sorted(STATUSES)}", "VALIDATION_ERROR"
             )
-        goals = Goal.objects.filter(user_id=request.user_id).prefetch_related("items")
+        goals = Goal.objects.filter(user_id=request.user_id).prefetch_related("items", "progress_logs")
         if status_filter:
             goals = goals.filter(status=status_filter)
         return Response(GoalSerializer(goals, many=True).data)
@@ -170,6 +183,20 @@ class GoalListCreateView(APIView):
         data = request.data if isinstance(request.data, dict) else {}
         text = clean_text(data.get("text"), max_length=500)
         goal_type, target, items, domain, deadline, summary, goal_template, used_fallback = parse_goal_safely(text)
+
+        # Honor explicitly confirmed client fields if valid
+        if data.get("goal_type") in (Goal.GOAL_TYPE_COUNTER, Goal.GOAL_TYPE_CHECKLIST, Goal.GOAL_TYPE_MANUAL):
+            goal_type = data.get("goal_type")
+        if _is_int(data.get("target")) and int(data.get("target")) >= 0:
+            target = int(data.get("target"))
+        if data.get("deadline"):
+            try:
+                deadline = datetime.fromisoformat(str(data.get("deadline")).replace("Z", "+00:00"))
+            except Exception:
+                pass
+        if data.get("domain") and isinstance(data.get("domain"), str):
+            domain = str(data.get("domain"))[:100]
+
         goal = Goal.objects.create(
             user_id=request.user_id,
             title=text[:255],
@@ -215,8 +242,8 @@ class GoalDetailView(APIView):
         return Response(payload)
 
     def put(self, request, goal_id):
-        """Partial update: title/target/domain/deadline/status only.
-        Items/progress go through their own endpoints. Unknown fields ignored."""
+        """Partial update: title/target/domain/deadline/status/items/current_value.
+        Unknown fields ignored."""
         goal = get_object_or_404(Goal, pk=goal_id, user_id=request.user_id)
         data = request.data if isinstance(request.data, dict) else {}
         updated = []
@@ -248,9 +275,26 @@ class GoalDetailView(APIView):
             if new_status in (Goal.STATUS_COMPLETED, Goal.STATUS_MISSED) and not goal.finished_at:
                 goal.finished_at = timezone.now()
             updated.append("status")
-        if not updated:
+        if "items" in data and isinstance(data.get("items"), list):
+            raw_items = data.get("items")
+            GoalItem.objects.filter(goal=goal).delete()
+            new_items = []
+            for it in raw_items:
+                if isinstance(it, dict):
+                    t = clean_text(it.get("title", ""), field="item.title", max_length=255)
+                    c = bool(it.get("completed", False))
+                    new_items.append(GoalItem(goal=goal, title=t, completed=c))
+                elif isinstance(it, str):
+                    t = clean_text(it, field="item.title", max_length=255)
+                    new_items.append(GoalItem(goal=goal, title=t, completed=False))
+            if new_items:
+                GoalItem.objects.bulk_create(new_items)
+            if hasattr(goal, "updated_at"):
+                updated.append("updated_at")
+        if not updated and "items" not in data:
             raise ApiError("no updatable fields provided", "VALIDATION_ERROR")
-        goal.save(update_fields=updated + (["finished_at"] if "finished_at" in updated or "status" in updated else []))
+        if updated:
+            goal.save(update_fields=updated + (["finished_at"] if "finished_at" in updated or "status" in updated else []))
         goal = Goal.objects.prefetch_related("items", "progress_logs").get(pk=goal.pk)
         return Response(GoalSerializer(goal).data)
 
@@ -329,6 +373,11 @@ def _progress_pct(goal):
             return 0
         done = sum(1 for item in items if item.completed)
         return round(done / len(items) * 100)
+    if goal.goal_type == Goal.GOAL_TYPE_MANUAL:
+        logs = list(goal.progress_logs.all())
+        if goal.target and goal.target > 0:
+            return min(100, round(len(logs) / goal.target * 100))
+        return min(100, len(logs) * 20) if logs else 0
     return None
 
 
@@ -494,6 +543,33 @@ class ChatParseGoalView(APIView):
     def post(self, request):
         data = request.data if isinstance(request.data, dict) else {}
         prompt = clean_text(data.get("prompt"), field="prompt", max_length=500)
+        stripped = prompt.strip()
+        lower = stripped.lower()
+
+        # Check for greetings
+        if re.match(r"^(hi|hello|hey|heya|howdy|yo|sup|hiya|greetings|good\s+(morning|afternoon|evening|day))[\s!.]*$", stripped, re.IGNORECASE):
+            return Response({
+                "ai_response_text": "Hey there! Ready to hit your targets today? Tell me what you'd like to achieve (e.g., 'Sell 4 books today' or 'Run 5km weekly'), and I'll configure a live tracker for you.",
+                "goal_proposal": None,
+                "is_goal": False,
+            })
+
+        # Check for casual affirmations / acknowledgments
+        if re.match(r"^(ok|okay|cool|nice|thanks|thank you|thx|ty|got it|awesome|great|sure|alright|perfect|sounds good|yes|no)[\s!.]*$", stripped, re.IGNORECASE):
+            return Response({
+                "ai_response_text": "Locked in! Whenever you're ready to log progress or start tracking a new goal, just say the word.",
+                "goal_proposal": None,
+                "is_goal": False,
+            })
+
+        # Too short or generic questions without action target
+        if len(stripped) < 4 and not any(char.isdigit() for char in stripped):
+            return Response({
+                "ai_response_text": "I'm your AI accountability coach. Tell me what goal or target you'd like to work on!",
+                "goal_proposal": None,
+                "is_goal": False,
+            })
+
         goal_type, target, items, domain, deadline, summary, goal_template, used_fallback = parse_goal_safely(prompt)
         proposal = {
             "title": summary or prompt[:255],
@@ -511,7 +587,7 @@ class ChatParseGoalView(APIView):
             ai_text = f"Understood! I structured this as a checklist with {len(items)} items."
         else:
             ai_text = f"Understood! I structured this as a {goal_type} goal (target {target})."
-        return Response({"ai_response_text": ai_text, "goal_proposal": proposal})
+        return Response({"ai_response_text": ai_text, "goal_proposal": proposal, "is_goal": True})
 
 
 class GoalFinalizeView(APIView):

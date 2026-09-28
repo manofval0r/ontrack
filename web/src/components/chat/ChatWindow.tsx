@@ -7,13 +7,14 @@ import { ChatInput } from './ChatInput'
 import { Loader } from '../common/Loader'
 import { useGoals } from '../../context/GoalContext'
 import { api } from '../../services/api'
+import { classifyUserMessage, parseRelativeDeadline, extractGoalProposal } from '../../utils/aiIntent'
 
 interface ChatWindowProps {
   initialPrompt?: string
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
-  const { user, createGoal } = useGoals()
+  const { user, createGoal, goals } = useGoals()
   const navigate = useNavigate()
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -51,18 +52,48 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     setMessages((prev) => [...prev, userMsg])
     setIsThinking(true)
 
+    const activeGoals = goals.filter((g) => g.status === 'active')
+    const intent = classifyUserMessage(content, activeGoals)
+
+    // If it's NOT an explicit goal creation request, respond conversationally without proposing a bogus goal!
+    if (intent.type !== 'goal_creation') {
+      setTimeout(() => {
+        let reply = ''
+        if (intent.type === 'status_query') {
+          reply = `You currently have ${activeGoals.length} active tracker(s) in motion.${
+            activeGoals.length > 0 ? ` Your lead target is "${activeGoals[0].title}".` : ' Ready to set a new goal?'
+          }`
+        } else if ('responseText' in intent && intent.responseText) {
+          reply = intent.responseText
+        } else {
+          reply = `I hear you. Tell me what target you'd like to achieve (e.g., "Sell 4 books today" or "Run 5km weekly"), or let me know what progress you've made!`
+        }
+
+        const aiMsg: ChatMessage = {
+          id: `msg-ai-${Date.now()}`,
+          sender: 'ai',
+          content: reply,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
+        setMessages((prev) => [...prev, aiMsg])
+        setIsThinking(false)
+      }, 400)
+      return
+    }
+
     // Call POST /api/chat/parse-goal — backend AI returns proposal + response text
     api.parseGoal(content)
       .then(({ ai_response_text, goal_proposal }) => {
+        const computedDeadline = goal_proposal?.deadline || parseRelativeDeadline(content) || undefined
         const goalProposal: Partial<Goal> = {
-          title: goal_proposal.title || content,
-          description: goal_proposal.summary || '',
-          goal_type: (goal_proposal.goal_type as Goal['goal_type']) || 'manual',
-          target: goal_proposal.target ?? 1,
-          unit: '',
-          domain: (goal_proposal.domain as Goal['domain']) || 'general',
-          deadline: goal_proposal.deadline ?? undefined,
-          items: goal_proposal.items?.map((title, idx) => ({
+          title: goal_proposal?.title || intent.cleanTitle || content,
+          description: goal_proposal?.summary || '',
+          goal_type: (goal_proposal?.goal_type as Goal['goal_type']) || intent.suggestedType || 'manual',
+          target: goal_proposal?.target ?? (intent.suggestedType === 'counter' ? 10 : 1),
+          unit: goal_proposal?.goal_type === 'counter' ? 'units' : '',
+          domain: (goal_proposal?.domain as Goal['domain']) || 'general',
+          deadline: computedDeadline,
+          items: goal_proposal?.items?.map((title, idx) => ({
             id: `item-${idx}`,
             title,
             completed: false,
@@ -73,37 +104,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
         const aiMsg: ChatMessage = {
           id: `msg-ai-${Date.now()}`,
           sender: 'ai',
-          content: ai_response_text,
+          content: ai_response_text || `I've prepared your tracker for "${goalProposal.title}". Click "Activate Tracker" below to start.`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           goal_proposal: goalProposal,
         }
         setMessages((prev) => [...prev, aiMsg])
       })
       .catch(() => {
-        // Offline fallback: keyword-inferred tracker (same rules as onboarding
-        // compiler) so the proposal still matches the goal shape.
-        const lower = content.toLowerCase()
-        const numMatch = content.match(/\b(\d+)\b/)
-        const isChecklist =
-          lower.includes('book') || lower.includes('ship') || lower.includes('task') ||
-          lower.includes('checklist') || lower.includes('read') || lower.includes('steps')
-        const isManual =
-          lower.includes('reflect') || lower.includes('journal') ||
-          lower.includes('meditat') || lower.includes('habit') || lower.includes('mood')
-        const goalType: Goal['goal_type'] = isChecklist ? 'checklist' : isManual ? 'manual' : 'counter'
+        const localProposal = extractGoalProposal(content)
         const aiMsg: ChatMessage = {
           id: `msg-ai-${Date.now()}`,
           sender: 'ai',
-          content: `You're offline, so I built a ${goalType} tracker locally from "${content}". It will sync when you reconnect — tap below to start.`,
+          content: `I've analyzed your goal and configured your tracker for "${localProposal.title}". Click "Activate Tracker" below to launch your workspace.`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          goal_proposal: {
-            title: content,
-            goal_type: goalType,
-            target: numMatch ? parseInt(numMatch[1], 10) : goalType === 'counter' ? 7 : 1,
-            unit: goalType === 'counter' ? 'units' : '',
-            domain: 'general',
-            deadline: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-          },
+          goal_proposal: localProposal,
         }
         setMessages((prev) => [...prev, aiMsg])
       })
@@ -115,9 +129,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
   const handleActivateGoal = async (proposed: Partial<Goal>) => {
     try {
       setActivateError(null)
-      // POST /api/goals { text } — send the goal title as the text
-      const created = await createGoal({ text: proposed.title ?? '' } as any)
-      navigate(`/goal/${created.id}`)
+      const created = await createGoal({
+        title: proposed.title,
+        text: proposed.title ?? 'Untitled Goal',
+        target: proposed.target,
+        unit: proposed.unit,
+        goal_type: proposed.goal_type,
+        domain: proposed.domain,
+        deadline: proposed.deadline,
+        items: proposed.items,
+        description: proposed.description,
+      })
+      navigate(`/dashboard/goal/${created.id}`)
     } catch (e: any) {
       setActivateError(e?.error ?? 'Could not create this tracker. Try again.')
     }

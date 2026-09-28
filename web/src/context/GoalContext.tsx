@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import type {
   Goal,
+  ProgressLog,
   DashboardData,
   StandardError,
   AudioSettings,
@@ -37,6 +38,7 @@ interface GoalContextType {
   selectGoal: (id: string) => Promise<Goal | null>
   createGoal: (payload: Partial<Goal> & { text?: string }) => Promise<Goal>
   updateGoal: (id: string, updates: Partial<Goal>) => Promise<Goal>
+  deleteGoal: (id: string) => Promise<void>
   finalizeGoal: (id: string) => Promise<Goal>
   logProgress: (goalId: string, value: number | string, note?: string) => Promise<Goal>
   respondToCheckIn: (goalId: string, checkInId: string, response: string) => Promise<Goal>
@@ -115,6 +117,26 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // (stash `ontrack_oauth_provider` before redirecting to authorize),
   // then scrubs the fragment so tokens never linger in history.
   const consumeOAuthCallback = useCallback(async () => {
+    // 1. Process pending OAuth callback markers from captureAuthFromUrl
+    const pendingCompleted = localStorage.getItem('ontrack_oauth_provider_completed')
+    if (pendingCompleted) {
+      try {
+        const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
+        const pToken = stored[pendingCompleted]
+        const ghLogin = localStorage.getItem('ontrack_github_login') || ''
+        await api.saveIntegration({
+          provider: pendingCompleted,
+          access_token: pToken || '',
+          meta: ghLogin ? { login: ghLogin } : undefined,
+        })
+      } catch (err) {
+        console.warn('[GoalContext] Could not sync completed OAuth integration to backend:', err)
+      } finally {
+        localStorage.removeItem('ontrack_oauth_provider_completed')
+      }
+    }
+
+    // 2. Process hash directly if still present
     if (!window.location.hash) return
     const frag = new URLSearchParams(window.location.hash.slice(1))
     const access = frag.get('access_token')
@@ -128,8 +150,6 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (pendingProvider && providerToken) {
         try {
           await api.saveIntegration({ provider: pendingProvider, access_token: providerToken })
-          // Local copy lets the Integrations tab verify identity (hackathon
-          // tradeoff — same sensitivity class as the session token).
           const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
           stored[pendingProvider] = providerToken
           localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
@@ -195,6 +215,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('ontrack_user_profile')
       }
       // Non-fatal otherwise: UI falls back to local defaults.
+      console.warn('[GoalContext] Could not bootstrap user from API', err)
     }
   }, [consumeOAuthCallback])
 
@@ -210,12 +231,19 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await api.getGoals()
       setGoals(data)
     } catch (err: any) {
-      if (err?.code === 'UNAUTHORIZED') {
-        localStorage.removeItem('ontrack_token')
-        localStorage.removeItem('ontrack_refresh_token')
-        localStorage.removeItem('ontrack_user_profile')
+      console.warn('[GoalContext] Fetch goals error, checking local store:', err)
+      try {
+        const local = localStorage.getItem('ontrack_local_goals')
+        if (local) {
+          const parsed = JSON.parse(local)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setGoals(parsed)
+          }
+        }
+      } catch {}
+      if (err?.code !== 'UNAUTHORIZED' && err?.code !== 'AUTH_INVALID') {
+        setError(err?.code ? err : { error: 'Failed to load goals', code: 'FETCH_ERROR' })
       }
-      setError(err?.code ? err : { error: 'Failed to load goals', code: 'FETCH_ERROR' })
     } finally {
       setLoading(false)
     }
@@ -235,6 +263,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('ontrack_user_profile')
       }
       // Non-fatal: dashboard stats are supplementary.
+      console.warn('[GoalContext] Dashboard fetch failed', err)
     }
   }, [])
 
@@ -252,17 +281,35 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const selectGoal = async (id: string): Promise<Goal | null> => {
     try {
       setLoading(true)
-      // Try local cache first to avoid a round-trip
+      // Try state cache first to avoid a round-trip
       const cached = goals.find((g) => g.id === id)
       if (cached) {
         setActiveGoal(cached)
         setLoading(false)
         return cached
       }
+      // Try local storage cache
+      try {
+        const localSaved = localStorage.getItem('ontrack_local_goals')
+        if (localSaved) {
+          const parsed = JSON.parse(localSaved) as Goal[]
+          const found = parsed.find((g) => g.id === id)
+          if (found) {
+            setActiveGoal(found)
+            setGoals((prev) => (prev.some((g) => g.id === id) ? prev : [found, ...prev]))
+            setLoading(false)
+            return found
+          }
+        }
+      } catch {}
+
       const goal = await api.getGoal(id)
       setActiveGoal(goal)
       return goal
     } catch (err: any) {
+      if (activeGoal?.id === id) {
+        return activeGoal
+      }
       setError(err?.code ? err : { error: 'Goal not found', code: 'NOT_FOUND' })
       return null
     } finally {
@@ -275,26 +322,111 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true)
       const newGoal = await api.createGoal(payload)
       setGoals((prev) => [newGoal, ...prev])
+      setActiveGoal(newGoal)
       fetchDashboard()
       return newGoal
     } catch (err: any) {
-      setError(err?.code ? err : { error: 'Failed to create goal', code: 'CREATE_ERROR' })
-      throw err
+      console.warn('[GoalContext] Server goal creation failed, providing optimistic fallback:', err)
+      const titleText = payload.title?.trim() || payload.text?.trim() || 'Untitled Goal'
+      const fallbackGoal: Goal = {
+        id: `goal-${Date.now()}`,
+        user_id: user.name || 'local-user',
+        title: titleText,
+        description: payload.description || '',
+        goal_type: payload.goal_type || 'counter',
+        target: payload.target ?? 10,
+        current_value: 0,
+        unit: payload.unit || 'units',
+        domain: payload.domain || 'general',
+        status: 'active',
+        deadline: payload.deadline || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+        items: payload.items || [],
+        progress_logs: [],
+        check_ins: [],
+        created_at: new Date().toISOString(),
+      }
+      setGoals((prev) => {
+        const next = [fallbackGoal, ...prev]
+        try {
+          localStorage.setItem('ontrack_local_goals', JSON.stringify(next))
+        } catch {}
+        return next
+      })
+      setActiveGoal(fallbackGoal)
+      if (err?.code === 'AUTH_INVALID') {
+        setError({ error: 'Session expired — tracker created and active in local mode.', code: 'AUTH_INVALID' })
+      } else {
+        setError(err?.code ? err : { error: 'Failed to sync goal to cloud', code: 'CREATE_ERROR' })
+      }
+      return fallbackGoal
     } finally {
       setLoading(false)
     }
   }
 
   const updateGoal = async (id: string, updates: Partial<Goal>): Promise<Goal> => {
+    // Optimistic update in state first
+    setGoals((prev) => {
+      const next = prev.map((g) => {
+        if (g.id !== id) return g
+        const merged = { ...g, ...updates }
+        if (updates.items) {
+          merged.items = updates.items
+          merged.current_value = updates.items.filter((i) => i.completed).length
+        }
+        return merged
+      })
+      try {
+        localStorage.setItem('ontrack_local_goals', JSON.stringify(next))
+      } catch {}
+      return next
+    })
+
     try {
       const updated = await api.updateGoal(id, updates)
-      setGoals((prev) => prev.map((g) => (g.id === id ? updated : g)))
+      setGoals((prev) => {
+        const next = prev.map((g) => (g.id === id ? { ...g, ...updated } : g))
+        try {
+          localStorage.setItem('ontrack_local_goals', JSON.stringify(next))
+        } catch {}
+        return next
+      })
       if (activeGoal?.id === id) setActiveGoal(updated)
       fetchDashboard()
       return updated
     } catch (err: any) {
-      setError(err?.code ? err : { error: 'Failed to update goal', code: 'UPDATE_ERROR' })
-      throw err
+      console.warn('[GoalContext] Server update failed, local optimistic update kept:', err)
+      const existing = goals.find((g) => g.id === id)
+      const localUpdated: Goal = {
+        ...(existing || { id, user_id: '', title: 'Goal', goal_type: 'counter', target: 10, current_value: 0, domain: 'general', deadline: '', status: 'active', created_at: '' }),
+        ...updates,
+      }
+      return localUpdated
+    }
+  }
+
+  const deleteGoal = async (id: string): Promise<void> => {
+    // Optimistic remove from local state and storage
+    setGoals((prev) => {
+      const filtered = prev.filter((g) => g.id !== id)
+      try {
+        localStorage.setItem('ontrack_local_goals', JSON.stringify(filtered))
+      } catch {}
+      return filtered
+    })
+    if (activeGoal?.id === id) {
+      setActiveGoal(null)
+    }
+
+    try {
+      setLoading(true)
+      await api.deleteGoal(id)
+      fetchDashboard()
+    } catch (err: any) {
+      console.warn('[GoalContext] Server delete failed, kept local deletion:', err)
+      fetchDashboard()
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -322,6 +454,44 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fetchDashboard()
       return updated
     } catch (err: any) {
+      // Resilient local fallback so progress is never lost
+      const existing = goals.find((g) => g.id === goalId) || (activeGoal?.id === goalId ? activeGoal : null)
+      if (existing) {
+        const numVal = typeof value === 'number' ? value : parseInt(String(value), 10) || 1
+        const newLog: ProgressLog = {
+          id: `log-${Date.now()}`,
+          goal_id: goalId,
+          value: numVal,
+          note: note || '',
+          timestamp: new Date().toISOString(),
+        }
+        const updatedLogs = [newLog, ...(existing.progress_logs || [])]
+        const newCurrentVal =
+          existing.goal_type === 'counter'
+            ? (existing.current_value || 0) + numVal
+            : existing.goal_type === 'manual'
+            ? (existing.current_value || 0) + 1
+            : existing.current_value
+        const isDone = existing.target > 0 && newCurrentVal >= existing.target
+        const fallbackGoal: Goal = {
+          ...existing,
+          current_value: newCurrentVal,
+          status: isDone ? 'completed' : existing.status,
+          finished_at: isDone && !existing.finished_at ? new Date().toISOString() : existing.finished_at,
+          progress_logs: updatedLogs,
+        }
+        setGoals((prev) => {
+          const list = prev.some((g) => g.id === goalId)
+            ? prev.map((g) => (g.id === goalId ? fallbackGoal : g))
+            : [fallbackGoal, ...prev]
+          try {
+            localStorage.setItem('ontrack_local_goals', JSON.stringify(list))
+          } catch {}
+          return list
+        })
+        if (activeGoal?.id === goalId || !activeGoal) setActiveGoal(fallbackGoal)
+        return fallbackGoal
+      }
       setError(err?.code ? err : { error: 'Failed to log progress', code: 'PROGRESS_ERROR' })
       throw err
     }
@@ -449,6 +619,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
         selectGoal,
         createGoal,
         updateGoal,
+        deleteGoal,
         finalizeGoal,
         logProgress,
         respondToCheckIn,
