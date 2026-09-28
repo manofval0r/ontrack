@@ -17,18 +17,18 @@ Updated: 2026-09-28.
 - [x] App-blocking research → Android-scoped plan (David) — `artifacts/app-blocking-plan.md`
 - [x] Web mock-identity cleanup: sidebar/TTS-test name, dashboard fake stats, voice-empty behavior (David)
 - [x] Flagship polish batch: tokens, a11y roles/labels/states, error/loading/empty states, copy, dead code, splits (David) — `a8eb2ae`
+- [x] `/docs` route wired + DashboardChatPanel honest proactive copy (David)
 
 ## In progress
 
-- [ ] Supabase redirect allowlist: `ontrack://auth` + Expo dev URL (Owner — dashboard, 5 min)
-- [ ] Apple Family Controls request forms ×4 (Owner — portal, weeks of lead time)
+- [ ] Supabase redirect allowlist: `ontrack://auth` + Expo dev URL (Owner — dashboard, 5 min; without this, mobile OAuth lands on web)
+- [ ] EAS preview APK build + install test (Owner runs `eas build --platform android --profile preview`)
 
 ## Left — Web (Eniola unless noted)
 
 - [ ] Dashboard stat grid: replace `*150/*120/850` scalers with backend `dashboard.stats` (blocked on Evans serializer note in plan §16)
 - [ ] DashboardChatPanel: honest proactive copy (no fabricated "since yesterday" claims)
 - [ ] Chat fallback proposal: infer goal_type from keywords instead of always `manual`
-- [ ] `/docs` route: page exists, unreachable — wire `Route path="/docs"` + nav link
 - [ ] Remove `mock_*_oauth_token` dev fallbacks in Login/Signup (dead code vs `ProtectedRoute`)
 
 ## Left — Mobile (David/Israel)
@@ -36,7 +36,6 @@ Updated: 2026-09-28.
 - [ ] Device pass: mic dictation, TTS playback, work-block timer on real hardware
 - [ ] Android app-blocking implementation (approved scope — see blocking plan §4)
 - [ ] Settings "Focus & blocking" section (after blocking lands)
-- [ ] EAS preview APK build + install test (Owner runs `eas build --platform android --profile preview`)
 
 ## Left — Backend (Evans)
 
