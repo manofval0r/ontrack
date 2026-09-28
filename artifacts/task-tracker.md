@@ -49,6 +49,10 @@ Updated: 2026-09-28.
 ## Left — Backend (Evans)
 
 - [x] Serializer enrichment PARTIAL: `current_value` + `progress_logs` shipped — mobile consumes them (remaining: `unit`, `template_context` on goal list)
+- [ ] REGRESSION (teammate merge `c4fd9df`, 2026-09-28): 3 backend tests fail —
+  `test_es256_without_jwks_url_is_401` (200 not 401: ES256 accepted without JWKS,
+  possible fail-open), `test_create_goal_ai_raise_still_201_manual` (got
+  `checklist`, expected `manual` fallback), `test_create_goal_bad_deadline_ignored_not_fatal`
 - [ ] FocusSession + BlockedSelection tables/endpoints (after plan approval)
 - [ ] GitHub activity sync beyond connect stub (commits → progress); Calendar event sync scope answer (connect-only today)
 - [ ] Render deploy both instances + `/api/health` + `/api/debug` verification
