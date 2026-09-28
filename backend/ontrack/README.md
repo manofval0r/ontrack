@@ -2,11 +2,20 @@
 
 ## Start the server (local dev)
 ```sh
+python -m venv .venv
+# macOS/Linux:
+source .venv/bin/activate
+# Windows PowerShell:
+# .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 cp .env.example .env   # then fill in real values (see below)
 python manage.py migrate
 python manage.py runserver
 ```
+Requires Python 3.11+ with the venv activated — without it you get
+`ModuleNotFoundError: No module named 'django'`. Local dev uses SQLite
+automatically (no `DATABASE_URL` needed); tests use an isolated test DB:
+`python manage.py test`.
 
 ## Run all smoke tests
 ```sh
