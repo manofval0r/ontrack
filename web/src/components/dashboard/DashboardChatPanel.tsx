@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Zap, Sparkles, Target, ArrowRight } from 'lucide-react'
 import type { Goal } from '../../types'
 import { GoalStatusPill, computeGoalStatus } from '../common/GoalStatusPill'
+import { classifyUserMessage } from '../../utils/aiIntent'
 
 interface ActionSnapshot {
   type: 'goal_created' | 'progress_logged' | 'verdict'
@@ -164,18 +165,11 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
 
   // Core NLP intent router
   const processUserIntent = async (text: string, timeStr: string) => {
-    const lower = text.toLowerCase()
     const activeGoals = goals.filter((g) => g.status === 'active')
+    const intent = classifyUserMessage(text, activeGoals)
 
-    // 1. FLOW 3: Status / Summary Query
-    if (
-      lower.includes('how am i doing') ||
-      lower.includes('status') ||
-      lower.includes('shipping rate') ||
-      lower.includes('progress report') ||
-      lower.includes('how is my week') ||
-      lower.includes('summary')
-    ) {
+    // 1. Status / Summary Query
+    if (intent.type === 'status_query') {
       const completedCount = goals.filter((g) => g.status === 'completed').length
       const activeCount = activeGoals.length
       const summaryContent = `Here is your execution breakdown:\n\n• **${activeCount} Active Goals** currently in motion\n• **${completedCount} Completed Goals** shipped\n• **${shippingRate}% Weekly Shipping Rate**\n• **${streakDays}-Day Momentum Streak**\n\nYou're maintaining solid consistency. Keep your daily logs updated to maintain high velocity.`
@@ -192,56 +186,54 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
       return
     }
 
-    // 2. FLOW 2: Progress Logging on existing goal
-    // Patterns like: "did 15 pushups", "logged 10 pushups", "sold 2 cars", "ran 5km", "completed 1 book", "did 20"
-    const numberMatch = text.match(/\b(\d+)\b/)
-    const hasLogVerb =
-      lower.includes('did') ||
-      lower.includes('logged') ||
-      lower.includes('finished') ||
-      lower.includes('sold') ||
-      lower.includes('read') ||
-      lower.includes('ran') ||
-      lower.includes('completed') ||
-      lower.includes('hit') ||
-      lower.includes('+')
+    // 2. Greetings, Acknowledgments, Help, Coaching Advice, or General Chat
+    if (
+      intent.type === 'greeting' ||
+      intent.type === 'acknowledgment' ||
+      intent.type === 'help_query' ||
+      intent.type === 'coaching_advice' ||
+      intent.type === 'general_chat'
+    ) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai-${Date.now()}`,
+          sender: 'ai',
+          content: intent.responseText,
+          timestamp: timeStr,
+        },
+      ])
+      return
+    }
 
-    if (numberMatch && (hasLogVerb || activeGoals.length > 0)) {
-      const delta = parseInt(numberMatch[1], 10)
+    // 3. Progress Logging on existing goal
+    if (intent.type === 'progress_log') {
+      const { delta } = intent
+      let targetGoal = intent.matchedGoal
 
-      // Find matching goals by keyword
-      const matched = activeGoals.filter((g) => {
-        const titleLower = g.title.toLowerCase()
-        const unitLower = (g.unit || '').toLowerCase()
-        if (lower.includes('pushup') && (titleLower.includes('pushup') || unitLower.includes('pushup'))) return true
-        if (lower.includes('car') && (titleLower.includes('car') || unitLower.includes('car'))) return true
-        if (lower.includes('book') && (titleLower.includes('book') || unitLower.includes('book'))) return true
-        if (lower.includes('km') && (titleLower.includes('km') || unitLower.includes('km'))) return true
-        if (lower.includes('deal') && (titleLower.includes('deal') || unitLower.includes('deal'))) return true
-        return false
-      })
-
-      // Ambiguity check: if no keyword match, check all active counter goals
-      const candidateGoals = matched.length > 0 ? matched : activeGoals.filter((g) => g.goal_type === 'counter')
-
-      if (candidateGoals.length > 1 && matched.length === 0) {
-        // Must handle ambiguity — ask which one!
-        setPendingGoalAction({ delta, text })
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `ai-${Date.now()}`,
-            sender: 'ai',
-            content: `You logged ${delta}, but you have multiple active goals. Which one would you like to update?`,
-            timestamp: timeStr,
-            ambiguousGoals: candidateGoals,
-          },
-        ])
-        return
+      // Ambiguity check: if no single matched goal, check all active counter goals
+      if (!targetGoal) {
+        const candidateGoals = activeGoals.filter((g) => g.goal_type === 'counter')
+        if (candidateGoals.length > 1) {
+          setPendingGoalAction({ delta, text })
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `ai-${Date.now()}`,
+              sender: 'ai',
+              content: `You logged ${delta}, but you have multiple active goals. Which one would you like to update?`,
+              timestamp: timeStr,
+              ambiguousGoals: candidateGoals,
+            },
+          ])
+          return
+        }
+        if (candidateGoals.length === 1) {
+          targetGoal = candidateGoals[0]
+        }
       }
 
-      if (candidateGoals.length >= 1) {
-        const targetGoal = candidateGoals[0]
+      if (targetGoal) {
         const nextVal = (targetGoal.current_value || 0) + delta
         const isNowDone = targetGoal.target > 0 && nextVal >= targetGoal.target
 
@@ -276,31 +268,9 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
       }
     }
 
-    // 3. FLOW 1: Creating a new goal mid-session
-    // User typed something like: "Read 3 books by next month", "Run 10km weekly", "New goal: 30 minutes meditation"
-    const isNewGoalRequest =
-      lower.startsWith('goal') ||
-      lower.startsWith('new goal') ||
-      lower.startsWith('i want to') ||
-      lower.startsWith('i need to') ||
-      lower.startsWith('track') ||
-      lower.startsWith('build') ||
-      lower.startsWith('set a goal') ||
-      !activeGoals.some((g) => lower.includes(g.title.toLowerCase().slice(0, 8)))
-
-    if (isNewGoalRequest) {
-      const cleanTitle = text.replace(/^(new goal|set a goal|goal|i want to|i need to|track|build):?\s*/i, '').trim() || text
-      const cleanLower = cleanTitle.toLowerCase()
-
-      let goalType: Goal['goal_type'] = 'counter'
-
-      if (cleanLower.includes('book') || cleanLower.includes('ship') || cleanLower.includes('task') || cleanLower.includes('checklist')) {
-        goalType = 'checklist'
-      } else if (cleanLower.includes('reflect') || cleanLower.includes('journal') || cleanLower.includes('meditat') || cleanLower.includes('habit')) {
-        goalType = 'manual'
-      } else {
-        goalType = 'counter'
-      }
+    // 4. Goal Creation (Only when explicitly identified as a goal creation prompt!)
+    if (intent.type === 'goal_creation') {
+      const { cleanTitle, suggestedType } = intent
 
       try {
         // POST /api/goals { text: cleanTitle } — backend AI parses and returns the goal
@@ -310,7 +280,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
           {
             id: `ai-${Date.now()}`,
             sender: 'ai',
-            content: `I built a **${goalType === 'counter' ? 'Counter' : goalType === 'checklist' ? 'Checklist' : 'Daily Log'}** tracker for "${created.title}". It's now active on your dashboard.`,
+            content: `I built a **${suggestedType === 'counter' ? 'Counter' : suggestedType === 'checklist' ? 'Checklist' : 'Daily Log'}** tracker for "${created.title}". It's now active on your dashboard.`,
             timestamp: timeStr,
             actionSnapshot: {
               type: 'goal_created',
@@ -324,7 +294,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
       }
     }
 
-    // 4. Default Coaching Response
+    // 5. Default Fallback Response
     setMessages((prev) => [
       ...prev,
       {

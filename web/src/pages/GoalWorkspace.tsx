@@ -12,6 +12,7 @@ import { Loader } from '../components/common/Loader'
 import { ErrorState } from '../components/common/ErrorState'
 import { Modal } from '../components/common/Modal'
 import { Button } from '../components/Button'
+import { EditGoalModal } from '../components/goals/EditGoalModal'
 import { useGoals } from '../context/GoalContext'
 
 export const GoalWorkspace: React.FC = () => {
@@ -26,12 +27,14 @@ export const GoalWorkspace: React.FC = () => {
     clearError,
     logProgress,
     updateGoal,
+    deleteGoal,
     finalizeGoal,
     respondToCheckIn,
   } = useGoals()
 
   const [confirmFinalizeOpen, setConfirmFinalizeOpen] = useState(false)
   const [finalizing, setFinalizing] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
 
   const goalId = id || (goals.length > 0 ? goals[0].id : '')
 
@@ -86,8 +89,8 @@ export const GoalWorkspace: React.FC = () => {
     await logProgress(activeGoal.id, `${completedCount}/${items.length} milestones complete`, 'Updated milestone task state')
   }
 
-  const handleReflectionLog = async (reflection: string, sentiment: string) => {
-    await logProgress(activeGoal.id, sentiment, reflection)
+  const handleReflectionLog = async (reflection: string) => {
+    await logProgress(activeGoal.id, 1, reflection)
   }
 
   const handleCheckInResponse = async (checkInId: string, response: string) => {
@@ -155,7 +158,12 @@ export const GoalWorkspace: React.FC = () => {
       )}
 
       {/* Goal Header */}
-      <GoalHeader goal={activeGoal} onFinalize={() => setConfirmFinalizeOpen(true)} />
+      <GoalHeader
+        goal={activeGoal}
+        onFinalize={() => setConfirmFinalizeOpen(true)}
+        onEdit={() => setIsEditOpen(true)}
+        onDelete={() => setIsEditOpen(true)}
+      />
 
       {/* Dynamic Tracker based on AI format */}
       {activeGoal.goal_type === 'counter' && (
@@ -206,6 +214,20 @@ export const GoalWorkspace: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Edit & Delete Goal Modal */}
+      <EditGoalModal
+        goal={activeGoal}
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        onSave={async (id, updates) => {
+          await updateGoal(id, updates)
+        }}
+        onDelete={async (id) => {
+          await deleteGoal(id)
+          navigate('/dashboard')
+        }}
+      />
     </div>
   )
 }

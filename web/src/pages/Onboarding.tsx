@@ -691,10 +691,14 @@ export const Onboarding: React.FC = () => {
               {createdGoal.goal_type === 'manual' && (
                 <ManualTracker
                   goal={createdGoal}
-                  onLogReflection={async (ref, sent) => {
+                  onLogReflection={async (ref) => {
                     setCreatedGoal((prev) => ({
                       ...prev,
-                      progress_logs: [{ id: `log-${Date.now()}`, goal_id: prev.id, value: sent, note: ref, timestamp: 'Just now' }],
+                      current_value: (prev.current_value || 0) + 1,
+                      progress_logs: [
+                        { id: `log-${Date.now()}`, goal_id: prev.id, value: 1, note: ref, timestamp: 'Just now' },
+                        ...(prev.progress_logs || []),
+                      ],
                     }))
                   }}
                 />

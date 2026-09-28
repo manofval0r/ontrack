@@ -51,6 +51,7 @@ export interface Goal {
     date: string
   }
   created_at: string
+  finished_at?: string
 }
 
 export interface ChatMessage {

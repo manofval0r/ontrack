@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Flame } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { Logo } from '../Logo'
 import { useGoals } from '../../context/GoalContext'
@@ -100,7 +101,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           {/* Quick Metrics Badges (md+ only) */}
           <div className="hidden md:flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#ECFEFF] dark:bg-[#00C4B3]/15 border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] text-xs font-bold text-[#006D6A] dark:text-[#00C4B3]">
-              <span>🔥</span>
+              <Flame className="w-3.5 h-3.5 text-[#006D6A] dark:text-[#00C4B3]" />
               <span className="hidden lg:inline">{streak} Day Streak</span>
               <span className="lg:hidden">{streak}d</span>
             </div>

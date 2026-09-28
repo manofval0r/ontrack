@@ -75,8 +75,8 @@ export const DashboardTrackerCard: React.FC<DashboardTrackerCardProps> = ({
         {goal.goal_type === 'manual' && (
           <ManualTracker
             goal={goal}
-            onLogReflection={async (ref, sentiment) => {
-              await onLogProgress(goal.id, sentiment, ref)
+            onLogReflection={async (ref) => {
+              await onLogProgress(goal.id, 1, ref)
             }}
           />
         )}

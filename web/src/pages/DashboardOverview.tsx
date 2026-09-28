@@ -11,7 +11,7 @@ import { GoalDetailSlideOver } from '../components/dashboard/GoalDetailSlideOver
 
 export const DashboardOverview: React.FC = () => {
   const navigate = useNavigate()
-  const { goals, dashboardData, updateGoal, logProgress, finalizeGoal } = useGoals()
+  const { goals, dashboardData, updateGoal, deleteGoal, logProgress, finalizeGoal } = useGoals()
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
@@ -52,6 +52,7 @@ export const DashboardOverview: React.FC = () => {
       <div className="w-full min-w-0">
         <DashboardRecentActivity
           goals={goals}
+          onDeleteGoal={deleteGoal}
           onSelectGoal={(id) => {
             const g = goals.find((item) => item.id === id)
             if (g) handleOpenDetail(g)
@@ -69,6 +70,11 @@ export const DashboardOverview: React.FC = () => {
         onUpdateGoal={async (id, updates) => {
           const updated = await updateGoal(id, updates)
           if (selectedGoal?.id === id) setSelectedGoal(updated)
+        }}
+        onDeleteGoal={async (id) => {
+          await deleteGoal(id)
+          setIsDetailOpen(false)
+          setSelectedGoal(null)
         }}
         onLogProgress={async (goalId, value, note) => {
           const updated = await logProgress(goalId, value, note)

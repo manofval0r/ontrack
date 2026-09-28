@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Zap, Rocket, Target, BookOpen, HeartPulse, Filter, Search, Clock } from 'lucide-react'
+import { Zap, Rocket, Target, BookOpen, HeartPulse, Filter, Search, Clock, X, Trash2 } from 'lucide-react'
 import type { Goal } from '../../types'
 import { formatLogTime } from '../../utils/goalMetrics'
 
@@ -20,16 +20,19 @@ export interface ActivityLogItem {
 interface DashboardRecentActivityProps {
   goals?: Goal[]
   onSelectGoal?: (goalId: string) => void
+  onDeleteGoal?: (goalId: string) => Promise<void>
 }
 
 export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = ({
   goals = [],
   onSelectGoal,
+  onDeleteGoal,
 }) => {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'All' | 'Completed' | 'Pending' | 'In Progress'>('All')
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false)
   const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({})
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Compile real activity stream from goals
   const realActivities: ActivityLogItem[] = useMemo(() => {
@@ -140,23 +143,81 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
     }
   }
 
+  const selectedCount = Object.values(selectedRows).filter(Boolean).length
+
+  const handleDeleteSelected = async () => {
+    const selectedIds = Object.keys(selectedRows).filter((id) => selectedRows[id])
+    if (selectedIds.length === 0) return
+    const goalIdsToDelete = Array.from(
+      new Set(
+        filteredActivities
+          .filter((a) => selectedRows[a.id])
+          .map((a) => a.goalId)
+      )
+    )
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${goalIdsToDelete.length} tracker(s) (${selectedIds.length} activity entries)?`
+      )
+    ) {
+      setIsDeleting(true)
+      try {
+        for (const gid of goalIdsToDelete) {
+          await onDeleteGoal?.(gid)
+        }
+        setSelectedRows({})
+      } finally {
+        setIsDeleting(false)
+      }
+    }
+  }
+
   return (
     <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] flex flex-col justify-between transition-colors relative">
-      {/* Table Header with Search and Filter buttons */}
+      {/* Table Header with Search, Filter and Bulk Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b-2 border-[#071E2D]/10 dark:border-white/10">
         <div>
-          <h3
-            className="text-base sm:text-lg font-bold text-[#071E2D] dark:text-white tracking-tight"
-            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-          >
-            Recent Tracking Logs
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3
+              className="text-base sm:text-lg font-bold text-[#071E2D] dark:text-white tracking-tight"
+              style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+            >
+              Recent Tracking Logs
+            </h3>
+            {selectedCount > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#00C4B3] text-[#071E2D]">
+                {selectedCount} selected
+              </span>
+            )}
+          </div>
           <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 mt-0.5 font-medium">
             Live stream of updates captured from your goals, check-ins, and activity logs
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap relative">
+          {/* Bulk Delete Button when items selected */}
+          {selectedCount > 0 && (
+            <div className="flex items-center gap-1.5 animate-fadeIn">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeleteSelected}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold border-2 border-[#071E2D] shadow-[2px_2px_0px_#071E2D] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeleting ? 'Deleting...' : `Delete Selected (${selectedCount})`}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedRows({})}
+                className="px-2.5 py-1.5 rounded-full bg-white dark:bg-[#091824] hover:bg-slate-100 text-[#071E2D] dark:text-white text-xs font-semibold border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[1px_1px_0px_#071E2D] transition-all cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
           {/* Search Input Box */}
           <div className="flex items-center gap-2 bg-[#F8FAFB] dark:bg-[#091824] px-3.5 py-1.5 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] text-xs w-full sm:w-48 md:w-56 focus-within:dark:border-[#00C4B3] transition-all">
             <Search className="w-3.5 h-3.5 text-[#071E2D] dark:text-white shrink-0" />
@@ -175,7 +236,7 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                 aria-label="Clear search"
                 className="text-xs text-[#071E2D]/50 hover:text-[#071E2D] dark:text-white/50 dark:hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
-                ✕
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -325,17 +386,34 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
                       {act.date}
                     </td>
                     <td className="py-3.5 px-3 text-right">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onSelectGoal?.(act.goalId)
-                        }}
-                        aria-label={`Inspect goal ${act.title}`}
-                        className="px-3 min-h-[44px] inline-flex items-center bg-white dark:bg-[#091824] hover:bg-[#00C4B3] hover:text-[#071E2D] text-[#071E2D] dark:text-white border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full text-xs font-bold shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer whitespace-nowrap"
-                      >
-                        Inspect
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onSelectGoal?.(act.goalId)
+                          }}
+                          aria-label={`Inspect goal ${act.title}`}
+                          className="px-3 min-h-[44px] inline-flex items-center bg-white dark:bg-[#091824] hover:bg-[#00C4B3] hover:text-[#071E2D] text-[#071E2D] dark:text-white border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full text-xs font-bold shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer whitespace-nowrap"
+                          title={`Inspect ${act.title}`}
+                        >
+                          Inspect
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            if (window.confirm(`Delete tracker "${act.title}"?`)) {
+                              await onDeleteGoal?.(act.goalId)
+                            }
+                          }}
+                          className="p-1.5 bg-white dark:bg-[#091824] hover:bg-rose-500 hover:text-white text-rose-500 dark:text-rose-400 border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full shadow-[1px_1px_0px_#071E2D] dark:shadow-[1px_1px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
+                          title={`Delete ${act.title}`}
+                          aria-label={`Delete ${act.title}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )

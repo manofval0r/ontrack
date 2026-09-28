@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { AuthIllustration } from '../components/AuthIllustration'
 
@@ -64,6 +64,7 @@ const SUPABASE_ANON_KEY =
 
 export const Login: React.FC = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -72,6 +73,47 @@ export const Login: React.FC = () => {
 
   const supabaseConfigured =
     !!SUPABASE_URL && !!SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')
+  // ── Forgot Password States ─────────────────────────────────────────
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(
+    () => new URLSearchParams(location.search).get('forgot') === 'true'
+  )
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotSubmitting, setForgotSubmitting] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotError, setForgotError] = useState<string | null>(null)
+
+  const handleSendResetLink = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!forgotEmail.trim()) {
+      setForgotError('Please enter your email address.')
+      return
+    }
+    setForgotError(null)
+    setForgotSubmitting(true)
+    try {
+      if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
+        const redirectTo = `${window.location.origin}/reset-password`
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ email: forgotEmail.trim() }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          setForgotError(data.error_description ?? data.msg ?? data.message ?? 'Could not send reset link. Please check your email and try again.')
+          return
+        }
+      }
+      setForgotSent(true)
+    } catch {
+      setForgotError('Network error. Please try again.')
+    } finally {
+      setForgotSubmitting(false)
+    }
+  }
 
   const handleGoogleAuth = () => {
     if (!supabaseConfigured) {
@@ -205,11 +247,20 @@ export const Login: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Right-aligned password hint */}
+                {/* Right-aligned Forgot Password button */}
                 <div className="flex justify-end mt-1 pr-1">
-                  <span className="font-sans font-medium text-xs text-[#071E2D]/50 dark:text-slate-400">
-                    Password reset lives in your Supabase inbox
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotEmail(email)
+                      setForgotError(null)
+                      setForgotSent(false)
+                      setShowForgotPasswordModal(true)
+                    }}
+                    className="font-sans font-medium text-xs text-[#006D6A] dark:text-[#00C4B3] hover:text-[#00C4B3] transition-colors focus-visible:outline-none focus-visible:underline decoration-[#00C4B3] cursor-pointer bg-transparent border-0 p-0"
+                  >
+                    Forgot password?
+                  </button>
                 </div>
 
                 {/* Live auth error */}
@@ -299,6 +350,140 @@ export const Login: React.FC = () => {
           />
         </div>
       </main>
+
+      {/* ── Forgot Password Modal ────────────────────────────────────────── */}
+      {showForgotPasswordModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="forgot-password-title"
+          className="fixed inset-0 z-50 bg-[#071E2D]/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowForgotPasswordModal(false)
+          }}
+        >
+          <div className="w-full max-w-[440px] bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-[28px] p-6 sm:p-8 shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000] relative">
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setShowForgotPasswordModal(false)}
+              aria-label="Close modal"
+              className="absolute right-5 top-5 text-[#071E2D]/40 dark:text-slate-400 hover:text-[#071E2D] dark:hover:text-white p-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] transition-colors cursor-pointer"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {forgotSent ? (
+              <div className="flex flex-col items-center text-center py-2">
+                <div className="w-14 h-14 rounded-full bg-[#00C4B3]/15 flex items-center justify-center mb-4 text-[#006D6A] dark:text-[#00C4B3]">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                </div>
+                <h2
+                  id="forgot-password-title"
+                  className="text-2xl font-bold text-[#071E2D] dark:text-white mb-2"
+                  style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                >
+                  Check your email
+                </h2>
+                <p className="text-sm text-[#071E2D]/75 dark:text-slate-300 mb-6 leading-relaxed">
+                  We've sent a password reset link to{' '}
+                  <strong className="text-[#071E2D] dark:text-white font-semibold">{forgotEmail}</strong>.
+                  Please click the link in your email to choose a new password.
+                </p>
+                <div className="w-full flex flex-col gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPasswordModal(false)}
+                    className="w-full py-3.5 px-6 rounded-full bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] font-sans font-semibold text-sm transition-all duration-150 hover:-translate-y-0.5 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] cursor-pointer"
+                  >
+                    Back to log in
+                  </button>
+                  <button
+                    type="button"
+                    disabled={forgotSubmitting}
+                    onClick={() => handleSendResetLink()}
+                    className="w-full py-2.5 px-4 text-xs font-semibold text-[#006D6A] dark:text-[#00C4B3] hover:underline cursor-pointer bg-transparent border-0"
+                  >
+                    {forgotSubmitting ? 'Resending email…' : 'Didn’t receive it? Resend link'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSendResetLink} noValidate className="flex flex-col gap-4">
+                <div className="mb-2">
+                  <h2
+                    id="forgot-password-title"
+                    className="text-2xl font-bold text-[#071E2D] dark:text-white mb-1.5"
+                    style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                  >
+                    Forgot password?
+                  </h2>
+                  <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 leading-relaxed">
+                    Enter the email associated with your OnTrack account, and we'll send you a link to reset your password.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="forgot-email"
+                    className="text-xs font-bold text-[#071E2D] dark:text-slate-200 uppercase tracking-wider pl-1"
+                  >
+                    Email address
+                  </label>
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                    autoFocus
+                    autoComplete="email"
+                    className="w-full px-5 py-3.5 rounded-full border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] font-sans text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors shadow-sm"
+                  />
+                </div>
+
+                {forgotError && (
+                  <div
+                    role="alert"
+                    className="flex items-center gap-2 text-xs text-red-600 bg-red-50/80 dark:bg-red-950/30 border border-red-200/80 dark:border-red-900/50 rounded-xl px-3.5 py-2"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="flex-shrink-0" aria-hidden="true">
+                      <circle cx="8" cy="8" r="7" stroke="#dc2626" strokeWidth="1.75" />
+                      <path d="M8 4.5v4M8 11v.5" stroke="#dc2626" strokeWidth="1.75" strokeLinecap="round" />
+                    </svg>
+                    <span>{forgotError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={forgotSubmitting}
+                  className="w-full mt-2 py-3.5 px-6 rounded-full bg-[#071E2D] dark:bg-[#00C4B3] text-white dark:text-[#071E2D] font-sans font-semibold text-base transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] hover:shadow-[5px_5px_0px_#071E2D] dark:hover:shadow-[5px_5px_0px_#000000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2 flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {forgotSubmitting ? 'Sending reset link…' : 'Send reset link'}
+                </button>
+
+                <div className="text-center mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPasswordModal(false)}
+                    className="text-xs font-semibold text-[#071E2D]/60 dark:text-slate-400 hover:text-[#071E2D] dark:hover:text-white transition-colors cursor-pointer bg-transparent border-0"
+                  >
+                    Never mind, return to log in
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

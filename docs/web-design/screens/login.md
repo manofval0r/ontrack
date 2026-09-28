@@ -27,7 +27,7 @@ Shared public navbar and responsive split main area. The form includes email, pa
 | Navbar              | Shared navigation | Default             | Public links.                                           |
 | Email/password form | Form              | Editable            | Submit handler currently navigates to dashboard.        |
 | Password visibility | Icon button       | Visible/hidden      | Accessible label changes.                               |
-| Forgot password     | Link              | Default             | Currently `href="#"`; recovery flow is not implemented. |
+| Forgot password     | Button / Modal    | Default             | Opens recovery modal; sends Supabase reset email.       |
 | Error example       | Alert             | Rendered demo state | Static sample error, not tied to validation.            |
 | Provider actions    | Icon buttons      | Default             | Provider availability unconfirmed.                      |
 | Auth illustration   | Image/panel       | Desktop only        | Hidden below `lg`.                                      |
@@ -59,7 +59,7 @@ Handler navigates to `/dashboard` without verifying credentials; treat as mock b
 | Element         | Copy                                              | Notes                                                       |
 | --------------- | ------------------------------------------------- | ----------------------------------------------------------- |
 | Heading         | “Log in”                                          | Current copy.                                               |
-| Forgot password | “Forgot password?”                                | Placeholder anchor only.                                    |
+| Forgot password | “Forgot password?”                                | Opens reset password modal.                                 |
 | Error example   | “That email and password don't match. Try again.” | Static demo; must not be represented as an actual response. |
 | Submit          | “Log in”                                          | Current handler navigates directly.                         |
 | Signup link     | “Don't have an account? Sign up”                  | Routes to `/signup`.                                        |
@@ -70,7 +70,7 @@ Handler navigates to `/dashboard` without verifying credentials; treat as mock b
 | ---------------------- | -------------------------------------------- | ---------------- | ------------------------------- |
 | Submit                 | Prevent default and navigate to `/dashboard` | Route navigation | Demo dashboard; no auth check.  |
 | Toggle password        | Switch input type                            | None             | Reveals/conceals password.      |
-| Select forgot password | Navigate to `#`                              | None             | No recovery flow.               |
+| Select forgot password | Open password reset modal                    | Fade / Scale     | Send reset email via Supabase.  |
 | Select provider        | Provider button action                       | Hover            | No provider contract confirmed. |
 | Select signup link     | Navigate to `/signup`                        | Route navigation | Signup form.                    |
 

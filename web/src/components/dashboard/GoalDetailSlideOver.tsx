@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import type { Goal } from '../../types'
 import { GoalStatusPill, computeGoalStatus } from '../common/GoalStatusPill'
 import { CounterTracker } from '../trackers/CounterTracker'
 import { ChecklistTracker } from '../trackers/ChecklistTracker'
 import { ManualTracker } from '../trackers/ManualTracker'
+import { EditGoalModal } from '../goals/EditGoalModal'
 import { Button } from '../Button'
 
 interface GoalDetailSlideOverProps {
@@ -11,6 +13,7 @@ interface GoalDetailSlideOverProps {
   isOpen: boolean
   onClose: () => void
   onUpdateGoal: (id: string, updates: Partial<Goal>) => Promise<any>
+  onDeleteGoal?: (id: string) => Promise<any>
   onLogProgress: (goalId: string, value: number | string, note?: string) => Promise<any>
   onMarkDoneEarly: (goalId: string) => Promise<any>
 }
@@ -20,13 +23,16 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
   isOpen,
   onClose,
   onUpdateGoal,
+  onDeleteGoal,
   onLogProgress,
   onMarkDoneEarly,
 }) => {
+  const [isEditOpen, setIsEditOpen] = useState(false)
+
   // ESC key to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' && !isEditOpen) onClose()
     }
     if (isOpen) {
       window.addEventListener('keydown', handleKeyDown)
@@ -36,7 +42,7 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
       window.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = 'unset'
     }
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, isEditOpen])
 
   if (!isOpen || !goal) return null
 
@@ -72,18 +78,30 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
               </h2>
             </div>
 
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-9 h-9 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#F3F6F8] dark:hover:bg-white/5 hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all flex-shrink-0 cursor-pointer"
-              aria-label="Close goal detail panel"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
+            {/* Action Buttons: Edit, Close */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-white text-xs font-bold shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#F3F6F8] dark:hover:bg-white/5 transition-all cursor-pointer"
+                title="Edit Goal"
+              >
+                <Pencil className="w-3.5 h-3.5 text-[#006D6A] dark:text-[#00C4B3]" />
+                <span>Edit</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-9 h-9 rounded-full border-2 border-[#071E2D] dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] flex items-center justify-center text-[#071E2D] dark:text-white shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:bg-[#F3F6F8] dark:hover:bg-white/5 hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all flex-shrink-0 cursor-pointer"
+                aria-label="Close goal detail panel"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Main Body */}
@@ -116,8 +134,8 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
               {goal.goal_type === 'manual' && (
                 <ManualTracker
                   goal={goal}
-                  onLogReflection={async (ref, sentiment) => {
-                    await onLogProgress(goal.id, sentiment, ref)
+                  onLogReflection={async (ref) => {
+                    await onLogProgress(goal.id, 1, ref)
                   }}
                 />
               )}
@@ -162,24 +180,64 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
               )}
             </div>
 
-            {/* Mark as done early button (if still active) */}
-            {status !== 'done' && (
-              <div className="pt-2 flex justify-end">
+            {/* Bottom Action Bar */}
+            <div className="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#071E2D]/10 dark:border-white/10">
+              {onDeleteGoal ? (
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 py-2 px-2.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Goal</span>
+                </button>
+              ) : <div />}
+
+              <div className="flex items-center gap-2 ml-auto">
                 <Button
                   variant="secondary"
-                  onClick={async () => {
-                    await onMarkDoneEarly(goal.id)
-                    onClose()
-                  }}
-                  className="text-xs py-2 px-4"
+                  onClick={() => setIsEditOpen(true)}
+                  className="text-xs py-2 px-3 flex items-center gap-1.5 cursor-pointer"
                 >
-                  Mark as done early
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Edit Goal</span>
                 </Button>
+
+                {status !== 'done' && (
+                  <Button
+                    variant="primary"
+                    onClick={async () => {
+                      await onMarkDoneEarly(goal.id)
+                      onClose()
+                    }}
+                    className="text-xs py-2 px-4 cursor-pointer"
+                  >
+                    Mark as done early
+                  </Button>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Edit & Delete Modal */}
+      <EditGoalModal
+        goal={goal}
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        onSave={async (id, updates) => {
+          await onUpdateGoal(id, updates)
+        }}
+        onDelete={
+          onDeleteGoal
+            ? async (id) => {
+                await onDeleteGoal(id)
+                onClose()
+              }
+            : undefined
+        }
+      />
     </div>
   )
 }

@@ -22,15 +22,61 @@ export function captureAuthFromUrl(): void {
   const params = new URLSearchParams(hash.includes('access_token') ? hash : search)
   const access = params.get('access_token')
   const refresh = params.get('refresh_token')
-  if (!access) return
-  localStorage.setItem('ontrack_token', access)
-  if (refresh) localStorage.setItem('ontrack_refresh_token', refresh)
-  const profile = profileFromAccessToken()
-  if (profile && (profile.name || profile.email)) {
-    localStorage.setItem('ontrack_user_profile', JSON.stringify(profile))
+  const providerToken = params.get('provider_token')
+  const type = params.get('type')
+  const pendingProvider = localStorage.getItem('ontrack_oauth_provider')
+
+  if (access) {
+    localStorage.setItem('ontrack_token', access)
+    if (refresh) localStorage.setItem('ontrack_refresh_token', refresh)
+    if (type === 'recovery') {
+      localStorage.setItem('ontrack_recovery_token', access)
+    }
+
+    // Save provider token and integration marker if returning from provider OAuth
+    if (pendingProvider || providerToken) {
+      const provider = pendingProvider || 'github'
+      try {
+        const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
+        stored[provider] = providerToken || access
+        localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
+        localStorage.setItem('ontrack_oauth_provider_completed', provider)
+      } catch (err) {
+        console.warn('[auth] Could not persist provider token:', err)
+      }
+      localStorage.removeItem('ontrack_oauth_provider')
+    }
+
+    const profile = profileFromAccessToken()
+    if (profile && (profile.name || profile.email)) {
+      localStorage.setItem('ontrack_user_profile', JSON.stringify(profile))
+    }
+
+    // Extract GitHub identity if available in JWT payload
+    try {
+      const payloadPart = access.split('.')[1]
+      if (payloadPart) {
+        const payload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')))
+        const meta = (payload.user_metadata as Record<string, unknown> | undefined) ?? {}
+        const ghUsername =
+          (typeof meta.user_name === 'string' && meta.user_name) ||
+          (typeof meta.preferred_username === 'string' && meta.preferred_username) ||
+          null
+        if (ghUsername) {
+          localStorage.setItem('ontrack_github_login', ghUsername)
+        }
+      }
+    } catch {}
   }
+
   const clean = `${window.location.pathname}${window.location.search && !search.includes('access_token') ? window.location.search : ''}`
   window.history.replaceState({}, '', clean || '/')
+
+  if (type === 'recovery' && window.location.pathname !== '/reset-password') {
+    window.location.href = '/reset-password'
+  } else if ((type === 'signup' || type === 'email_confirmation') && !localStorage.getItem('ontrack_onboarded')) {
+    window.location.href = '/onboarding'
+  }
 }
 
 
