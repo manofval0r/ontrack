@@ -58,7 +58,7 @@ export const ReportsPanel: React.FC = () => {
         if (g.status === 'completed') map[d].completed += 1
       }
     })
-    return Object.entries(map).filter(([_, data]) => data.count > 0)
+    return Object.entries(map).filter((entry) => entry[1].count > 0)
   }, [goals])
 
   const filteredGoals = useMemo(() => {
@@ -296,7 +296,7 @@ export const ReportsPanel: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-[#071E2D]/5 dark:divide-white/5 text-xs">
                 {filteredGoals.map((g) => {
-                  let pct = 0
+                  let pct: number
                   if (g.goal_type === 'checklist') {
                     const total = g.items?.length || 0
                     const done = g.items?.filter((i) => i.completed).length || 0

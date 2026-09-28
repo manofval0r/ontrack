@@ -66,7 +66,7 @@ export function captureAuthFromUrl(): void {
           localStorage.setItem('ontrack_github_login', ghUsername)
         }
       }
-    } catch {}
+    } catch { /* storage unavailable — login still succeeds without the cache */ }
   }
 
   const clean = `${window.location.pathname}${window.location.search && !search.includes('access_token') ? window.location.search : ''}`
