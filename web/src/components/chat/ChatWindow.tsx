@@ -80,17 +80,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
         setMessages((prev) => [...prev, aiMsg])
       })
       .catch(() => {
-        // Fallback if backend is unreachable
+        // Offline fallback: keyword-inferred tracker (same rules as onboarding
+        // compiler) so the proposal still matches the goal shape.
+        const lower = content.toLowerCase()
+        const numMatch = content.match(/\b(\d+)\b/)
+        const isChecklist =
+          lower.includes('book') || lower.includes('ship') || lower.includes('task') ||
+          lower.includes('checklist') || lower.includes('read') || lower.includes('steps')
+        const isManual =
+          lower.includes('reflect') || lower.includes('journal') ||
+          lower.includes('meditat') || lower.includes('habit') || lower.includes('mood')
+        const goalType: Goal['goal_type'] = isChecklist ? 'checklist' : isManual ? 'manual' : 'counter'
         const aiMsg: ChatMessage = {
           id: `msg-ai-${Date.now()}`,
           sender: 'ai',
-          content: `Got it — I've noted your goal: "${content}". Click "Activate Tracker" below to start tracking it.`,
+          content: `You're offline, so I built a ${goalType} tracker locally from "${content}". It will sync when you reconnect — tap below to start.`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           goal_proposal: {
             title: content,
-            goal_type: 'manual',
-            target: 7,
-            unit: 'days',
+            goal_type: goalType,
+            target: numMatch ? parseInt(numMatch[1], 10) : goalType === 'counter' ? 7 : 1,
+            unit: goalType === 'counter' ? 'units' : '',
             domain: 'general',
             deadline: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
           },

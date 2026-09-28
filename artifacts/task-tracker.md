@@ -26,10 +26,7 @@ Updated: 2026-09-28.
 
 ## Left — Web (Eniola unless noted)
 
-- [ ] Dashboard stat grid: replace `*150/*120/850` scalers with backend `dashboard.stats` (blocked on Evans serializer note in plan §16)
-- [ ] DashboardChatPanel: honest proactive copy (no fabricated "since yesterday" claims)
-- [ ] Chat fallback proposal: infer goal_type from keywords instead of always `manual`
-- [ ] Remove `mock_*_oauth_token` dev fallbacks in Login/Signup (dead code vs `ProtectedRoute`)
+- [ ] Dashboard stat grid: switch local computation to backend `dashboard.stats` once Evans ships serializer enrichment (plan §16)
 
 ## Left — Mobile (David/Israel)
 

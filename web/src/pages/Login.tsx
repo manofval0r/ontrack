@@ -70,32 +70,37 @@ export const Login: React.FC = () => {
   const [submitting, setSubmitting] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
 
+  const supabaseConfigured =
+    !!SUPABASE_URL && !!SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')
+
   const handleGoogleAuth = () => {
-    if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
-      const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
-      window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
-    } else {
-      localStorage.setItem('ontrack_token', 'mock_google_oauth_token')
-      navigate('/dashboard')
+    if (!supabaseConfigured) {
+      setAuthError('Google sign-in is not configured in this build. Use email instead.')
+      return
     }
+    const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
+    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
   }
 
   const handleGithubAuth = () => {
-    if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
-      const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
-      window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=github&redirect_to=${redirectTo}`
-    } else {
-      localStorage.setItem('ontrack_token', 'mock_github_oauth_token')
-      navigate('/dashboard')
+    if (!supabaseConfigured) {
+      setAuthError('GitHub sign-in is not configured in this build. Use email instead.')
+      return
     }
+    const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
+    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=github&redirect_to=${redirectTo}`
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setAuthError(null)
 
-    // ── If Supabase is configured, use real auth ───────────────────────
-    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    // ── Supabase email auth (required — no mock bypass) ──────────────────
+    if (!supabaseConfigured) {
+      setAuthError('Email sign-in is not configured in this build yet.')
+      return
+    }
+    {
       setSubmitting(true)
       try {
         const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
@@ -123,11 +128,7 @@ export const Login: React.FC = () => {
       } finally {
         setSubmitting(false)
       }
-      return
     }
-
-    // ── Dev fallback: skip real auth, go straight to dashboard ────────
-    navigate('/dashboard')
   }
 
   return (
