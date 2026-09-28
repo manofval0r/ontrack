@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Target, Zap, Flame, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Target, Zap, Flame, AlertTriangle, ArrowRight, CheckCircle2, Mic, MicOff } from 'lucide-react'
 import type { Goal } from '../../types'
 import { Button } from '../Button'
 
@@ -19,8 +19,80 @@ export const ManualTracker: React.FC<ManualTrackerProps> = ({ goal, onLogReflect
   const [reflection, setReflection] = useState('')
   const [selectedSentiment, setSelectedSentiment] = useState('focused')
   const [submitting, setSubmitting] = useState(false)
+  const [isListeningVoice, setIsListeningVoice] = useState(false)
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null)
   const [successNotice, setSuccessNotice] = useState<string | null>(null)
   const [localLogs, setLocalLogs] = useState<any[]>(goal.progress_logs || [])
+  const recognitionRef = useRef<any>(null)
+
+  const stopVoice = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onresult = null
+        recognitionRef.current.onerror = null
+        recognitionRef.current.onend = null
+        recognitionRef.current.stop()
+      } catch {}
+      recognitionRef.current = null
+    }
+    setIsListeningVoice(false)
+  }
+
+  const toggleVoice = async () => {
+    setVoiceNotice(null)
+    if (isListeningVoice) {
+      stopVoice()
+      return
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      setVoiceNotice('Speech recognition not supported in this browser. Please use Chrome/Edge or type.')
+      setTimeout(() => setVoiceNotice(null), 4000)
+      return
+    }
+
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        await navigator.mediaDevices.getUserMedia({ audio: true })
+      }
+      const recognition = new SpeechRecognition()
+      recognition.continuous = true
+      recognition.interimResults = true
+      recognition.lang = 'en-US'
+
+      recognition.onresult = (event: any) => {
+        let transcript = ''
+        for (let i = 0; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript + ' '
+        }
+        setReflection(transcript.trim())
+      }
+
+      recognition.onerror = () => {
+        stopVoice()
+      }
+
+      recognition.onend = () => {
+        setIsListeningVoice(false)
+      }
+
+      recognition.start()
+      recognitionRef.current = recognition
+      setIsListeningVoice(true)
+    } catch {
+      setVoiceNotice('Microphone permission required to dictate reflection.')
+      setTimeout(() => setVoiceNotice(null), 4000)
+      stopVoice()
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      stopVoice()
+    }
+  }, [])
 
   // Sync if parent updates goal.progress_logs
   React.useEffect(() => {
@@ -120,13 +192,40 @@ export const ManualTracker: React.FC<ManualTrackerProps> = ({ goal, onLogReflect
           })}
         </div>
 
-        <textarea
-          rows={3}
-          value={reflection}
-          onChange={(e) => setReflection(e.target.value)}
-          placeholder="Record key breakthroughs, insights, completed items, or friction encountered (optional)..."
-          className="w-full p-3.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors bg-white dark:bg-[#0E202D] resize-none"
-        />
+        <div className="relative">
+          <textarea
+            rows={3}
+            value={reflection}
+            onChange={(e) => setReflection(e.target.value)}
+            placeholder={isListeningVoice ? 'Listening to your reflection...' : "Note key breakthroughs, insights, completed items, or friction encountered (optional)..."}
+            className={`w-full p-3.5 pr-11 rounded-xl border-2 ${
+              isListeningVoice
+                ? 'border-[#00C4B3] ring-2 ring-[#00C4B3]/30 bg-[#ECFEFF]/20 dark:bg-[#00C4B3]/10'
+                : 'border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#0E202D]'
+            } focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors resize-none`}
+          />
+
+          <button
+            type="button"
+            onClick={toggleVoice}
+            title={isListeningVoice ? 'Stop voice recording' : 'Dictate reflection with microphone'}
+            aria-label={isListeningVoice ? 'Stop voice recording' : 'Dictate reflection with microphone'}
+            className={`absolute right-3 top-3 p-1.5 rounded-lg transition-all cursor-pointer ${
+              isListeningVoice
+                ? 'bg-red-500 text-white animate-pulse'
+                : 'text-[#071E2D]/60 dark:text-slate-400 hover:text-[#006D6A] dark:hover:text-[#00C4B3] hover:bg-[#F3F6F8] dark:hover:bg-[#152E42]'
+            }`}
+          >
+            {isListeningVoice ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+        </div>
+
+        {voiceNotice && (
+          <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            {voiceNotice}
+          </p>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
           <div className="text-xs text-[#071E2D]/60 dark:text-slate-400 flex items-center gap-1.5">

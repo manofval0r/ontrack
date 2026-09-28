@@ -72,6 +72,13 @@ export const Signup: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null)
   const [emailConfirmationSent, setEmailConfirmationSent] = useState(false)
 
+  React.useEffect(() => {
+    const token = localStorage.getItem('ontrack_token')
+    if (token && !token.startsWith('mock_')) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [navigate])
+
   const handleGoogleAuth = () => {
     if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
       const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)

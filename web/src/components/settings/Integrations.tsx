@@ -164,6 +164,12 @@ export const Integrations: React.FC = () => {
 
   useEffect(() => {
     refresh()
+    const completedProvider = localStorage.getItem('ontrack_oauth_provider_completed')
+    if (completedProvider) {
+      setNotice(`Successfully connected ${completedProvider === 'github' ? 'GitHub' : completedProvider}!`)
+      localStorage.removeItem('ontrack_oauth_provider_completed')
+      setTimeout(() => setNotice(null), 5000)
+    }
   }, [refresh])
 
   // After OAuth returns, verify identity against the provider and enrich meta.

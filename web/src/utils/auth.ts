@@ -69,8 +69,35 @@ export function captureAuthFromUrl(): void {
     } catch { /* storage unavailable — login still succeeds without the cache */ }
   }
 
+  // Clean hash/query from URL
   const clean = `${window.location.pathname}${window.location.search && !search.includes('access_token') ? window.location.search : ''}`
   window.history.replaceState({}, '', clean || '/')
+
+  if (access) {
+    if (type === 'recovery' && window.location.pathname !== '/reset-password') {
+      window.location.href = '/reset-password'
+      return
+    }
+    if ((type === 'signup' || type === 'email_confirmation') && !localStorage.getItem('ontrack_onboarded')) {
+      window.location.href = '/onboarding'
+      return
+    }
+    if (pendingProvider) {
+      window.location.href = '/dashboard/integrations'
+      return
+    }
+
+    // Returning from OAuth login/auth: always redirect to /dashboard if currently on landing, login, or signup
+    if (
+      window.location.pathname === '/' ||
+      window.location.pathname === '/login' ||
+      window.location.pathname === '/signup'
+    ) {
+      window.location.href = '/dashboard'
+      return
+    }
+    return
+  }
 
   if (type === 'recovery' && window.location.pathname !== '/reset-password') {
     window.location.href = '/reset-password'

@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Trophy, Check } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Trophy, Check, Mic, MicOff, AlertCircle } from 'lucide-react'
 import type { Goal } from '../../types'
 import { Button } from '../Button'
 
@@ -11,7 +11,88 @@ interface CounterTrackerProps {
 export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }) => {
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [isListeningNote, setIsListeningNote] = useState(false)
+  const [noteError, setNoteError] = useState<string | null>(null)
+  const recognitionRef = useRef<any>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const percent = Math.min(100, Math.round((goal.current_value / goal.target) * 100))
+
+  const stopNoteDictation = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onresult = null
+        recognitionRef.current.onerror = null
+        recognitionRef.current.onend = null
+        recognitionRef.current.stop()
+      } catch {}
+      recognitionRef.current = null
+    }
+    setIsListeningNote(false)
+  }
+
+  const toggleNoteDictation = async () => {
+    setNoteError(null)
+    if (isListeningNote) {
+      stopNoteDictation()
+      return
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      setNoteError('Speech recognition is not supported in this browser. Please use Chrome or Edge, or type your note.')
+      setTimeout(() => setNoteError(null), 5000)
+      return
+    }
+
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        await navigator.mediaDevices.getUserMedia({ audio: true })
+      }
+      const recognition = new SpeechRecognition()
+      recognition.continuous = true
+      recognition.interimResults = true
+      recognition.lang = 'en-US'
+
+      recognition.onresult = (event: any) => {
+        let transcript = ''
+        for (let i = 0; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript + ' '
+        }
+        setNote(transcript.trim())
+      }
+
+      recognition.onerror = (event: any) => {
+        if (event?.error === 'not-allowed') {
+          setNoteError('Microphone permission blocked. Please allow microphone in browser address bar.')
+        } else if (event?.error === 'network') {
+          setNoteError('Speech service network issue.')
+        }
+        stopNoteDictation()
+      }
+
+      recognition.onend = () => {
+        setIsListeningNote(false)
+      }
+
+      recognition.start()
+      recognitionRef.current = recognition
+      setIsListeningNote(true)
+    } catch (err: any) {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setNoteError('Microphone permission was denied.')
+      } else {
+        setNoteError('Could not start microphone.')
+      }
+      stopNoteDictation()
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      stopNoteDictation()
+    }
+  }, [])
 
   const handleIncrement = async (delta: number) => {
     const nextVal = Math.max(0, goal.current_value + delta)
@@ -25,10 +106,16 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
 
   const handleCustomLog = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!note.trim()) return
+    if (!note.trim()) {
+      inputRef.current?.focus()
+      setNoteError('Please type or speak a note to save.')
+      setTimeout(() => setNoteError(null), 3000)
+      return
+    }
+    stopNoteDictation()
     setSubmitting(true)
     try {
-      await onUpdate(goal.current_value, note)
+      await onUpdate(goal.current_value, note.trim())
       setNote('')
     } finally {
       setSubmitting(false)
@@ -130,18 +217,56 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
         </div>
       </div>
 
-      {/* Optional Note Logging */}
-      <form onSubmit={handleCustomLog} className="flex flex-col sm:flex-row gap-3 pt-3 border-t-2 border-[#071E2D]/10 dark:border-white/10">
-        <input
-          type="text"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Attach a context note (e.g. 'Signed Apex agreement, $18k ARR')..."
-          className="flex-1 px-4 py-2.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824] focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors"
-        />
-        <Button type="submit" variant="secondary" noBubble disabled={!note.trim() || submitting} className="text-xs py-2 px-5">
-          Record Note
-        </Button>
+      {/* Note Logging with Voice Dictation */}
+      <form onSubmit={handleCustomLog} className="flex flex-col gap-2 pt-3 border-t-2 border-[#071E2D]/10 dark:border-white/10">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+          <div className="relative flex-1 flex items-center">
+            <input
+              ref={inputRef}
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={isListeningNote ? 'Listening to your voice...' : "Attach a context note (e.g. 'Signed Apex agreement, $18k ARR')..."}
+              className={`w-full px-4 py-2.5 pr-11 rounded-xl border-2 ${
+                isListeningNote
+                  ? 'border-[#00C4B3] ring-2 ring-[#00C4B3]/30 bg-[#ECFEFF]/20 dark:bg-[#00C4B3]/10'
+                  : 'border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824]'
+              } focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors`}
+            />
+
+            {/* Voice Dictation Button */}
+            <button
+              type="button"
+              onClick={toggleNoteDictation}
+              title={isListeningNote ? 'Stop voice recording' : 'Dictate note with microphone'}
+              aria-label={isListeningNote ? 'Stop voice recording' : 'Dictate note with microphone'}
+              className={`absolute right-2 p-1.5 rounded-lg transition-all cursor-pointer ${
+                isListeningNote
+                  ? 'bg-red-500 text-white animate-pulse'
+                  : 'text-[#071E2D]/60 dark:text-slate-400 hover:text-[#006D6A] dark:hover:text-[#00C4B3] hover:bg-[#F3F6F8] dark:hover:bg-[#152E42]'
+              }`}
+            >
+              {isListeningNote ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </button>
+          </div>
+
+          <Button
+            type="submit"
+            variant="secondary"
+            noBubble
+            disabled={submitting}
+            className="text-xs py-2 px-5 cursor-pointer whitespace-nowrap"
+          >
+            {submitting ? 'Saving...' : 'Save Note'}
+          </Button>
+        </div>
+
+        {noteError && (
+          <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1.5 animate-fadeIn">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            {noteError}
+          </p>
+        )}
       </form>
     </div>
   )
