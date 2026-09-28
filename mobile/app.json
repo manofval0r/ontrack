@@ -25,7 +25,9 @@
     "android": {
       "package": "com.manofval0r.ontrack",
       "versionCode": 1,
-      "permissions": ["RECORD_AUDIO"],
+      "permissions": [
+        "RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#00C4B3"
@@ -39,6 +41,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "05280680-78e6-484a-a927-248e9d12e79c"
+      }
     }
   }
 }
