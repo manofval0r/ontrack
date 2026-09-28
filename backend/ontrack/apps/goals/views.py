@@ -206,6 +206,12 @@ class GoalDetailView(APIView):
         )
         payload = GoalSerializer(goal).data
         payload["template_context"] = _template_context(goal)
+        # Newest 20 logs from the prefetched cache (no extra query).
+        # Manual-tracker feeds and history UIs need these; the list
+        # serializer deliberately omits them to avoid N+1 on /api/goals.
+        logs = list(goal.progress_logs.all())
+        logs.sort(key=lambda entry: entry.logged_at, reverse=True)
+        payload["progress_logs"] = ProgressLogSerializer(logs[:20], many=True).data
         return Response(payload)
 
     def put(self, request, goal_id):

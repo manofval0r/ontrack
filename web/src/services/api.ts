@@ -330,17 +330,36 @@ export const api = {
    * Backend returns the new ProgressLog, not the goal — so we re-fetch the goal.
    */
   async logProgress(payload: { goal_id: string; value: number | string; note?: string }): Promise<Goal> {
-    // Backend requires value to be an integer
-    const intValue = typeof payload.value === 'string'
-      ? parseInt(payload.value, 10) || 0
-      : Math.round(payload.value)
+    // Backend requires value to be an integer. Manual-tracker sentiments
+    // ('focused', 'on-track', ...) are labels, not numbers: log one entry
+    // and fold the label into the note so nothing is lost.
+    const SENTIMENT_LABELS: Record<string, string> = {
+      focused: 'Laser Focused',
+      'on-track': 'On Track',
+      pushed: 'Pushed Hard',
+      obstacle: 'Encountered Blocker',
+    }
+    let intValue: number
+    let note = payload.note ?? ''
+    if (typeof payload.value === 'number') {
+      intValue = Math.round(payload.value)
+    } else {
+      const parsed = parseInt(payload.value, 10)
+      if (!Number.isNaN(parsed)) {
+        intValue = parsed
+      } else {
+        intValue = 1
+        const label = SENTIMENT_LABELS[payload.value] ?? payload.value
+        note = `[${label}]${note ? ` ${note}` : ''}`.slice(0, 500)
+      }
+    }
 
     await request('/api/progress', {
       method: 'POST',
       body: JSON.stringify({
         goal_id: payload.goal_id,
         value: intValue,
-        note: payload.note ?? '',
+        note,
       }),
     })
     // Return the refreshed goal
