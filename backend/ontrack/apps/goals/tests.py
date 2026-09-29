@@ -321,7 +321,7 @@ class HealthDebugTests(TestCase):
         self.assertEqual(resp.status_code, 200, resp.content)
         body = resp.json()
         for key in ("instance", "uptime_seconds", "recent_goals",
-                    "recent_checkins", "recent_audio_cache"):
+                    "recent_checkins", "recent_audio_cache", "ai"):
             self.assertIn(key, body)
         self.assertEqual(len(body["recent_goals"]), 1)
 
@@ -441,3 +441,38 @@ class AiModuleUnconfiguredTests(TestCase):
             ai_module.parse_goal("anything")
         with self.assertRaises(RuntimeError):
             ai_module.generate_checkin("gid", {}, 0)
+
+
+@override_settings(SUPABASE_JWT_SECRET=TEST_SECRET, DEBUG_ACCESS_KEY="dbg-key")
+class AiStatusTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def _debug_ai(self):
+        return self.client.get("/api/debug", HTTP_X_DEBUG_KEY="dbg-key").json()["ai"]
+
+    @override_settings(NVIDIA_BASE_URL="", NVIDIA_API_KEY="", NVIDIA_MODEL_NAME="")
+    def test_ai_unconfigured_reports_not_reachable(self):
+        ai = self._debug_ai()
+        self.assertFalse(ai["configured"])
+        self.assertFalse(ai["reachable"])
+        self.assertNotIn("key", json.dumps(ai).lower())
+
+    @override_settings(
+        NVIDIA_BASE_URL="https://ai.test/v1",
+        NVIDIA_API_KEY="k",
+        NVIDIA_MODEL_NAME="m",
+    )
+    def test_ai_reachable_when_models_answers(self):
+        from config import views as views_module
+
+        fake = mock.MagicMock()
+        fake.__enter__.return_value = fake
+        fake.__exit__.return_value = False
+        fake.status = 200
+        with mock.patch.object(views_module.urllib.request, "urlopen", return_value=fake):
+            ai = self._debug_ai()
+        self.assertTrue(ai["configured"])
+        self.assertTrue(ai["reachable"])
+        self.assertEqual(ai["base_host"], "ai.test")
+        self.assertEqual(ai["model"], "m")
