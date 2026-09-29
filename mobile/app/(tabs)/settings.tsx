@@ -11,6 +11,7 @@ import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { Card } from '../../components/ui';
 import { BackdropArt } from '../../components/BackdropArt';
+import { rescheduleReminders, requestReminderPermission } from '../../lib/reminders';
 import { updateInfo, useAppUpdate } from '../../lib/updates';
 import { api, request } from '../../lib/api';
 import { clearSession, clearProviderToken, getProviderToken, signInWithProvider } from '../../lib/auth';
@@ -66,12 +67,36 @@ export default function Settings() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected]);
 
+  // Passive alarm refresh: new goals / deadlines refresh the schedule without
+  // ever prompting (permission prompts only come from explicit toggles).
+  useEffect(() => {
+    if (!settings || !notifs || goals.length === 0) return;
+    rescheduleReminders({ master: true, cadence, quiet, goals }, false).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goals]);
+
   const save = async (patch: any, revert: () => void) => {
     try {
       await api.updateSettings(patch);
+      return true;
     } catch {
       revert();
       setError('Could not save. Change reverted.');
+      return false;
+    }
+  };
+
+  const syncReminders = async (next?: { master?: boolean; cadence?: string; quiet?: boolean }) => {
+    const master = next?.master ?? notifs;
+    const cad = next?.cadence ?? cadence;
+    const q = next?.quiet ?? quiet;
+    try {
+      const n = await rescheduleReminders({ master, cadence: cad, quiet: q, goals });
+      if (master && n === 0) {
+        setNotice('Reminders are on, but notification permission is missing — enable it in system settings.');
+      }
+    } catch {
+      // Alarms are best-effort; the settings save already succeeded.
     }
   };
 
@@ -216,7 +241,7 @@ export default function Settings() {
             {['off', '30min', '1hour'].map((c) => (
               <Pressable
                 key={c}
-                onPress={() => { const prev = cadence; setCadence(c); save({ notifications: { checkin_cadence: c } }, () => setCadence(prev)); }}
+                onPress={async () => { const prev = cadence; setCadence(c); const ok = await save({ notifications: { checkin_cadence: c } }, () => setCadence(prev)); if (ok) syncReminders({ cadence: c }); }}
                 accessibilityLabel={`Check-ins ${c}`}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: cadence === c }}
@@ -234,8 +259,20 @@ export default function Settings() {
 
         <Card>
           <Text style={{ fontWeight: '700', color: Brand.navy }}>Notifications</Text>
-          <Row label="Reminders and check-ins" hint="Goal reminders and coach check-in prompts" value={notifs} onChange={(v) => { const prev = notifs; setNotifs(v); save({ notifications: { master_enabled: v } }, () => setNotifs(prev)); }} />
-          <Row label="Quiet hours (10pm–7am)" hint="No nudges overnight" value={quiet} onChange={(v) => { const prev = quiet; setQuiet(v); save({ notifications: { quiet_hours: { enabled: v, start: '22:00', end: '07:00' } } }, () => setQuiet(prev)); }} />
+          <Row label="Reminders and check-ins" hint="Goal reminders and coach check-in prompts" value={notifs} onChange={async (v) => {
+            const prev = notifs;
+            if (v) {
+              const granted = await requestReminderPermission().catch(() => false);
+              if (!granted) {
+                setError('Notifications need system permission — enable it, then try again.');
+                return;
+              }
+            }
+            setNotifs(v);
+            const ok = await save({ notifications: { master_enabled: v } }, () => setNotifs(prev));
+            if (ok) syncReminders({ master: v });
+          }} />
+          <Row label="Quiet hours (10pm–7am)" hint="No nudges overnight" value={quiet} onChange={async (v) => { const prev = quiet; setQuiet(v); const ok = await save({ notifications: { quiet_hours: { enabled: v, start: '22:00', end: '07:00' } } }, () => setQuiet(prev)); if (ok) syncReminders({ quiet: v }); }} />
         </Card>
 
         <Card>

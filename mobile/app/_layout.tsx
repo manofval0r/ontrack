@@ -1,9 +1,11 @@
 /** Root layout: fonts → session → navigation graph (spec M1–M14). */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Notifications from 'expo-notifications';
 import {
   useFonts,
   DMSans_400Regular,
@@ -13,6 +15,31 @@ import {
 import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
 import { OriginalSurfer_400Regular } from '@expo-google-fonts/original-surfer';
 import { GoalsProvider } from '../lib/store';
+import { ToastProvider, useToast } from '../lib/toast';
+
+/** Foreground notifications surface as in-app toasts instead of banners. */
+function ForegroundToastBridge() {
+  const toast = useToast();
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
+  useEffect(() => {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: false,
+        shouldShowList: false,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      }),
+    });
+    const sub = Notifications.addNotificationReceivedListener((n) => {
+      const t = n.request.content.title ?? 'Reminder';
+      const b = n.request.content.body ?? '';
+      toastRef.current.show({ type: 'info', title: t, message: b });
+    });
+    return () => sub.remove();
+  }, []);
+  return null;
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -52,8 +79,11 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <GoalsProvider>
-      <StatusBar style="light" />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GoalsProvider>
+        <ToastProvider>
+          <ForegroundToastBridge />
+          <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="onboarding" />
@@ -77,6 +107,8 @@ export default function RootLayout() {
           options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
         />
       </Stack>
-    </GoalsProvider>
+        </ToastProvider>
+      </GoalsProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -1,5 +1,5 @@
 /** M5 Home — greeting + streak, Today's Focus, due-soon, goal list, FAB. */
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import Animated, { FadeInUp, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -11,6 +11,7 @@ import { FontFamily, Typography } from '../../constants/typography';
 import { GoalCard } from '../../components/GoalCard';
 import { SkeletonCard } from '../../components/Skeleton';
 import { BackdropArt } from '../../components/BackdropArt';
+import { RefreshArc, RefreshState } from '../../components/RefreshArc';
 import { Card } from '../../components/ui';
 import { useGoals } from '../../lib/store';
 import { displayProgress, templateMeta } from '../../lib/templates';
@@ -31,6 +32,26 @@ export default function Home() {
   const focusMeta = focus ? templateMeta(focus) : null;
   const reduceMotion = useReduceMotion();
   const flicker = useSharedValue(1);
+  const [syncState, setSyncState] = useState<RefreshState>('idle');
+  const wasLoading = useRef(false);
+
+  // Arc status machine: spin while syncing, tick on success, rest idle.
+  useEffect(() => {
+    if (loading) {
+      wasLoading.current = true;
+      setSyncState('loading');
+      return;
+    }
+    if (!wasLoading.current) return;
+    wasLoading.current = false;
+    if (error) {
+      setSyncState('idle');
+      return;
+    }
+    setSyncState('done');
+    const t = setTimeout(() => setSyncState('idle'), 1500);
+    return () => clearTimeout(t);
+  }, [loading, error]);
 
   useEffect(() => {
     if (streak > 0 && !reduceMotion) {
@@ -64,12 +85,15 @@ export default function Home() {
               <View
                 accessibilityLabel={`${streak} day streak`}
                 accessibilityRole="text"
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
               >
+                <RefreshArc state={syncState} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' }, flickerStyle]}>
                   <Ionicons name="flame" size={16} color={Brand.amberDot} />
                 </Animated.View>
                 <Text style={{ fontWeight: '700', color: Brand.navy }}>{streak}</Text>
+                </View>
               </View>
             </View>
             {focus && (

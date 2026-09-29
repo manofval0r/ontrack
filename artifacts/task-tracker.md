@@ -44,6 +44,13 @@ Updated: 2026-09-28.
 - [x] Auth screens: shared BrandMark, true Google G + GitHub mark icons (ProviderIcons), SocialButton primitive, login redesigned social-first to match signup
 - [ ] Dock draggable pill: plan in `artifacts/dock-pill-plan.md` — AWAITING APPROVAL, not implemented
 - [ ] Home goal cards: 4 concepts (A Verdict / B Ticket / C Week strip / D Coach) in mockup — AWAITING PICK
+- [x] Concept C shipped as type-aware cards: counters get week-strip + inline −/+ stepper with toast feedback, checklists get tap-to-check rows, manuals get entries + Log entry CTA; all cards carry time-remaining
+- [x] Dock pill implemented (Underpass, live-scrub, chat glow ring) + GestureHandlerRootView at root; needs fresh preview build (native dep)
+- [x] OTA verify pass: fixed stuck downloading flag pre-reload; config reviewed (channels preview/production, appVersion runtime) — device checklist in chat
+- [x] Toasts: native Reanimated toast system (`lib/toast.tsx`, goey-toast-inspired API, maxQueue drop-oldest, actions) mounted at root; foreground notifications arrive as toasts
+- [x] Reminders/alarms: `lib/reminders.ts` local scheduling (cadence nudges, 8am streak ping, per-goal deadline alarms), quiet-hours-safe daytime triggers, permission-gated toggles, passive resync on goal changes
+- [x] Hackathon gaps closed (mobile-side): time-remaining on cards, quick-log from card, swipe-to-delete on Goals, check-in cadence wired to real nudges, deadline alarms, sync status everywhere
+- [x] RefreshArc: chunky arc→tick sync mark on Home + Goals (Reanimated+SVG, no three.js — documented why in code)
 - [x] Absorbed teammate merges (legal pages, voice/integrations overhaul, audio plugin): no conflicts, tsc clean, backend consumes new serializer fields
 
 ## Left — Web (Eniola unless noted)

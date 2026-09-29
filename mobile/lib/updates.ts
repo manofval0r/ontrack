@@ -67,6 +67,7 @@ export function useAppUpdate() {
         clearInterval(timer);
         setProgress(100);
         setPending(true);
+        setDownloading(false);
         await new Promise((r) => setTimeout(r, 600));
         await Updates.reloadAsync();
       } catch (e: any) {
