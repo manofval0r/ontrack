@@ -10,6 +10,7 @@ import { Brand } from '../../constants/colors';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { Card } from '../../components/ui';
+import { BackdropArt } from '../../components/BackdropArt';
 import { updateInfo, useAppUpdate } from '../../lib/updates';
 import { api, request } from '../../lib/api';
 import { clearSession, clearProviderToken, getProviderToken, signInWithProvider } from '../../lib/auth';
@@ -79,19 +80,31 @@ export default function Settings() {
       setBusyProvider(provider);
       setError(null);
       setNotice(null);
-      const { providerToken } = await signInWithProvider(provider === 'google-cal' ? 'google' : 'github', {
+      const { providerToken, owned } = await signInWithProvider(provider === 'google-cal' ? 'google' : 'github', {
         mode: provider,
         scopes: provider === 'google-cal' ? CALENDAR_SCOPES : undefined,
       });
+      if (!owned) {
+        // The cold-start receiver (app/auth.tsx) claimed this redirect and
+        // owns the connect — it routes back here with ?connected=. Just reload.
+        await load();
+        return;
+      }
       // Warm path: vault the provider token now (auth.tsx covers cold paths).
       const vaultToken = providerToken ?? (await getProviderToken(provider));
       if (!vaultToken) {
         throw new Error('Connected, but no provider token came back. Try again.');
       }
-      await request('/api/integrations', {
-        method: 'POST',
-        body: JSON.stringify({ provider, access_token: vaultToken, meta: { via: 'supabase-oauth' } }),
-      });
+      try {
+        await request('/api/integrations', {
+          method: 'POST',
+          body: JSON.stringify({ provider, access_token: vaultToken, meta: { via: 'supabase-oauth' } }),
+        });
+      } catch (e: any) {
+        // The cold path may have connected it a moment ago — confirm state
+        // instead of failing a success.
+        if (!/already|exists|duplicate|409/i.test(String(e?.message ?? e?.error ?? e))) throw e;
+      }
       await load();
       setNotice(`${provider === 'google-cal' ? 'Google Calendar' : 'GitHub'} connected.`);
     } catch (e: any) {
@@ -157,6 +170,7 @@ export default function Settings() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
+      <BackdropArt variant="dots" />
       <ScrollView contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 130 }}>
         <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 36, color: Brand.navy }}>Settings</Text>
         {error && (

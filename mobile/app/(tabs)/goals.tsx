@@ -8,6 +8,7 @@ import { Brand } from '../../constants/colors';
 import { Spacing, Touch } from '../../constants/spacing';
 import { FontFamily } from '../../constants/typography';
 import { GoalCard } from '../../components/GoalCard';
+import { BackdropArt } from '../../components/BackdropArt';
 import { Card } from '../../components/ui';
 import { useGoals } from '../../lib/store';
 
@@ -22,6 +23,7 @@ export default function Goals() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
+      <BackdropArt variant="dots" />
       <FlatList
         data={[...active, ...done]}
         keyExtractor={(g) => String(g.id)}

@@ -10,34 +10,20 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useURL } from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as SecureStore from 'expo-secure-store';
 import { Brand } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { Card, PillButton } from '../components/ui';
 import { request } from '../lib/api';
-import { setSession } from '../lib/auth';
-
-const MODE_KEY = 'ontrack_oauth_mode';
+import { getToken, oauthRedirectUrl, parseOAuthParams, claimOAuthRedirect, saveProviderToken, setSession } from '../lib/auth';
 
 function isAuthUrl(url: string): boolean {
   return url.startsWith('ontrack://auth') || /\/--\/auth([?#]|$)/.test(url);
 }
 
-function parseTokens(url: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  const hash = url.split('#')[1] ?? '';
-  const query = url.split('?')[1]?.split('#')[0] ?? '';
-  for (const part of [query, hash]) {
-    for (const [k, v] of new URLSearchParams(part)) {
-      if (v) out[k] = v;
-    }
-  }
-  return out;
-}
-
 export default function AuthCallback() {
   const url = useURL();
   const [error, setError] = useState<string | null>(null);
+  const [errMode, setErrMode] = useState<string>('login');
   const [done, setDone] = useState(false);
 
   useEffect(() => {
@@ -51,23 +37,41 @@ export default function AuthCallback() {
       return () => clearTimeout(t);
     }
     (async () => {
+      let mode = 'login';
       try {
         if (!isAuthUrl(url)) {
           router.replace('/(tabs)');
           return;
         }
-        const params = parseTokens(url);
+        // Single-owner claim (see lib/auth.ts): the warm browser session may
+        // already own this redirect. Replays route by existing session and
+        // NEVER touch the login session or retry side effects.
+        const claimed = await claimOAuthRedirect(url);
+        if (claimed === null) {
+          setDone(true);
+          router.replace((await getToken()) ? '/(tabs)' : '/(auth)/login');
+          return;
+        }
+        mode = claimed;
+        setErrMode(mode);
+        const params = parseOAuthParams(url);
         if (params.error_description || params.error) {
           throw new Error(params.error_description ?? 'Sign-in was cancelled.');
         }
-        const mode = (await SecureStore.getItemAsync(MODE_KEY)) || 'login';
-        await SecureStore.deleteItemAsync(MODE_KEY);
 
         if (mode === 'login') {
           if (!params.access_token) throw new Error('No session returned. Try again.');
           await setSession(params.access_token, params.refresh_token);
           setDone(true);
           router.replace('/(tabs)');
+          return;
+        }
+
+        if (mode === 'unknown') {
+          // Mode key already consumed elsewhere. Route by session — a login
+          // swap here is exactly what used to boot users to the login screen.
+          setDone(true);
+          router.replace((await getToken()) ? '/(tabs)' : '/(auth)/login');
           return;
         }
 
@@ -78,23 +82,33 @@ export default function AuthCallback() {
             'Connected, but no provider token came back. Reconnect — and if it persists, the provider needs re-approval.'
           );
         }
-        await request('/api/integrations', {
-          method: 'POST',
-          body: JSON.stringify({ provider: mode, access_token: vaultToken, meta: { via: 'supabase-oauth' } }),
-        });
         try {
-          const raw = await SecureStore.getItemAsync('ontrack_provider_tokens');
-          const map = raw ? JSON.parse(raw) : {};
-          map[mode] = vaultToken;
-          await SecureStore.setItemAsync('ontrack_provider_tokens', JSON.stringify(map));
-        } catch {}
+          await request('/api/integrations', {
+            method: 'POST',
+            body: JSON.stringify({ provider: mode, access_token: vaultToken, meta: { via: 'supabase-oauth' } }),
+          });
+        } catch (e: any) {
+          // Tolerate the double-processing twin: the warm path may have
+          // already connected this provider a moment ago.
+          if (!/already|exists|duplicate|409/i.test(String(e?.message ?? e?.error ?? e))) throw e;
+        }
+        await saveProviderToken(mode, vaultToken);
         setDone(true);
         router.replace({ pathname: '/(tabs)/settings', params: { connected: mode } });
       } catch (e: any) {
-        setError(e?.error ?? e?.message ?? 'Sign-in failed. Try again.');
+        // Genuine failures must not nuke a good login session or strand the
+        // user on the sign-in screen. Integration errors stay on settings.
+        setErrMode(mode);
+        const msg = String(e?.error ?? e?.message ?? 'Sign-in failed. Try again.');
+        const hint = /no session|no sign-in data|returned no token/i.test(msg)
+          ? `\n\nExpected redirect: ${oauthRedirectUrl()} — this URL must be in the Supabase redirect allowlist.`
+          : '';
+        setError(`${msg}${hint}`);
       }
     })();
   }, [url, done]);
+
+  const integrating = errMode !== 'login' && errMode !== 'unknown';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl, justifyContent: 'center' }}>
@@ -104,8 +118,17 @@ export default function AuthCallback() {
             <Text style={{ fontWeight: '700', color: Brand.navy, fontSize: 18 }}>Hmm, that link broke</Text>
             <Text style={{ marginTop: 6, color: Brand.navy }}>{error}</Text>
             <View style={{ marginTop: 12, gap: 10 }}>
-              <PillButton title="Back to sign in" primary onPress={() => router.replace('/(auth)/login')} />
-              <PillButton title="Home" onPress={() => router.replace('/(tabs)')} />
+              {integrating ? (
+                <>
+                  <PillButton title="Back to settings" primary onPress={() => router.replace('/(tabs)/settings')} />
+                  <PillButton title="Home" onPress={() => router.replace('/(tabs)')} />
+                </>
+              ) : (
+                <>
+                  <PillButton title="Back to sign in" primary onPress={() => router.replace('/(auth)/login')} />
+                  <PillButton title="Home" onPress={() => router.replace('/(tabs)')} />
+                </>
+              )}
             </View>
           </>
         ) : (

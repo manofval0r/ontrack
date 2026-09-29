@@ -108,6 +108,18 @@
   .setrow{display:flex; justify-content:space-between; align-items:center; padding:9px 0; font-size:13.5px;}
   .switch{width:44px; height:26px; border-radius:999px; background:var(--turquoise); border:2px solid var(--navy); position:relative;}
   .switch::after{content:""; position:absolute; right:2px; top:1.5px; width:18px; height:18px; border-radius:999px; background:#fff; border:2px solid var(--navy);}
+  /* Goal-card concepts (proposals — pick one) */
+  .verdict{font-family:"Original Surfer",Georgia,serif; font-weight:400; font-size:52px; line-height:1;}
+  .perf{border-top:3px dashed var(--navy); margin:10px -16px 0; padding-top:10px;}
+  .stepper{display:flex; align-items:center; gap:8px;}
+  .stepper b{flex:1; text-align:center; font-size:15px;}
+  .stepbtn{width:44px; height:44px; border-radius:999px; border:2px solid var(--navy); background:var(--turquoise);
+    font-size:20px; font-weight:700; color:var(--navy); box-shadow:2px 2px 0 var(--navy);}
+  .stepbtn:active{transform:translate(2px,2px); box-shadow:0 0 0 var(--navy);}
+  .concept-tag{display:inline-block; font-size:10px; font-weight:700; background:var(--navy); color:var(--turquoise);
+    border-radius:999px; padding:3px 10px; letter-spacing:.08em;}
+  .daydots{display:flex; gap:5px; margin-top:8px;}
+  .daydots i{flex:1; height:30px; border-radius:8px; border:2px solid var(--navy); display:block;}
   .note{font-size:12px; opacity:.55; text-align:center; max-width:640px; margin:26px auto 0; line-height:1.6;}
   /* Animated backdrop layers (mockup mirror of BackdropArt) */
   .bgwrap{position:absolute; inset:0; overflow:hidden; pointer-events:none;}
@@ -493,6 +505,91 @@
         </div>
       </div></div>
       <div class="cap">Off-track 404<small>custom route screen + sitemap, mobile + web</small></div></div>
+  </div>
+
+  <!-- GOAL CARD CONCEPTS — proposals, pick one to ship -->
+  <div class="grid" style="margin-top:34px; padding-top:28px; border-top:2px dashed rgba(255,255,255,.25);">
+    <div class="hero" style="width:100%; margin-bottom:8px;">
+      <h1>Home goal cards — <span>4 concepts</span></h1>
+      <p>Proposals only. Reply A, B, C, or D and the winner gets built into the app.</p>
+    </div>
+
+    <!-- CONCEPT A · VERDICT -->
+    <div class="shot"><div class="phone"><div class="notch"></div>
+      <div class="screen">
+        <div class="greet">Good morning</div>
+        <div class="card" style="background:var(--navy); color:#fff;">
+          <span class="concept-tag">CONCEPT A · VERDICT</span>
+          <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:8px;">
+            <div><div class="verdict">3<span style="color:var(--turquoise);">/5</span></div>
+              <div style="font-size:12px; font-weight:700; color:var(--turquoise);">DEALS SHIPPED</div></div>
+            <span style="font-size:11px; font-weight:700; background:var(--turquoise); color:var(--navy); border-radius:999px; padding:4px 10px;">14-day streak</span>
+          </div>
+          <div style="font-size:15px; font-weight:700; margin-top:8px;">Close 5 Enterprise Deals</div>
+          <div class="bar" style="margin-top:8px; border-color:#fff;"><div></div></div>
+          <div class="pillbtn" style="margin-top:10px; background:var(--turquoise);">+1 Log progress</div>
+        </div>
+        <div class="goalrow"><b class="t">Morning pushups</b><div class="bar" style="margin-top:8px;"><div></div></div></div>
+      </div></div>
+      <div class="cap">Concept A · Verdict<small>giant score numeral · streak chip · one-tap +1 log</small></div></div>
+
+    <!-- CONCEPT B · TICKET -->
+    <div class="shot"><div class="phone"><div class="notch"></div>
+      <div class="screen">
+        <div class="greet">Good morning</div>
+        <div class="card">
+          <span class="concept-tag">CONCEPT B · TICKET</span>
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <div style="background:var(--navy); color:#fff; border-radius:14px; padding:10px 12px; text-align:center; min-width:64px;">
+              <b style="font-size:22px; display:block;">FRI</b><span style="font-size:11px; color:var(--turquoise); font-weight:700;">3 LEFT</span>
+            </div>
+            <div style="flex:1;"><b style="font-size:15px;">Close 5 Enterprise Deals</b>
+              <div style="font-size:12px; opacity:.6;">3 of 5 · counter</div>
+              <div class="bar" style="margin-top:6px;"><div></div></div></div>
+          </div>
+          <div class="perf">
+            <div class="pillbtn primary" style="width:100%;">Check in — tear off today's stub</div>
+          </div>
+        </div>
+        <div class="goalrow"><b class="t">Morning pushups</b><div class="bar" style="margin-top:8px;"><div></div></div></div>
+      </div></div>
+      <div class="cap">Concept B · Ticket<small>deadline stub + perforation · check-in tears off</small></div></div>
+
+    <!-- CONCEPT C · WEEK STRIP -->
+    <div class="shot"><div class="phone"><div class="notch"></div>
+      <div class="screen">
+        <div class="greet">Good morning</div>
+        <div class="card">
+          <span class="concept-tag">CONCEPT C · WEEK STRIP</span>
+          <div style="margin-top:8px;"><b style="font-size:15px;">Close 5 Enterprise Deals</b>
+            <div style="font-size:12px; font-weight:700; color:var(--teal);">THIS WEEK'S PROOF</div></div>
+          <div class="daydots">
+            <i style="background:var(--turquoise);"></i><i style="background:var(--turquoise);"></i><i style="background:var(--aqua);"></i><i style="background:#fff;"></i><i style="background:#fff;"></i><i style="background:#fff;"></i><i style="background:#fff;"></i>
+          </div>
+          <div class="stepper" style="margin-top:10px;">
+            <span class="stepbtn">−</span><b>3 of 5 deals</b><span class="stepbtn">+</span>
+          </div>
+        </div>
+        <div class="goalrow"><b class="t">Morning pushups</b><div class="bar" style="margin-top:8px;"><div></div></div></div>
+      </div></div>
+      <div class="cap">Concept C · Week strip<small>7-day proof dots · inline −/+ stepper, no detail open</small></div></div>
+
+    <!-- CONCEPT D · COACH -->
+    <div class="shot"><div class="phone"><div class="notch"></div>
+      <div class="screen">
+        <div class="greet">Good morning</div>
+        <div class="card" style="background:#ECFEFF;">
+          <span class="concept-tag">CONCEPT D · COACH</span>
+          <div style="margin-top:8px;"><b style="font-size:15px;">Close 5 Enterprise Deals</b></div>
+          <div class="bubble ai" style="margin-top:8px; font-size:14px; max-width:100%;">Two more before Friday keeps the 14-day streak alive. Today's move?</div>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <div class="pillbtn primary" style="flex:1;">Log progress</div>
+            <span class="roundbtn" style="background:var(--turquoise);">♪</span>
+          </div>
+        </div>
+        <div class="goalrow"><b class="t">Morning pushups</b><div class="bar" style="margin-top:8px;"><div></div></div></div>
+      </div></div>
+      <div class="cap">Concept D · Coach<small>AI next-move line on the card · log + hear it</small></div></div>
   </div>
 
   <p class="note">Mockup mirrors the SDK 57 implementation file-for-file (routes, copy, tokens, flows). Micro-motion shown via CSS approximations of the Reanimated loops. Open <b>design-showcase.html</b> for the token-level reference.</p>

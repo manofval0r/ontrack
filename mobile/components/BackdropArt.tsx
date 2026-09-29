@@ -43,9 +43,12 @@ function Blobs({ reduce }: { reduce: boolean }) {
   );
 }
 
+/** Web dot-grid canvas parity: 24px grid, 1.25-unit navy dots at 0.14 alpha
+ * on the app canvas. Always on — blobs/rings are the accent on top. */
 function DotField() {
-  const rows = 10;
+  const step = 24;
   const cols = 6;
+  const rows = 10;
   const dots: Array<{ x: number; y: number; accent: boolean }> = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -53,15 +56,15 @@ function DotField() {
     }
   }
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 120 200" preserveAspectRatio="xMidYMid slice">
+    <Svg width="100%" height="100%" viewBox={`0 0 ${cols * step} ${rows * step}`} preserveAspectRatio="xMidYMid slice">
       {dots.map((d, i) => (
         <Circle
           key={i}
-          cx={10 + d.x * 20}
-          cy={10 + d.y * 20}
-          r={d.accent ? 3 : 1.8}
+          cx={step / 2 + d.x * step}
+          cy={step / 2 + d.y * step}
+          r={d.accent ? 2.4 : 1.25}
           fill={d.accent ? Brand.turquoise : Brand.navy}
-          opacity={d.accent ? 0.85 : 0.22}
+          opacity={d.accent ? 0.5 : 0.14}
         />
       ))}
     </Svg>
@@ -94,12 +97,11 @@ export function BackdropArt({ variant = 'blobs' }: { variant?: 'blobs' | 'dots' 
       accessibilityElementsHidden
       style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}
     >
+      {/* Base canvas always on: the web dot-grid. Accents layer above it. */}
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <DotField />
+      </View>
       {(variant === 'blobs' || variant === 'full') && <Blobs reduce={reduce} />}
-      {(variant === 'dots' || variant === 'full') && (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.7 }}>
-          <DotField />
-        </View>
-      )}
       {(variant === 'rings' || variant === 'full') && <Rings reduce={reduce} />}
     </View>
   );

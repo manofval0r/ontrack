@@ -10,6 +10,7 @@ import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { GoalCard } from '../../components/GoalCard';
 import { SkeletonCard } from '../../components/Skeleton';
+import { BackdropArt } from '../../components/BackdropArt';
 import { Card } from '../../components/ui';
 import { useGoals } from '../../lib/store';
 import { displayProgress, templateMeta } from '../../lib/templates';
@@ -48,6 +49,7 @@ export default function Home() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
+      <BackdropArt variant="dots" />
       <FlatList
         data={active}
         keyExtractor={(g) => String(g.id)}

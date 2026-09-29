@@ -68,7 +68,7 @@ export async function signUpWithEmail(name: string, email: string, password: str
 export async function signInWithProvider(
   provider: 'google' | 'github',
   opts?: { mode?: string; scopes?: string }
-): Promise<{ accessToken: string; providerToken: string | null }> {
+): Promise<{ accessToken: string; providerToken: string | null; owned: boolean }> {
   const redirect = Linking.createURL('auth');
   const mode = opts?.mode ?? 'login';
   await SecureStore.setItemAsync('ontrack_oauth_mode', mode);
@@ -78,21 +78,69 @@ export async function signInWithProvider(
   if (opts?.scopes) authUrl += `&scopes=${encodeURIComponent(opts.scopes)}`;
   const result = await WebBrowser.openAuthSessionAsync(authUrl, redirect);
   if (result.type !== 'success' || !result.url) throw new Error(`${provider} sign-in cancelled.`);
-  const hash = result.url.split('#')[1] ?? '';
-  const query = result.url.split('?')[1]?.split('#')[0] ?? '';
-  const params = new URLSearchParams(`${query}&${hash}`);
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-  const providerToken = params.get('provider_token');
+  // Single-owner claim: the cold-start receiver (app/auth.tsx) may process the
+  // same redirect via deep link. Whoever claims it owns the side effects; the
+  // loser parses tokens for its caller but writes NOTHING (no session swap,
+  // no duplicate vault/POST). This is what keeps login and integration
+  // connects strictly separated.
+  const claimed = await claimOAuthRedirect(result.url);
+  const params = parseOAuthParams(result.url);
+  const accessToken = params.access_token;
+  const providerToken = params.provider_token ?? null;
   if (!accessToken) throw new Error(`${provider} sign-in returned no token.`);
+  if (claimed === null) return { accessToken, providerToken, owned: false };
   if (mode === 'login') {
     // Login only: session swap belongs here and nowhere else.
-    await setSession(accessToken, refreshToken ?? undefined);
+    await setSession(accessToken, params.refresh_token || undefined);
   }
   if (providerToken) {
     await saveProviderToken(mode === 'login' ? provider : mode, providerToken);
   }
-  return { accessToken, providerToken };
+  await SecureStore.setItemAsync('ontrack_oauth_last_provider', mode === 'login' ? provider : mode);
+  return { accessToken, providerToken, owned: true };
+}
+
+/** Parse access/refresh/provider tokens from a redirect URL (hash or query). */
+export function parseOAuthParams(url: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const hash = url.split('#')[1] ?? '';
+  const query = url.split('?')[1]?.split('#')[0] ?? '';
+  for (const part of [query, hash]) {
+    for (const [k, v] of new URLSearchParams(part)) {
+      if (v) out[k] = v;
+    }
+  }
+  return out;
+}
+
+const LAST_URL_KEY = 'ontrack_oauth_last_url';
+
+/** Claim a redirect URL for processing.
+ * Returns the stored mode ('login', a provider id like 'github'/'google-cal',
+ * or 'unknown' when the key is already gone), or null when this exact URL was
+ * already handled by the other path (replay: do nothing, write nothing).
+ * Callers must NEVER swap the login session unless mode is exactly 'login'. */
+export async function claimOAuthRedirect(url: string): Promise<string | null> {
+  let last: string | null = null;
+  let mode: string | null = null;
+  try {
+    [last, mode] = await Promise.all([
+      SecureStore.getItemAsync(LAST_URL_KEY),
+      SecureStore.getItemAsync('ontrack_oauth_mode'),
+    ]);
+  } catch {}
+  try {
+    await SecureStore.setItemAsync(LAST_URL_KEY, url);
+    await SecureStore.deleteItemAsync('ontrack_oauth_mode');
+  } catch {}
+  if (last && last === url) return null;
+  return mode ?? 'unknown';
+}
+
+/** The redirect Supabase must send the user back to. Shown in error copy so a
+ * redirect-allowlist mismatch can be fixed in the Supabase dashboard. */
+export function oauthRedirectUrl(): string {
+  return Linking.createURL('auth');
 }
 
 export async function saveProviderToken(key: string, token: string) {
