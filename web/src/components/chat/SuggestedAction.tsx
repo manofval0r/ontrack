@@ -6,22 +6,22 @@ interface SuggestedActionProps {
 
 export const SUGGESTED_PROMPTS = [
   {
-    title: 'Sell 5 Enterprise Deals',
-    description: 'High-ticket sales pipeline with 14-day cadence',
-    type: 'Counter',
-    prompt: 'I want to close 5 enterprise software deals within the next 14 days.',
+    title: 'Track 50 Pushups Daily',
+    description: 'Launch a daily counter tracker',
+    type: 'Set Tracker',
+    prompt: 'Track 50 pushups daily',
   },
   {
-    title: 'Ship Frontend Web MVP',
-    description: 'Engineering sprint with milestone checklists',
-    type: 'Checklist',
-    prompt: 'Complete 5 key frontend web engineering milestones for our OnTrack hackathon release.',
+    title: 'Check GitHub Activity',
+    description: 'Query repos & recent commits',
+    type: 'Integration',
+    prompt: 'What are my recent GitHub repos and commits?',
   },
   {
-    title: 'Daily Founder Focus',
-    description: 'Mindset & daily reflection habit',
-    type: 'Reflection',
-    prompt: 'Log a daily evening reflection on wins and roadblocks for 7 consecutive days.',
+    title: 'Deep Work Strategy',
+    description: 'Ask questions conversationally',
+    type: 'Chat Question',
+    prompt: 'How can I maintain deep focus during 90-minute work blocks?',
   },
 ]
 
@@ -29,7 +29,7 @@ export const SuggestedAction: React.FC<SuggestedActionProps> = ({ onSelect }) =>
   return (
     <div className="flex flex-col gap-2.5 w-full">
       <span className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/60 dark:text-slate-400 pl-1">
-        Suggested Goals To Jumpstart:
+        Try asking or setting a tracker:
       </span>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {SUGGESTED_PROMPTS.map((item, idx) => (

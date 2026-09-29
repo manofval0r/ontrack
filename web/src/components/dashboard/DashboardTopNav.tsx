@@ -64,8 +64,8 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
     }
     list.push({
       id: 'notif-ai',
-      title: 'Nemotron AI Coach Online',
-      message: 'Autonomous voice & chat check-ins active for your workspace.',
+      title: 'AI Assistant Online',
+      message: 'AI Assistant is ready to answer questions, check integrations, and manage trackers.',
       time: 'Just now',
       type: 'system',
       read: false,
@@ -309,7 +309,7 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
 
                 <div className="p-2.5 border-t-2 border-[#071E2D]/10 dark:border-white/10 bg-[#F8FAFB] dark:bg-[#07141E] flex items-center justify-between">
                   <span className="text-[10px] text-[#071E2D]/60 dark:text-slate-400 font-mono">
-                    Nemotron Coach Active
+                    AI Assistant Active
                   </span>
                   {onToggleChat && (
                     <button
@@ -320,7 +320,7 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
                       }}
                       className="text-[11px] font-bold text-[#00C4B3] hover:underline cursor-pointer"
                     >
-                      Open AI Coach &rarr;
+                      Open Chat &rarr;
                     </button>
                   )}
                 </div>

@@ -203,7 +203,7 @@ export const Dashboard: React.FC = () => {
         </main>
       </div>
 
-      {/* ── AI Coach Chat Drawer (Accessible anytime via messages icon or Quick Log) ── */}
+      {/* ── AI Assistant Chat Drawer (Accessible anytime via messages icon or Quick Log) ── */}
       {isChatDrawerOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden flex justify-end" role="dialog" aria-modal="true">
           {/* Backdrop */}
@@ -224,7 +224,7 @@ export const Dashboard: React.FC = () => {
                   className="font-bold text-sm text-[#071E2D] dark:text-white"
                   style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                 >
-                  Ontrack AI Accountability Coach
+                  OnTrack AI Assistant
                 </h3>
               </div>
               <button

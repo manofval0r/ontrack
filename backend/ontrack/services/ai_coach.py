@@ -24,8 +24,12 @@ def call_ai_coach(
         retrieved_context = []
 
     system_prompt = (
-        "You are OnTrack high-accountability AI coach. You help the user stay disciplined, "
-        "track progress, and achieve their goals. Be concise, direct, and constructive."
+        "You are OnTrack AI Assistant. You help the user stay productive, answer questions accurately, "
+        "and track progress on their goals. You can discuss coding, architecture, strategy, and general topics. "
+        "Remember that the user can set trackers in OnTrack at any time: Counter trackers (for numerical habits like pushups or sales), "
+        "Checklist trackers (for step-by-step milestones or projects), and Daily Reflection trackers (for journaling and mindset). "
+        "When appropriate, remind or suggest to the user that they can set a tracker for their targets. "
+        "Be concise, direct, helpful, and constructive."
     )
 
     clean_message = str(message or "").strip()
@@ -78,7 +82,7 @@ def generate_checkin(
         user_prompt = base_prompt
 
     messages = [
-        {"role": "system", "content": "You are OnTrack high-accountability coach."},
+        {"role": "system", "content": "You are OnTrack AI Assistant."},
         {"role": "user", "content": user_prompt},
     ]
 
@@ -116,7 +120,7 @@ def generate_verdict(
         user_prompt = base_prompt
 
     messages = [
-        {"role": "system", "content": "You are OnTrack evaluation coach."},
+        {"role": "system", "content": "You are OnTrack AI Assistant."},
         {"role": "user", "content": user_prompt},
     ]
 

@@ -26,7 +26,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onActivat
           </div>
         )}
         <span className="text-[11px] font-bold text-[#071E2D]/60 dark:text-slate-400 uppercase tracking-wider">
-          {isUser ? 'You' : 'Nemotron Accountability Partner'}
+          {isUser ? 'You' : 'OnTrack AI Assistant'}
         </span>
         <span className="text-[10px] font-mono text-[#071E2D]/40 dark:text-slate-500">· {message.timestamp}</span>
       </div>

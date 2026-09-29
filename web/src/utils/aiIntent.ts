@@ -1,4 +1,5 @@
 import type { Goal } from '../types'
+import { isIntegrationQuery } from '../services/integrationsAssistant'
 
 export type ClassifiedIntent =
   | { type: 'greeting'; responseText: string }
@@ -8,7 +9,8 @@ export type ClassifiedIntent =
   | { type: 'coaching_advice'; topic: 'motivation' | 'habits' | 'burnout' | 'general'; responseText: string }
   | { type: 'progress_log'; delta: number; rawText: string; matchedGoal?: Goal }
   | { type: 'goal_creation'; cleanTitle: string; suggestedType: Goal['goal_type'] }
-  | { type: 'general_chat'; responseText: string }
+  | { type: 'integration_query'; service: 'github' | 'calendar' | 'all'; rawText: string }
+  | { type: 'general_chat'; responseText: string; rawText?: string }
 
 // Words that typically indicate a greeting
 const GREETING_REGEX = /^(hi|hello|hey|heya|howdy|yo|sup|hiya|greetings|good\s+(morning|afternoon|evening|day))(\s+.*)?$/i
@@ -28,19 +30,19 @@ const CASUAL_PHRASES: { pattern: RegExp; reply: string }[] = [
   },
   {
     pattern: /\b(im|i'm|i am)\s+(bored|doing nothing)\b/i,
-    reply: "Boredom is the perfect cue to build momentum! Look at your active trackers or tell me a new target you'd like to crush today.",
+    reply: "Boredom is the perfect cue to build momentum! You can ask me any question, or say *\"Track 20 mins reading\"* to set a tracker.",
   },
   {
     pattern: /^(test|testing|test ontrack|test 123|hello test|check|ping)(\s+.*)?$/i,
-    reply: "Ontrack AI Coach is active, synchronized, and ready! Tell me a goal you'd like to achieve (e.g. *\"Sell 4 books today\"* or *\"Run 5km weekly\"*) to launch your tracker.",
+    reply: "OnTrack AI Assistant is active, synchronized, and ready! You can ask me questions, check your integrations, or say a target (e.g. *\"Sell 4 books today\"* or *\"Run 5km weekly\"*) to launch a tracker.",
   },
   {
     pattern: /\b(how are you|how're you|hows it going|how's it going|what's up|whats up)\b/i,
-    reply: "I'm locked in and ready to keep you accountable! What target are we tackling today?",
+    reply: "I'm doing great and ready to assist! What are you working on today, or would you like to set a new tracker?",
   },
   {
     pattern: /\b(who are you|what do you do|what are you)\b/i,
-    reply: "I'm your OnTrack AI Coach. I help you set concrete targets, track milestones, and maintain a high shipping velocity.",
+    reply: "I'm your OnTrack AI Assistant. I can answer questions, connect with your integrations (like GitHub and Google Calendar), and set up trackers (Counter, Checklist, or Reflection) whenever you're ready.",
   },
 ]
 
@@ -75,12 +77,11 @@ const COACHING_TRIGGERS: { [key: string]: 'motivation' | 'habits' | 'burnout' } 
   'stressed': 'burnout',
 }
 
-// Action verbs frequently paired with targets/quantities
+// Action verbs frequently paired with targets/quantities for personal habit or performance tracking
 const GOAL_ACTION_VERBS = [
   'read', 'run', 'walk', 'sell', 'write', 'ship', 'close', 'study',
   'code', 'save', 'drink', 'do', 'lift', 'bench', 'meditate', 'practice',
-  'workout', 'exercise', 'publish', 'make', 'earn', 'eat', 'build',
-  'finish', 'complete', 'learn', 'call', 'pitch', 'launch'
+  'workout', 'exercise', 'publish', 'earn', 'eat'
 ]
 
 // Progress logging verbs (past or action)
@@ -91,6 +92,7 @@ const LOG_VERBS = [
 
 /**
  * Checks if a string represents an explicit goal creation intent.
+ * Strict differentiator: general chat, questions, coding requests, and casual talk NEVER make trackers.
  */
 export function isGoalCreationPrompt(text: string): { isGoal: boolean; cleanTitle: string; suggestedType: Goal['goal_type'] } {
   const trimmed = text.trim()
@@ -100,22 +102,29 @@ export function isGoalCreationPrompt(text: string): { isGoal: boolean; cleanTitl
 
   const lower = trimmed.toLowerCase()
 
-  // Guard against questions (e.g. "how do I read more books?" or "can you help me run?")
-  if (trimmed.endsWith('?') || lower.startsWith('how ') || lower.startsWith('can you ') || lower.startsWith('should i ')) {
+  // 1. Guard against ALL questions and conversational inquiries
+  // (e.g. "what is python?", "how do I center a div?", "can you write code for me?", "explain async/await")
+  const questionWordsRegex = /^(what|why|how|who|whom|when|where|which|whose|can|could|would|will|should|is|are|am|was|were|does|did|tell|explain|summarize|give me|help|suggest|recommend|compare|show|list)\b/i
+  if (trimmed.endsWith('?') || questionWordsRegex.test(trimmed)) {
     return { isGoal: false, cleanTitle: trimmed, suggestedType: 'counter' }
   }
 
-  // Guard against greetings like "hi", "hello"
+  // 2. Guard against integrations queries (e.g., "what are my repos?", "check my github commits")
+  if (isIntegrationQuery(trimmed).isQuery) {
+    return { isGoal: false, cleanTitle: trimmed, suggestedType: 'counter' }
+  }
+
+  // 3. Guard against greetings like "hi", "hello"
   if (GREETING_REGEX.test(trimmed) && !lower.includes('i want to') && !lower.includes('goal:')) {
     return { isGoal: false, cleanTitle: trimmed, suggestedType: 'counter' }
   }
 
-  // Guard against acknowledgments
+  // 4. Guard against acknowledgments
   if (ACK_REGEX.test(trimmed)) {
     return { isGoal: false, cleanTitle: trimmed, suggestedType: 'counter' }
   }
 
-  // Guard against casual statements (feelings, testing, eating, tiredness)
+  // 5. Guard against casual statements (feelings, testing, eating, tiredness)
   if (CASUAL_PHRASES.some((cp) => cp.pattern.test(trimmed))) {
     return { isGoal: false, cleanTitle: trimmed, suggestedType: 'counter' }
   }
@@ -124,41 +133,39 @@ export function isGoalCreationPrompt(text: string): { isGoal: boolean; cleanTitl
     return { isGoal: false, cleanTitle: trimmed, suggestedType: 'counter' }
   }
 
-  // 1. Explicit goal keyword prefixes
-  const explicitPrefixRegex = /^(new goal|set a goal|create a goal|goal|i want to|i need to|i plan to|i aim to|i will|track my|track|build a tracker for|target):?\s*/i
+  // 6. Explicit goal keyword prefixes (e.g. "track 50 pushups", "create a goal to read 5 books", "set tracker for...")
+  const explicitPrefixRegex = /^(new goal|set a goal|create a goal|goal|i want to track|track my|track|build a tracker for|set tracker for|tracker for):?\s*/i
   if (explicitPrefixRegex.test(trimmed)) {
     const cleanTitle = trimmed.replace(explicitPrefixRegex, '').trim() || trimmed
-    if (cleanTitle.length >= 4 && !/\b(hungry|tired|sleep|bored|test|eat food|chill)\b/i.test(cleanTitle)) {
+    if (cleanTitle.length >= 3 && !/\b(hungry|tired|sleep|bored|test|eat food|chill)\b/i.test(cleanTitle)) {
       return { isGoal: true, cleanTitle, suggestedType: inferGoalType(cleanTitle) }
     }
     return { isGoal: false, cleanTitle: trimmed, suggestedType: 'counter' }
   }
 
-  // 2. Action verb + quantity pattern (e.g., "sell 4 books today", "run 5 miles", "read 20 pages", "do 50 pushups")
+  // 7. Action verb + quantity pattern (e.g., "sell 4 books today", "run 5 miles", "read 20 pages", "do 50 pushups")
   const verbList = GOAL_ACTION_VERBS.join('|')
   const actionWithQuantityRegex = new RegExp(`^(${verbList})\\s+(\\d+)\\s*(.*)$`, 'i')
   if (actionWithQuantityRegex.test(trimmed)) {
     return { isGoal: true, cleanTitle: trimmed, suggestedType: inferGoalType(trimmed) }
   }
 
-  // 3. Actionable Checklist format (e.g., "tasks: buy groceries, clean room", "checklist: step 1, step 2")
-  if (/^(tasks?|checklist|todo|milestones?):/i.test(trimmed) || trimmed.includes('\n- ') || trimmed.includes('\n* ')) {
+  // 8. Actionable Checklist format (e.g., "tasks: buy groceries, clean room", "checklist: step 1, step 2")
+  if (/^(tasks?|checklist|todo|milestones?):/i.test(trimmed) || (trimmed.startsWith('- ') && trimmed.includes('\n- ')) || (trimmed.startsWith('* ') && trimmed.includes('\n* '))) {
     const cleanTitle = trimmed.replace(/^(tasks?|checklist|todo|milestones?):?\s*/i, '').trim() || trimmed
     return { isGoal: true, cleanTitle, suggestedType: 'checklist' }
   }
 
-  // 4. Imperative project goals (e.g., "launch my portfolio site", "deploy the new website", "build a mobile app")
-  const projectActionRegex = /^(launch|deploy|build|publish|design|setup|create)\s+(my|a|an|the|our)?\s*([a-zA-Z0-9_\-\s]+)$/i
-  if (projectActionRegex.test(trimmed)) {
-    return { isGoal: true, cleanTitle: trimmed, suggestedType: inferGoalType(trimmed) }
-  }
-
-  // 5. Temporal / Habit commitments (e.g. "meditate 10 mins daily", "daily meditation", "journal every night", "drink 2L water daily")
-  if (/(daily|every day|every night|each week|weekly|every morning|nightly|by (monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next week))/i.test(lower)) {
-    // If it has at least an action verb or quantity or known habit word
-    if (new RegExp(`(${verbList}|habit|journal|reflect|water|workout|meditat)`, 'i').test(lower)) {
+  // 9. Habit / Temporal commitments with explicit habit words (e.g. "meditate 10 mins daily", "journal every night", "drink 2L water daily")
+  if (/(daily|every day|every night|each week|weekly|every morning|nightly)/i.test(lower)) {
+    if (new RegExp(`(${verbList}|habit|journal|reflect|water|workout|meditat|pushup)`, 'i').test(lower)) {
       return { isGoal: true, cleanTitle: trimmed, suggestedType: inferGoalType(trimmed) }
     }
+  }
+
+  // 10. Explicit project milestone goals with deadline (e.g. "launch portfolio by Friday", "deploy v1 by next week")
+  if (/^(launch|deploy|publish|ship)\s+(my|a|an|the)?\s*([a-zA-Z0-9_\-\s]+)\s+(by|before)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next week|end of month)$/i.test(trimmed)) {
+    return { isGoal: true, cleanTitle: trimmed, suggestedType: 'checklist' }
   }
 
   return { isGoal: false, cleanTitle: trimmed, suggestedType: 'counter' }
@@ -385,60 +392,71 @@ export function classifyUserMessage(text: string, activeGoals: Goal[]): Classifi
   const trimmed = text.trim()
   const lower = trimmed.toLowerCase()
 
-  // 1. Status / Summary Queries
+  // 1. Integrations Query Check (GitHub repos, commits, Google calendar)
+  const integrationCheck = isIntegrationQuery(trimmed)
+  if (integrationCheck.isQuery) {
+    return {
+      type: 'integration_query',
+      service: integrationCheck.service,
+      rawText: trimmed,
+    }
+  }
+
+  // 2. Status / Summary Queries
   if (STATUS_REGEX.test(lower)) {
     return { type: 'status_query' }
   }
 
-  // 2. Help queries
+  // 3. Help queries
   if (HELP_REGEX.test(trimmed)) {
     return {
       type: 'help_query',
       responseText:
-        "I'm your OnTrack AI Coach. Here's how we work together:\n\n" +
-        "• **Set a Goal**: Say *\"Sell 4 books today\"* or *\"Run 5km weekly\"* to launch a tracker.\n" +
-        "• **Log Progress**: Just say *\"Did 20 pushups\"* or *\"Sold 2 books\"* to update your counter.\n" +
-        "• **Track Velocity**: Ask *\"How am I doing?\"* anytime for your shipping rate and momentum streak.\n" +
-        "• **Overcome Friction**: Tell me if you feel stuck or lazy, and we'll break your next step down.",
+        "I'm your OnTrack AI Assistant. Here is what I can do:\n\n" +
+        "• **General Chat & Questions**: Ask any questions about your code, workflow, strategy, or learning.\n" +
+        "• **Integrations**: Inquire about your GitHub activity (*\"What are my repos?\"*, *\"Check my commits\"*) or Google Calendar.\n" +
+        "• **Set Trackers**: Say *\"Track 50 pushups daily\"*, *\"Read 20 pages\"*, or *\"Launch portfolio by Friday\"*.\n" +
+        "• **Log Progress**: Say *\"Did 20 pushups\"* or *\"Sold 2 books\"* to update your active counters.\n" +
+        "• **Check Velocity**: Ask *\"How am I doing?\"* anytime for your shipping rate and streak.",
     }
   }
 
-  // 3. Conversational Acknowledgments (ok, thanks, got it)
+  // 4. Conversational Acknowledgments (ok, thanks, got it)
   if (ACK_REGEX.test(trimmed)) {
     const ackReplies = [
-      "You got this! Keep the momentum high. Tell me whenever you have progress to log or want to tackle another target.",
-      "Locked in. Let's make today count. Let me know when you're ready to log an update!",
-      "Great energy. Stay focused on your active targets and shout when you hit a milestone.",
+      "You got this! Keep the momentum high. Tell me whenever you have progress to log or want to set another tracker.",
+      "Locked in. Let's make today count. Let me know when you have questions or want to log an update!",
+      "Great energy. Keep moving forward, and remember you can set a tracker for any milestone whenever you need.",
     ]
     const chosen = ackReplies[Math.floor(Math.random() * ackReplies.length)]
     return { type: 'acknowledgment', responseText: chosen }
   }
 
-  // 4. Greetings (hi, hello, hey, good morning)
+  // 5. Greetings (hi, hello, hey, good morning)
   if (GREETING_REGEX.test(trimmed) && trimmed.length < 35 && !lower.includes('i want to') && !lower.includes('goal')) {
     if (activeGoals.length > 0) {
       const primaryGoal = activeGoals[0]
       const goalCountStr = activeGoals.length === 1 ? '1 active goal' : `${activeGoals.length} active goals`
       return {
         type: 'greeting',
-        responseText: `Hey there! Ready to make moves today? You have **${goalCountStr}** in motion—including **"${primaryGoal.title}"**.\n\nDid you make progress to log, or are you planning a new target?`,
+        responseText: `Hey there! Ready to make moves today? You have **${goalCountStr}** in motion—including **"${primaryGoal.title}"**.\n\nAsk me anything, check your integrations, or let me know if you have progress to log!`,
       }
     } else {
       return {
         type: 'greeting',
-        responseText: "Hey there! I'm your OnTrack AI Coach. What target do you want to hit today? (e.g. *\"Sell 4 books today\"* or *\"Read 20 pages every night\"*)",
+        responseText: "Hey there! I'm your OnTrack AI Assistant. Ask me any question, check your integrations, or say what you'd like to achieve (e.g. *\"Sell 4 books today\"* or *\"Read 20 pages every night\"*) to set a tracker.",
       }
     }
   }
 
-  // 5. Casual conversations (im hungry, test ontrack, how are you, etc.)
+  // 6. Casual conversations (im hungry, test ontrack, how are you, etc.)
   for (const casual of CASUAL_PHRASES) {
     if (casual.pattern.test(trimmed)) {
-      return { type: 'general_chat', responseText: casual.reply }
+      return { type: 'general_chat', responseText: casual.reply, rawText: trimmed }
     }
   }
 
-  // 6. Coaching Advice (motivation, procrastination, habits)
+  // 7. Coaching Advice (motivation, procrastination, habits)
   for (const [trigger, topic] of Object.entries(COACHING_TRIGGERS)) {
     if (lower.includes(trigger)) {
       let advice: string
@@ -456,7 +474,7 @@ export function classifyUserMessage(text: string, activeGoals: Goal[]): Classifi
     }
   }
 
-  // 7. Explicit Goal Creation Check
+  // 8. Explicit Goal Creation Check (strict check, questions never pass)
   const goalCheck = isGoalCreationPrompt(trimmed)
   if (goalCheck.isGoal) {
     return {
@@ -466,7 +484,7 @@ export function classifyUserMessage(text: string, activeGoals: Goal[]): Classifi
     }
   }
 
-  // 8. Progress Logging on Existing Goals
+  // 9. Progress Logging on Existing Goals
   // Must have a number, plus either a logging verb, a '+' prefix, or directly reference an active goal's title or unit
   const numberMatch = trimmed.match(/(?:\+|\b)(\d+)/)
   const startsWithPlus = trimmed.startsWith('+')
@@ -500,10 +518,11 @@ export function classifyUserMessage(text: string, activeGoals: Goal[]): Classifi
     }
   }
 
-  // 8. General conversational coaching response
+  // 10. General conversational chat (NOT a goal creation prompt)
   return {
     type: 'general_chat',
+    rawText: trimmed,
     responseText:
-      "I hear you. To log progress on an active tracker, say something like *\"did 20 pushups\"* or *\"sold 2 books\"*. To create a new tracker, tell me your target (e.g. *\"Read 5 books by next month\"*)!",
+      "I'm here to help. You can ask me any question, query your connected integrations (GitHub, Calendar), or create a tracker whenever you want to set a target (Counter, Checklist, or Reflection)!",
   }
 }

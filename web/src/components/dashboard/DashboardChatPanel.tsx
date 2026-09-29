@@ -3,6 +3,8 @@ import { Zap, Sparkles, Target, ArrowRight } from 'lucide-react'
 import type { Goal } from '../../types'
 import { GoalStatusPill, computeGoalStatus } from '../common/GoalStatusPill'
 import { classifyUserMessage } from '../../utils/aiIntent'
+import { api } from '../../services/api'
+import { answerIntegrationQuery } from '../../services/integrationsAssistant'
 
 interface ActionSnapshot {
   type: 'goal_created' | 'progress_logged' | 'verdict'
@@ -76,7 +78,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
     initializedRef.current = true
 
     const activeGoals = goals.filter((g) => g.status === 'active')
-    let proactiveMessage = "I'm your active accountability coach. Tell me your progress, add a goal, or ask how you're tracking this week."
+    let proactiveMessage = "I'm your OnTrack AI Assistant. Tell me your progress, ask any question, check your integrations, or add a tracker whenever you're ready."
 
     if (activeGoals.length > 0) {
       const pushupGoal = activeGoals.find((g) => g.title.toLowerCase().includes('pushup'))
@@ -166,7 +168,35 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
     const activeGoals = goals.filter((g) => g.status === 'active')
     const intent = classifyUserMessage(text, activeGoals)
 
-    // 1. Status / Summary Query
+    // 1. Integrations Query Check (GitHub repos, commits, Calendar)
+    if (intent.type === 'integration_query') {
+      try {
+        const reply = await answerIntegrationQuery(text)
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-${Date.now()}`,
+            sender: 'ai',
+            content: reply || "I'm checking your connected integrations. You can connect and configure them under Settings → Integrations.",
+            timestamp: timeStr,
+          },
+        ])
+      } catch (err) {
+        console.warn('[DashboardChatPanel] Integration query failed:', err)
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-${Date.now()}`,
+            sender: 'ai',
+            content: "I couldn't retrieve your integration details right now. You can check your connected tools in Settings → Integrations.",
+            timestamp: timeStr,
+          },
+        ])
+      }
+      return
+    }
+
+    // 2. Status / Summary Query
     if (intent.type === 'status_query') {
       const completedCount = goals.filter((g) => g.status === 'completed').length
       const activeCount = activeGoals.length
@@ -184,13 +214,12 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
       return
     }
 
-    // 2. Greetings, Acknowledgments, Help, Coaching Advice, or General Chat
+    // 3. Greetings, Acknowledgments, Help, or Coaching Advice
     if (
       intent.type === 'greeting' ||
       intent.type === 'acknowledgment' ||
       intent.type === 'help_query' ||
-      intent.type === 'coaching_advice' ||
-      intent.type === 'general_chat'
+      intent.type === 'coaching_advice'
     ) {
       setMessages((prev) => [
         ...prev,
@@ -292,21 +321,43 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
       }
     }
 
-    // 5. Default Fallback Response
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `ai-${Date.now()}`,
-        sender: 'ai',
-        content: `I hear you. To log progress on an existing goal, say something like "did 15 pushups" or "completed phase 1". To set a new target, just say what you want to achieve!`,
-        timestamp: timeStr,
-      },
-    ])
+    // 5. General Chat / Questions (Not goal creation) - Query backend AI Assistant
+    try {
+      const leadGoal = activeGoals[0]
+      const res = await api.sendChatMessage(text, leadGoal?.id)
+      const reply =
+        res.reply ||
+        res.message ||
+        res.ai_response_text ||
+        (intent as any).responseText ||
+        "I'm here to help. You can ask me questions, check your integrations, or say what you'd like to achieve to set up a tracker (Counter, Checklist, or Reflection)!"
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai-${Date.now()}`,
+          sender: 'ai',
+          content: reply,
+          timestamp: timeStr,
+        },
+      ])
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai-${Date.now()}`,
+          sender: 'ai',
+          content:
+            (intent as any).responseText ||
+            "I'm here to help. You can ask me questions, check your integrations, or say what you'd like to achieve to set up a tracker (Counter, Checklist, or Reflection)!",
+          timestamp: timeStr,
+        },
+      ])
+    }
   }
 
   return (
     <div className="flex flex-col h-full bg-white border-2 border-[#071E2D] rounded-2xl sm:rounded-3xl shadow-[4px_4px_0px_#071E2D] overflow-hidden">
-      {/* Header: Ontrack small label / icon, no unnecessary chrome */}
+      {/* Header: Ontrack small label / icon */}
       <div className="px-5 py-4 border-b-2 border-[#071E2D] bg-[#F8FAFB] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-[#00C4B3] border-2 border-[#071E2D] flex items-center justify-center font-bold text-xs text-[#071E2D]">
@@ -316,11 +367,11 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
             className="font-bold text-base text-[#071E2D] tracking-tight"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
-            Ontrack AI
+            AI Assistant
           </span>
         </div>
         <span className="text-[11px] font-bold text-[#006D6A] bg-[#ECFEFF] border border-[#00C4B3] px-2.5 py-0.5 rounded-full">
-          Active Partner
+          Active Assistant
         </span>
       </div>
 

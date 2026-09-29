@@ -8,6 +8,7 @@ import { Loader } from '../common/Loader'
 import { useGoals } from '../../context/GoalContext'
 import { api } from '../../services/api'
 import { classifyUserMessage, parseRelativeDeadline, extractGoalProposal } from '../../utils/aiIntent'
+import { answerIntegrationQuery } from '../../services/integrationsAssistant'
 
 interface ChatWindowProps {
   initialPrompt?: string
@@ -20,7 +21,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     {
       id: 'msg-welcome',
       sender: 'ai',
-      content: `Hi ${user.name || 'there'}! I'm your Nemotron AI Accountability Partner. Speak or type your goal and I'll parse your target, assign the optimal tracker format (Counter, Checklist, or Reflection), and set up your execution workspace.`,
+      content: `Hi ${user.name || 'there'}! I'm your OnTrack AI Assistant. You can ask me questions, inquire about your integrations (GitHub, Calendar), or tell me a goal to create a tracker (Counter, Checklist, or Reflection).`,
       timestamp: 'Just now',
     },
   ])
@@ -168,7 +169,35 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
       return
     }
 
-    // If it's NOT an explicit goal creation request, engage the AI Coach!
+    // Handle integration queries directly using live integration data (GitHub, Calendar)
+    if (intent.type === 'integration_query') {
+      answerIntegrationQuery(content)
+        .then((reply) => {
+          const aiMsg: ChatMessage = {
+            id: `msg-ai-${Date.now()}`,
+            sender: 'ai',
+            content: reply || "I'm checking your connected integrations. You can connect and configure them under Settings → Integrations.",
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          }
+          setMessages((prev) => [...prev, aiMsg])
+        })
+        .catch((err) => {
+          console.warn('[ChatWindow] Integration query failed:', err)
+          const aiMsg: ChatMessage = {
+            id: `msg-ai-${Date.now()}`,
+            sender: 'ai',
+            content: "I couldn't retrieve your integration details right now. You can check your connected tools in Settings → Integrations.",
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          }
+          setMessages((prev) => [...prev, aiMsg])
+        })
+        .finally(() => {
+          setIsThinking(false)
+        })
+      return
+    }
+
+    // If it's NOT an explicit goal creation request, engage the AI Assistant for chat/questions!
     if (intent.type !== 'goal_creation') {
       const targetGoal = 'matchedGoal' in intent && (intent as any).matchedGoal ? (intent as any).matchedGoal : activeGoals[0]
       const goalId = targetGoal?.id
@@ -191,12 +220,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
           let reply: string
           if (intent.type === 'status_query') {
             reply = `You currently have ${activeGoals.length} active tracker(s) in motion.${
-              activeGoals.length > 0 ? ` Your lead target is "${activeGoals[0].title}".` : ' Ready to set a new goal?'
+              activeGoals.length > 0 ? ` Your lead target is "${activeGoals[0].title}".` : ' Ready to set a new tracker?'
             }`
           } else if ('responseText' in intent && intent.responseText) {
             reply = intent.responseText
           } else {
-            reply = `I'm keeping track of your goals and progress. Tell me what target you'd like to achieve (e.g., "Sell 4 books today" or "Run 5km weekly"), or let me know what progress you've made!`
+            reply = `I'm here to help. You can ask me questions, check your integrations, or say what you'd like to achieve (e.g. "Sell 4 books today" or "Run 5km weekly") to launch a tracker!`
           }
 
           const aiMsg: ChatMessage = {
@@ -324,7 +353,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
 
         {isThinking && (
           <div className="max-w-md">
-            <Loader aiThinking label="Nemotron AI Coach is analyzing context & retrieving your past progress..." />
+            <Loader aiThinking label="AI Assistant is thinking & retrieving context..." />
           </div>
         )}
 

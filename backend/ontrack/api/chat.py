@@ -1,4 +1,4 @@
-"""Chat endpoint with retrieval-augmented context for OnTrack AI Coach."""
+"""Chat endpoint with retrieval-augmented context for OnTrack AI Assistant."""
 import logging
 from rest_framework import status
 from rest_framework.response import Response
@@ -11,13 +11,14 @@ from services.retrieval import get_relevant_context
 
 logger = logging.getLogger(__name__)
 
-GENERIC_COACH_FALLBACK = (
-    "I'm with you. Keep focusing on your key milestones today, and let me know when you're ready to log progress."
+GENERIC_ASSISTANT_FALLBACK = (
+    "I'm here to assist you with your tasks, answer questions, or check your integrations. "
+    "Remember that you can set a tracker (Counter, Checklist, or Reflection) whenever you want to track progress!"
 )
 
 
 class ChatView(APIView):
-    """POST /api/chat — Conversational AI Coach endpoint with RAG context."""
+    """POST /api/chat — Conversational AI Assistant endpoint with RAG context."""
 
     throttle_classes = [GoalsBurstThrottle]
 
@@ -51,7 +52,7 @@ class ChatView(APIView):
                 "ai_coach.call_ai_coach failed; using generic fallback",
                 exc_info=True,
             )
-            ai_response = GENERIC_COACH_FALLBACK
+            ai_response = GENERIC_ASSISTANT_FALLBACK
             used_fallback = True
 
         return Response(

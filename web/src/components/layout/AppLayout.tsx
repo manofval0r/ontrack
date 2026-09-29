@@ -35,7 +35,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       ),
     },
     {
-      label: 'Nemotron Chat',
+      label: 'AI Assistant',
       path: '/chat',
       badge: 'AI',
       icon: (
@@ -221,16 +221,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           <div className="p-4 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#00C4B3] animate-pulse" />
-              <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">Nemotron AI Online</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">AI Assistant Online</span>
             </div>
             <p className="text-xs text-[#071E2D]/75 dark:text-slate-300 leading-relaxed">
-              Monitoring active goals. Automated check-ins scheduled to maintain velocity.
+              Ready to answer questions, query integrations, and set trackers.
             </p>
             <Link
               to="/chat"
               className="text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] hover:underline flex items-center gap-1 mt-1 transition-colors"
             >
-              Open conversational partner →
+              Open AI Assistant →
             </Link>
           </div>
         </aside>
