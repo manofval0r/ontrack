@@ -36,9 +36,9 @@ export const Typography: Record<
 > = {
   display: { fontFamily: FontFamily.display, fontSize: 40, fontWeight: FontWeight.bold, lineHeight: 46 },
   title: { fontFamily: FontFamily.display, fontSize: 28, fontWeight: FontWeight.bold, lineHeight: 34 },
-  cardHeading: { fontFamily: FontFamily.sans, fontSize: 20, fontWeight: FontWeight.bold, lineHeight: 26 },
-  body: { fontFamily: FontFamily.sans, fontSize: 16, fontWeight: FontWeight.regular, lineHeight: 23 },
-  button: { fontFamily: FontFamily.sans, fontSize: 16, fontWeight: FontWeight.semiBold, lineHeight: 22 },
+  cardHeading: { fontFamily: FontFamily.sans, fontSize: 22, fontWeight: FontWeight.bold, lineHeight: 28 },
+  body: { fontFamily: FontFamily.sans, fontSize: 17, fontWeight: FontWeight.regular, lineHeight: 25 },
+  button: { fontFamily: FontFamily.sans, fontSize: 17, fontWeight: FontWeight.semiBold, lineHeight: 23 },
   caption: { fontFamily: FontFamily.sans, fontSize: 12, fontWeight: FontWeight.semiBold, lineHeight: 16 },
   micro: { fontFamily: FontFamily.sans, fontSize: 11, fontWeight: FontWeight.bold, lineHeight: 14 },
 };

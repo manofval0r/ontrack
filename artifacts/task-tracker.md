@@ -37,6 +37,7 @@ Updated: 2026-09-28.
 - [x] OAuth separation fix: login-only session swap, warm-path vaulting, exp:// dev URLs, no-hang auth screen
 - [x] Mockup updated (dock, signup, 404, font preview)
 - [x] Bug-fix round (device feedback): animated BackdropArt backgrounds (onboarding/auth), explicit placeholder colors on all inputs, streak View/Text nesting fix, work-block pause-in-place, signup email-confirmation gate, onboarding tracker preview, TTS prefetch + 8s fast fallback, optimistic progress with rollback, canned-fallback badge, package quality-gate scripts
+- [x] Fullness round 2: visible animated backdrops (stronger blobs/dots), onboarding overhaul (1.3x art, captions, 34px titles, big dots), type scale wave 2 (40 greeting, 36 headers, 17 body/button, 22 cards, 17 chat)
 - [x] Absorbed teammate merges (legal pages, voice/integrations overhaul, audio plugin): no conflicts, tsc clean, backend consumes new serializer fields
 
 ## Left — Web (Eniola unless noted)

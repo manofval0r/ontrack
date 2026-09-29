@@ -74,7 +74,7 @@ export function ChatBubble({
           borderWidth: 2,
           borderColor: Brand.navy,
           borderRadius: Radii.bubble,
-          padding: 16,
+          padding: 14,
           shadowColor: Brand.navy,
           shadowOffset: { width: 3, height: 3 },
           shadowOpacity: 1,
@@ -82,7 +82,7 @@ export function ChatBubble({
           elevation: 3,
         }}
       >
-        <Text style={{ fontSize: 16, lineHeight: 23, color: isUser ? Brand.white : Brand.navy }}>{msg.content}</Text>
+        <Text style={{ fontSize: 17, lineHeight: 25, color: isUser ? Brand.white : Brand.navy }}>{msg.content}</Text>
         {!isUser && msg.source && msg.source !== 'ai' && (
           <Text style={{ fontSize: 10, fontWeight: '700', color: Brand.amberText, marginTop: 6 }}>
             {msg.source === 'offline' ? 'OFFLINE MODE · DEVICE-ONLY' : 'BASIC MODE · RETRY FOR FULL AI'}

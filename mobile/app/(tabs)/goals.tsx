@@ -26,11 +26,11 @@ export default function Goals() {
         data={[...active, ...done]}
         keyExtractor={(g) => String(g.id)}
         accessibilityLabel="Goals list"
-        contentContainerStyle={{ padding: Spacing.lg, gap: 14 }}
+        contentContainerStyle={{ padding: Spacing.lg, gap: 12 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { clearError(); refresh(); }} />}
         ListHeaderComponent={
           <View style={{ gap: 8, marginBottom: 4 }}>
-            <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 34, color: Brand.navy }}>
+            <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 36, color: Brand.navy }}>
               Goals
             </Text>
             <Text style={{ fontSize: 13, color: Brand.navy, opacity: 0.65 }}>

@@ -51,12 +51,12 @@ export default function Home() {
       <FlatList
         data={active}
         keyExtractor={(g) => String(g.id)}
-        contentContainerStyle={{ padding: Spacing.lg, gap: 14, paddingBottom: 130 }}
+        contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 130 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
         ListHeaderComponent={
           <View style={{ gap: 12, marginBottom: 4 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 34, color: Brand.navy }}>
+              <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 40, color: Brand.navy }}>
                 {greeting()}
               </Text>
               <View

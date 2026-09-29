@@ -15,50 +15,53 @@ import Svg, { Circle } from 'react-native-svg';
 import { Brand } from '../constants/colors';
 import { useReduceMotion } from '../lib/useReduceMotion';
 
-function useDrift(range: number, duration: number, reduce: boolean) {
-  const v = useSharedValue(0);
+function Blobs({ reduce }: { reduce: boolean }) {
+  const a = useSharedValue(0);
+  const b = useSharedValue(0);
+  const c = useSharedValue(0);
   useEffect(() => {
     if (reduce) return;
-    v.value = withRepeat(withTiming(1, { duration, easing: Easing.inOut(Easing.ease) }), -1, true);
-    return () => cancelAnimation(v);
-  }, [v, duration, reduce]);
-  return useAnimatedStyle(() => ({
-    transform: [{ translateX: v.value * range }, { translateY: v.value * (range * 0.6) }],
-  }));
-}
-
-function Blobs({ reduce }: { reduce: boolean }) {
-  const a = useDrift(26, 5200, reduce);
-  const b = useDrift(-22, 6400, reduce);
-  const c = useDrift(16, 4600, reduce);
+    a.value = withRepeat(withTiming(1, { duration: 5200, easing: Easing.inOut(Easing.ease) }), -1, true);
+    b.value = withRepeat(withTiming(1, { duration: 6400, easing: Easing.inOut(Easing.ease) }), -1, true);
+    c.value = withRepeat(withTiming(1, { duration: 4600, easing: Easing.inOut(Easing.ease) }), -1, true);
+    return () => {
+      cancelAnimation(a);
+      cancelAnimation(b);
+      cancelAnimation(c);
+    };
+  }, [a, b, c, reduce]);
+  const sa = useAnimatedStyle(() => ({ transform: [{ translateX: a.value * 30 }, { translateY: a.value * 22 }, { scale: 1 + a.value * 0.08 }] }));
+  const sb = useAnimatedStyle(() => ({ transform: [{ translateX: b.value * -26 }, { translateY: b.value * -18 }, { scale: 1 + b.value * 0.06 }] }));
+  const sc = useAnimatedStyle(() => ({ transform: [{ translateX: c.value * 20 }, { scale: 1 + c.value * 0.12 }] }));
   return (
     <>
-      <Animated.View style={[{ position: 'absolute', top: -70, right: -60, width: 220, height: 220, borderRadius: 110, backgroundColor: Brand.cyanBg, opacity: 0.8 }, a]} />
-      <Animated.View style={[{ position: 'absolute', bottom: -50, left: -70, width: 260, height: 260, borderRadius: 130, backgroundColor: Brand.cyanBg, opacity: 0.55 }, b]} />
-      <Animated.View style={[{ position: 'absolute', top: '42%', left: -90, width: 150, height: 150, borderRadius: 75, backgroundColor: Brand.mint, opacity: 0.5 }, c]} />
+      <Animated.View style={[{ position: 'absolute', top: -80, right: -70, width: 250, height: 250, borderRadius: 125, backgroundColor: Brand.turquoise, opacity: 0.28 }, sa]} />
+      <Animated.View style={[{ position: 'absolute', bottom: -60, left: -80, width: 300, height: 300, borderRadius: 150, backgroundColor: Brand.aqua, opacity: 0.3 }, sb]} />
+      <Animated.View style={[{ position: 'absolute', top: '40%', left: -100, width: 170, height: 170, borderRadius: 85, backgroundColor: Brand.turquoise, opacity: 0.22 }, sc]} />
+      <Animated.View style={[{ position: 'absolute', top: '62%', right: -60, width: 130, height: 130, borderRadius: 65, backgroundColor: Brand.mint, opacity: 0.8 }, sc]} />
     </>
   );
 }
 
 function DotField() {
-  const rows = 9;
+  const rows = 10;
   const cols = 6;
   const dots: Array<{ x: number; y: number; accent: boolean }> = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      dots.push({ x: c, y: r, accent: (r * 7 + c * 3) % 11 === 0 });
+      dots.push({ x: c, y: r, accent: (r * 7 + c * 3) % 9 === 0 });
     }
   }
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 120 180" preserveAspectRatio="xMidYMid slice">
+    <Svg width="100%" height="100%" viewBox="0 0 120 200" preserveAspectRatio="xMidYMid slice">
       {dots.map((d, i) => (
         <Circle
           key={i}
           cx={10 + d.x * 20}
           cy={10 + d.y * 20}
-          r={d.accent ? 2.6 : 1.6}
+          r={d.accent ? 3 : 1.8}
           fill={d.accent ? Brand.turquoise : Brand.navy}
-          opacity={d.accent ? 0.8 : 0.12}
+          opacity={d.accent ? 0.85 : 0.22}
         />
       ))}
     </Svg>

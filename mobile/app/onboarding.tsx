@@ -16,16 +16,19 @@ const STEPS = [  {
     title: 'Welcome to OnTrack',
     body: 'Chat-first accountability. Say a goal, get a tracker, prove progress.',
     artLabel: 'Illustration: the OnTrack arrow mark drawing itself',
+    caption: 'Step 1 · Meet your coach',
   },
   {
     title: 'Trackers that build themselves',
     body: 'Counters, checklists and logs appear from plain words — then update live.',
     artLabel: 'Illustration: a tracker card filling with progress and checklist ticks',
+    caption: 'Step 2 · Watch it build',
   },
   {
     title: 'Try your first goal',
     body: 'Type it below to preview — no account needed yet.',
     artLabel: 'Illustration: coach and user trading chat messages',
+    caption: 'Step 3 · Your turn',
   },
 ];
 
@@ -52,9 +55,9 @@ export default function Onboarding() {
               key={i}
               accessibilityElementsHidden
               style={{
-                width: i === step ? 24 : 8,
-                height: 8,
-                borderRadius: 4,
+                width: i === step ? 30 : 10,
+                height: 10,
+                borderRadius: 5,
                 backgroundColor: i === step ? Brand.turquoise : Colors.light.inputBorder,
               }}
             />
@@ -72,17 +75,20 @@ export default function Onboarding() {
         </Pressable>
       </View>
 
-      <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
+      <View style={{ flex: 1, justifyContent: 'center', gap: 14 }}>
         <Animated.View key={step} entering={FadeInRight.duration(300)} exiting={FadeOutLeft.duration(200)}>
-          <View accessibilityLabel={STEPS[step].artLabel} accessibilityRole="image">
+          <View accessibilityLabel={STEPS[step].artLabel} accessibilityRole="image" style={{ transform: [{ scale: 1.3 }], marginVertical: 18 }}>
             <OnboardingArt step={step} />
           </View>
         </Animated.View>
+        <Text style={{ textAlign: 'center', fontSize: 12, fontWeight: '700', color: Brand.teal }}>
+          {STEPS[step].caption}
+        </Text>
         <Card>
-          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 28, color: Brand.navy }}>
+          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 34, color: Brand.navy }}>
             {STEPS[step].title}
           </Text>
-          <Text style={{ marginTop: 8, fontSize: Typography.body.fontSize, color: Brand.navy, lineHeight: Typography.body.lineHeight }}>
+          <Text style={{ marginTop: 8, fontSize: 16, color: Brand.navy, lineHeight: 23 }}>
             {STEPS[step].body}
           </Text>
           {step === 2 && (
