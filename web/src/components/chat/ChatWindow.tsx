@@ -14,7 +14,7 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
-  const { user, createGoal, goals } = useGoals()
+  const { user, createGoal, goals, logProgress } = useGoals()
   const navigate = useNavigate()
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -35,6 +35,34 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     scrollToBottom()
   }, [messages, isThinking])
 
+  const handleSelectAction = async (goalId: string, delta: number) => {
+    const targetGoal = goals.find((g) => g.id === goalId)
+    if (!targetGoal) return
+
+    try {
+      setIsThinking(true)
+      const updated = await logProgress(goalId, delta, 'Logged via AI Chat selection')
+      const confirmMsg: ChatMessage = {
+        id: `msg-ai-${Date.now()}`,
+        sender: 'ai',
+        content: `Logged +${delta} ${targetGoal.unit || ''} for "${targetGoal.title}". Current progress: ${updated.current_value}/${updated.target}. Outstanding work!`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
+      setMessages((prev) => [...prev, confirmMsg])
+    } catch (err) {
+      console.warn('[ChatWindow] Error logging selected progress:', err)
+      const errorMsg: ChatMessage = {
+        id: `msg-ai-${Date.now()}`,
+        sender: 'ai',
+        content: `Could not update progress for "${targetGoal.title}". Please try again.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
+      setMessages((prev) => [...prev, errorMsg])
+    } finally {
+      setIsThinking(false)
+    }
+  }
+
   const handleSendMessage = (content: string) => {
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -48,7 +76,99 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     const activeGoals = goals.filter((g) => g.status === 'active')
     const intent = classifyUserMessage(content, activeGoals)
 
-    // If it's NOT an explicit goal creation request, engage the RAG-powered AI Coach!
+    // Handle progress logging on existing goals
+    if (intent.type === 'progress_log') {
+      const candidateCounters = activeGoals.filter((g) => g.goal_type === 'counter')
+
+      // Case 1: Specific goal uniquely matched by title/keyword
+      if (intent.matchedGoal) {
+        const target = intent.matchedGoal
+        logProgress(target.id, intent.delta, content)
+          .then((updated) => {
+            const aiMsg: ChatMessage = {
+              id: `msg-ai-${Date.now()}`,
+              sender: 'ai',
+              content: `Great job! Logged +${intent.delta} ${target.unit || ''} for "${target.title}". Current progress: ${updated.current_value}/${target.target}. Keep this streak going!`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            }
+            setMessages((prev) => [...prev, aiMsg])
+            // Also notify coach backend with personalized context
+            api.sendChatMessage(content, target.id).catch(() => {})
+          })
+          .catch(() => {
+            const aiMsg: ChatMessage = {
+              id: `msg-ai-${Date.now()}`,
+              sender: 'ai',
+              content: `Recorded +${intent.delta} for "${target.title}" locally. Keep pushing!`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            }
+            setMessages((prev) => [...prev, aiMsg])
+          })
+          .finally(() => {
+            setIsThinking(false)
+          })
+        return
+      }
+
+      // Case 2: Ambiguous logging with 2+ active counter goals — prompt user with buttons, NEVER guess silently!
+      if (candidateCounters.length > 1) {
+        const aiMsg: ChatMessage = {
+          id: `msg-ai-${Date.now()}`,
+          sender: 'ai',
+          content: `You have ${candidateCounters.length} active counters. Which goal did you complete ${intent.delta} for?`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          actionButtons: candidateCounters.map((cg) => ({
+            label: `+${intent.delta} to ${cg.title}`,
+            goalId: cg.id,
+            delta: intent.delta,
+          })),
+        }
+        setMessages((prev) => [...prev, aiMsg])
+        setIsThinking(false)
+        return
+      }
+
+      // Case 3: Only 1 active counter goal exists — safely attribute to it
+      if (candidateCounters.length === 1) {
+        const target = candidateCounters[0]
+        logProgress(target.id, intent.delta, content)
+          .then((updated) => {
+            const aiMsg: ChatMessage = {
+              id: `msg-ai-${Date.now()}`,
+              sender: 'ai',
+              content: `Logged +${intent.delta} ${target.unit || ''} for "${target.title}". Progress: ${updated.current_value}/${target.target}. Awesome effort!`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            }
+            setMessages((prev) => [...prev, aiMsg])
+          })
+          .catch(() => {
+            const aiMsg: ChatMessage = {
+              id: `msg-ai-${Date.now()}`,
+              sender: 'ai',
+              content: `Recorded +${intent.delta} for "${target.title}".`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            }
+            setMessages((prev) => [...prev, aiMsg])
+          })
+          .finally(() => {
+            setIsThinking(false)
+          })
+        return
+      }
+
+      // Case 4: No active counter goals
+      const aiMsg: ChatMessage = {
+        id: `msg-ai-${Date.now()}`,
+        sender: 'ai',
+        content: `I heard you completed ${intent.delta}, but you don't have an active counter tracker set up. Would you like to create one (e.g. "Do 50 pushups daily")?`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
+      setMessages((prev) => [...prev, aiMsg])
+      setIsThinking(false)
+      return
+    }
+
+    // If it's NOT an explicit goal creation request, engage the AI Coach!
     if (intent.type !== 'goal_creation') {
       const targetGoal = 'matchedGoal' in intent && (intent as any).matchedGoal ? (intent as any).matchedGoal : activeGoals[0]
       const goalId = targetGoal?.id
@@ -67,7 +187,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
           setMessages((prev) => [...prev, aiMsg])
         })
         .catch((err) => {
-          console.warn('[ChatWindow] RAG Chat endpoint fallback:', err)
+          console.warn('[ChatWindow] Chat endpoint fallback:', err)
           let reply: string
           if (intent.type === 'status_query') {
             reply = `You currently have ${activeGoals.length} active tracker(s) in motion.${
@@ -194,7 +314,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
       {/* Chat Messages Stream */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] flex flex-col gap-6 transition-colors">
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} onActivateGoal={handleActivateGoal} />
+          <MessageBubble
+            key={msg.id}
+            message={msg}
+            onActivateGoal={handleActivateGoal}
+            onSelectAction={handleSelectAction}
+          />
         ))}
 
         {isThinking && (

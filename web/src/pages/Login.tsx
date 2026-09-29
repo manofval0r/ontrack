@@ -81,12 +81,19 @@ export const Login: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem('ontrack_token')
     if (token && !token.startsWith('mock_')) {
-      navigate('/dashboard', { replace: true })
+      const searchParams = new URLSearchParams(location.search)
+      const redirect = searchParams.get('redirect') || '/dashboard'
+      navigate(redirect, { replace: true })
       return
     }
     const searchParams = new URLSearchParams(location.search)
     if (searchParams.get('forgot') === 'true') {
       setShowForgotPasswordModal(true)
+    }
+    if (searchParams.get('expired') === '1') {
+      setAuthError('Your session has expired. Please sign in again.')
+    } else if (searchParams.get('error')) {
+      setAuthError(decodeURIComponent(searchParams.get('error')!))
     }
   }, [location.search, navigate])
 
@@ -125,7 +132,9 @@ export const Login: React.FC = () => {
 
   const handleGoogleAuth = () => {
     if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
-      const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
+      const searchParams = new URLSearchParams(location.search)
+      const redirect = searchParams.get('redirect') || '/dashboard'
+      const redirectTo = encodeURIComponent(`${window.location.origin}${redirect}`)
       window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`
     } else {
       localStorage.setItem('ontrack_token', 'mock_google_oauth_token')
@@ -135,7 +144,9 @@ export const Login: React.FC = () => {
 
   const handleGithubAuth = () => {
     if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('your-project')) {
-      const redirectTo = encodeURIComponent(`${window.location.origin}/dashboard`)
+      const searchParams = new URLSearchParams(location.search)
+      const redirect = searchParams.get('redirect') || '/dashboard'
+      const redirectTo = encodeURIComponent(`${window.location.origin}${redirect}`)
       window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=github&redirect_to=${redirectTo}`
     } else {
       localStorage.setItem('ontrack_token', 'mock_github_oauth_token')
@@ -169,8 +180,10 @@ export const Login: React.FC = () => {
         if (data.refresh_token) {
           localStorage.setItem('ontrack_refresh_token', data.refresh_token)
         }
+        const searchParams = new URLSearchParams(location.search)
+        const targetRedirect = searchParams.get('redirect')
         const alreadyOnboarded = localStorage.getItem('ontrack_onboarded')
-        navigate(alreadyOnboarded ? '/dashboard' : '/onboarding')
+        navigate(targetRedirect || (alreadyOnboarded ? '/dashboard' : '/onboarding'))
       } catch {
         setAuthError('Network error. Please try again.')
       } finally {
@@ -180,7 +193,9 @@ export const Login: React.FC = () => {
     }
 
     // ── Dev fallback: skip real auth, go straight to dashboard ────────
-    navigate('/dashboard')
+    const searchParams = new URLSearchParams(location.search)
+    const targetRedirect = searchParams.get('redirect')
+    navigate(targetRedirect || '/dashboard')
   }
 
   return (

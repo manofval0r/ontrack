@@ -111,8 +111,8 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
               {goal.goal_type === 'counter' && (
                 <CounterTracker
                   goal={goal}
-                  onUpdate={async (newVal, note) => {
-                    await onLogProgress(goal.id, newVal, note)
+                  onUpdate={async (delta, note) => {
+                    await onLogProgress(goal.id, delta, note)
                   }}
                 />
               )}

@@ -63,6 +63,7 @@ export interface ChatMessage {
   isAudioPlaying?: boolean
   retrieved_context?: string[]
   rag_active?: boolean
+  actionButtons?: { label: string; goalId: string; delta: number }[]
 }
 
 export interface DashboardStats {

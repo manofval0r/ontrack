@@ -674,7 +674,15 @@ export const Onboarding: React.FC = () => {
             {/* Live Interactive Tracker */}
             <div className="w-full">
               {createdGoal.goal_type === 'counter' && (
-                <CounterTracker goal={createdGoal} onUpdate={async (val) => setCreatedGoal((prev) => ({ ...prev, current_value: val }))} />
+                <CounterTracker
+                  goal={createdGoal}
+                  onUpdate={async (delta) =>
+                    setCreatedGoal((prev) => ({
+                      ...prev,
+                      current_value: Math.max(0, (prev.current_value || 0) + delta),
+                    }))
+                  }
+                />
               )}
               {createdGoal.goal_type === 'checklist' && (
                 <ChecklistTracker goal={createdGoal} onUpdateItems={async (items) => setCreatedGoal((prev) => ({ ...prev, items }))} />

@@ -60,6 +60,10 @@ const COACHING_TRIGGERS: { [key: string]: 'motivation' | 'habits' | 'burnout' } 
   'cant focus': 'motivation',
   "can't focus": 'motivation',
   'distracted': 'motivation',
+  "don't feel like": 'motivation',
+  "dont feel like": 'motivation',
+  "not feeling it": 'motivation',
+  "no drive": 'motivation',
   'habit': 'habits',
   'routine': 'habits',
   'consistency': 'habits',
@@ -143,15 +147,39 @@ export function isGoalCreationPrompt(text: string): { isGoal: boolean; cleanTitl
     return { isGoal: true, cleanTitle, suggestedType: 'checklist' }
   }
 
-  // 4. Temporal / Habit commitments (e.g. "meditate 10 mins daily", "journal every night", "drink 2L water daily")
-  if (/(daily|every day|every night|each week|weekly|every morning|by (monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next week))/i.test(lower)) {
+  // 4. Imperative project goals (e.g., "launch my portfolio site", "deploy the new website", "build a mobile app")
+  const projectActionRegex = /^(launch|deploy|build|publish|design|setup|create)\s+(my|a|an|the|our)?\s*([a-zA-Z0-9_\-\s]+)$/i
+  if (projectActionRegex.test(trimmed)) {
+    return { isGoal: true, cleanTitle: trimmed, suggestedType: inferGoalType(trimmed) }
+  }
+
+  // 5. Temporal / Habit commitments (e.g. "meditate 10 mins daily", "daily meditation", "journal every night", "drink 2L water daily")
+  if (/(daily|every day|every night|each week|weekly|every morning|nightly|by (monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next week))/i.test(lower)) {
     // If it has at least an action verb or quantity or known habit word
-    if (new RegExp(`(${verbList}|habit|journal|reflect|water|workout)`, 'i').test(lower)) {
+    if (new RegExp(`(${verbList}|habit|journal|reflect|water|workout|meditat)`, 'i').test(lower)) {
       return { isGoal: true, cleanTitle: trimmed, suggestedType: inferGoalType(trimmed) }
     }
   }
 
   return { isGoal: false, cleanTitle: trimmed, suggestedType: 'counter' }
+}
+
+function stemWord(word: string): string {
+  const w = word.toLowerCase().replace(/[^a-z0-9]/g, '')
+  if (w === 'ran' || w === 'running') return 'run'
+  if (w === 'calls' || w === 'calling' || w === 'called') return 'call'
+  if (w === 'pushups' || w === 'pushup') return 'pushup'
+  if (w === 'books' || w === 'booking') return 'book'
+  if (w === 'sold' || w === 'selling' || w === 'sales') return 'sell'
+  if (w === 'pages') return 'page'
+  if (w === 'wrote' || w === 'writing') return 'write'
+  if (w === 'miles') return 'mile'
+  if (w.endsWith('ies')) return w.slice(0, -3) + 'y'
+  if (w.endsWith('es')) return w.slice(0, -2)
+  if (w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1)
+  if (w.endsWith('ing')) return w.slice(0, -3)
+  if (w.endsWith('ed')) return w.slice(0, -2)
+  return w
 }
 
 /**
@@ -283,8 +311,8 @@ export function extractTargetAndUnit(text: string): { target: number; unit: stri
  */
 export function inferGoalDomain(text: string): Goal['domain'] {
   const lower = text.toLowerCase()
-  if (/\b(sale|sales|sell|deal|deals|revenue|client|clients|close|customer|customers|mrr|arr)\b/.test(lower)) return 'sales'
-  if (/\b(code|build|app|deploy|ship|feature|bug|refactor|test|api|backend|frontend|git|github)\b/.test(lower)) return 'engineering'
+  if (/\b(sale|sales|sell|deal|deals|revenue|client|clients|close|customer|customers|mrr|arr|ticket|tickets)\b/.test(lower)) return 'sales'
+  if (/\b(code|build|app|deploy|ship|feature|bug|refactor|test|api|backend|frontend|git|github|site|portfolio)\b/.test(lower)) return 'engineering'
   if (/\b(run|workout|gym|exercise|lift|pushup|pushups|water|sleep|diet|calorie|weight|walk|km|miles)\b/.test(lower)) return 'fitness'
   if (/\b(read|book|books|study|course|learn|pages|exam|cert|practice|write|article)\b/.test(lower)) return 'learning'
   if (/\b(meditate|journal|reflect|mindset|focus|habit|habits|gratitude|peace|calm)\b/.test(lower)) return 'mindset'
@@ -302,6 +330,11 @@ export function inferGoalType(text: string): Goal['goal_type'] {
     lower.includes('step') ||
     lower.includes('ship') ||
     lower.includes('deploy') ||
+    lower.includes('launch') ||
+    lower.includes('portfolio') ||
+    lower.includes('site') ||
+    lower.includes('website') ||
+    lower.includes('app') ||
     lower.includes('feature') ||
     lower.includes(',')
   ) {
@@ -405,7 +438,7 @@ export function classifyUserMessage(text: string, activeGoals: Goal[]): Classifi
     }
   }
 
-  // 5. Coaching Advice (motivation, procrastination, habits)
+  // 6. Coaching Advice (motivation, procrastination, habits)
   for (const [trigger, topic] of Object.entries(COACHING_TRIGGERS)) {
     if (lower.includes(trigger)) {
       let advice: string
@@ -423,7 +456,7 @@ export function classifyUserMessage(text: string, activeGoals: Goal[]): Classifi
     }
   }
 
-  // 6. Explicit Goal Creation Check
+  // 7. Explicit Goal Creation Check
   const goalCheck = isGoalCreationPrompt(trimmed)
   if (goalCheck.isGoal) {
     return {
@@ -433,23 +466,27 @@ export function classifyUserMessage(text: string, activeGoals: Goal[]): Classifi
     }
   }
 
-  // 7. Progress Logging on Existing Goals
+  // 8. Progress Logging on Existing Goals
   // Must have a number, plus either a logging verb, a '+' prefix, or directly reference an active goal's title or unit
-  const numberMatch = trimmed.match(/(?:\+|\b)(\d+)\b/)
+  const numberMatch = trimmed.match(/(?:\+|\b)(\d+)/)
   const startsWithPlus = trimmed.startsWith('+')
   const hasLogVerb = LOG_VERBS.some((v) => lower.includes(v))
 
   if (numberMatch && activeGoals.length > 0) {
     const delta = parseInt(numberMatch[1], 10)
+    // Separate numbers from adjacent units like '5km' -> '5 km' for accurate tokenization
+    const normalizedText = lower.replace(/(\d+)([a-zA-Z]+)/g, '$1 $2')
+    const msgWords = normalizedText.split(/\s+/).map(stemWord)
 
-    // Check if message references any active goal's title or unit
+    // Check if message references any active goal's title or unit using word stems
     const matched = activeGoals.filter((g) => {
       const titleLower = g.title.toLowerCase()
       const unitLower = (g.unit || '').toLowerCase()
-      // Check title keywords
-      const words = titleLower.split(/\s+/).filter((w) => w.length > 2)
-      const hasTitleKeyword = words.some((w) => lower.includes(w))
-      const hasUnitKeyword = unitLower && lower.includes(unitLower)
+      const titleStems = titleLower.split(/\s+/).filter((w) => w.length > 2).map(stemWord)
+      const unitStem = stemWord(unitLower)
+
+      const hasTitleKeyword = titleStems.some((ts) => msgWords.includes(ts))
+      const hasUnitKeyword = unitStem && msgWords.includes(unitStem)
       return hasTitleKeyword || hasUnitKeyword
     })
 

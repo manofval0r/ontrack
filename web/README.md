@@ -211,11 +211,11 @@ Prevents everyday messages from mistakenly spawning unwanted goal trackers:
 5. **Progress Logging**: Messages stating completed actions (e.g. *"I just ran 5km"* or *"Finished 3 calls"*) automatically increment existing matched trackers.
 6. **Goal Proposals**: Concrete intentions (e.g. *"Sell 10 tickets by Saturday"*) generate structured tracker proposals for confirmation.
 
-### Retrieval-Augmented Generation (RAG) & Memory
+### Personalized History Memory & Grounding
 For conversational questions, status inquiries, and check-ins:
 * **pgvector Similarity Search**: Messages query the user's progress log embeddings (`ORDER BY embedding <-> query_embedding LIMIT 5`) scoped strictly to their authenticated account.
 * **Grounded Responses**: Rather than responding generically, Nemotron AI Coach references specific numbers, milestones, and patterns from prior log entries.
-* **UI Grounding Badge**: When RAG is active, message bubbles display an interactive badge indicating the number of retrieved items with an expandable toggle to inspect the exact progress logs used.
+* **UI Grounding Badge**: When history grounding is active, message bubbles display an interactive badge indicating the number of retrieved items with an expandable toggle to inspect the exact progress logs used.
 * **Zero Failure Tolerance**: If retrieval, embeddings, or network are unavailable, the conversation degrades gracefully to seamless contextual responses without errors.
 
 ### Smart Tracker Classification & Deadlines

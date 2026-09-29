@@ -135,7 +135,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
     const isNowDone = nextVal >= goal.target
 
     try {
-      const updated = await onLogProgress(goal.id, nextVal, text)
+      const updated = await onLogProgress(goal.id, delta, text)
       if (isNowDone) {
         await onUpdateGoal(goal.id, { status: 'completed' })
       }
@@ -236,7 +236,7 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
         const isNowDone = targetGoal.target > 0 && nextVal >= targetGoal.target
 
         try {
-          const updated = await onLogProgress(targetGoal.id, nextVal, text)
+          const updated = await onLogProgress(targetGoal.id, delta, text)
           if (isNowDone) {
             await onUpdateGoal(targetGoal.id, { status: 'completed' })
           }

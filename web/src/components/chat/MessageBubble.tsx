@@ -7,13 +7,14 @@ import { useGoals } from '../../context/GoalContext'
 interface MessageBubbleProps {
   message: ChatMessage
   onActivateGoal?: (proposedGoal: Partial<Goal>) => void
+  onSelectAction?: (goalId: string, delta: number) => void
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onActivateGoal }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onActivateGoal, onSelectAction }) => {
   const isUser = message.sender === 'user'
   const { playTTS, stopTTS, isAudioPlaying, currentSpeakingText } = useGoals()
   const isSpeakingThis = isAudioPlaying && currentSpeakingText === message.content
-  const [showRagDetails, setShowRagDetails] = React.useState(false)
+  const [showHistoryDetails, setShowHistoryDetails] = React.useState(false)
 
   return (
     <div className={`flex flex-col gap-1.5 ${isUser ? 'items-end' : 'items-start'} max-w-2xl w-full`}>
@@ -44,7 +45,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onActivat
           {message.content}
         </p>
 
-        {/* RAG Context Grounding Indicator */}
+        {/* Historical Context Grounding Indicator */}
         {!isUser && message.retrieved_context && message.retrieved_context.length > 0 && (
           <div className="mt-3 pt-3 border-t border-[#071E2D]/10 dark:border-white/10 flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
@@ -54,13 +55,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onActivat
               </div>
               <button
                 type="button"
-                onClick={() => setShowRagDetails((prev) => !prev)}
+                onClick={() => setShowHistoryDetails((prev) => !prev)}
                 className="text-[11px] font-bold text-[#006D6A] dark:text-[#00C4B3] hover:underline cursor-pointer"
               >
-                {showRagDetails ? 'Hide history ▲' : 'View history used ▼'}
+                {showHistoryDetails ? 'Hide history ▲' : 'View history used ▼'}
               </button>
             </div>
-            {showRagDetails && (
+            {showHistoryDetails && (
               <div className="p-2.5 bg-[#F0FDFA] dark:bg-[#07242C] border border-[#00C4B3]/30 rounded-xl text-[11px] text-[#071E2D]/80 dark:text-slate-300 space-y-1">
                 {message.retrieved_context.map((ctx, idx) => (
                   <div key={idx} className="flex items-start gap-1.5 leading-snug">
@@ -70,6 +71,22 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onActivat
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Ambiguity choice buttons if user logged ambiguously */}
+        {!isUser && message.actionButtons && message.actionButtons.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-[#071E2D]/10 dark:border-white/10 flex flex-wrap gap-2">
+            {message.actionButtons.map((btn, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => onSelectAction?.(btn.goalId, btn.delta)}
+                className="btn-pill btn-pill-primary text-xs !py-1.5 !px-3 cursor-pointer"
+              >
+                <span>{btn.label}</span>
+              </button>
+            ))}
           </div>
         )}
 

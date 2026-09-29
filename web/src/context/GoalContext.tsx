@@ -352,6 +352,9 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const updateGoal = async (id: string, updates: Partial<Goal>): Promise<Goal> => {
+    const previousGoals = [...goals]
+    const previousActive = activeGoal
+
     // Optimistic update in state first
     setGoals((prev) => {
       const next = prev.map((g) => {
@@ -369,6 +372,16 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return next
     })
 
+    // If it's a local fallback goal, persist locally without remote sync
+    if (id.startsWith('goal-')) {
+      const existing = goals.find((g) => g.id === id)
+      const localUpdated: Goal = {
+        ...(existing || { id, user_id: '', title: 'Goal', goal_type: 'counter', target: 10, current_value: 0, domain: 'general', deadline: '', status: 'active', created_at: '' }),
+        ...updates,
+      }
+      return localUpdated
+    }
+
     try {
       const updated = await api.updateGoal(id, updates)
       setGoals((prev) => {
@@ -382,17 +395,22 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fetchDashboard()
       return updated
     } catch (err: any) {
-      console.warn('[GoalContext] Server update failed, local optimistic update kept:', err)
-      const existing = goals.find((g) => g.id === id)
-      const localUpdated: Goal = {
-        ...(existing || { id, user_id: '', title: 'Goal', goal_type: 'counter', target: 10, current_value: 0, domain: 'general', deadline: '', status: 'active', created_at: '' }),
-        ...updates,
-      }
-      return localUpdated
+      console.warn('[GoalContext] Server update failed, rolling back optimistic update:', err)
+      // Roll back optimistic update to keep UI in sync with backend
+      setGoals(previousGoals)
+      if (previousActive?.id === id) setActiveGoal(previousActive)
+      try {
+        localStorage.setItem('ontrack_local_goals', JSON.stringify(previousGoals))
+      } catch { /* storage optional — continue without cache */ }
+      setError(err?.code ? err : { error: 'Failed to update tracker. Changes were rolled back.', code: 'UPDATE_ERROR' })
+      throw err
     }
   }
 
   const deleteGoal = async (id: string): Promise<void> => {
+    const previousGoals = [...goals]
+    const previousActive = activeGoal
+
     // Optimistic remove from local state and storage
     setGoals((prev) => {
       const filtered = prev.filter((g) => g.id !== id)
@@ -405,13 +423,24 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setActiveGoal(null)
     }
 
+    if (id.startsWith('goal-')) {
+      return
+    }
+
     try {
       setLoading(true)
       await api.deleteGoal(id)
       fetchDashboard()
     } catch (err: any) {
-      console.warn('[GoalContext] Server delete failed, kept local deletion:', err)
+      console.warn('[GoalContext] Server delete failed, rolling back local state:', err)
+      setGoals(previousGoals)
+      if (previousActive) setActiveGoal(previousActive)
+      try {
+        localStorage.setItem('ontrack_local_goals', JSON.stringify(previousGoals))
+      } catch { /* storage optional — continue without cache */ }
+      setError(err?.code ? err : { error: 'Failed to delete tracker. Action was rolled back.', code: 'DELETE_ERROR' })
       fetchDashboard()
+      throw err
     } finally {
       setLoading(false)
     }
@@ -444,21 +473,37 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Resilient local fallback so progress is never lost
       const existing = goals.find((g) => g.id === goalId) || (activeGoal?.id === goalId ? activeGoal : null)
       if (existing) {
-        const numVal = typeof value === 'number' ? value : parseInt(String(value), 10) || 1
-        const newLog: ProgressLog = {
-          id: `log-${Date.now()}`,
-          goal_id: goalId,
-          value: numVal,
-          note: note || '',
-          timestamp: new Date().toISOString(),
+        const numVal = typeof value === 'number' ? value : parseInt(String(value), 10) || 0
+        let updatedLogs = [...(existing.progress_logs || [])]
+        if (numVal < 0) {
+          if (updatedLogs.length > 0) {
+            const first = { ...updatedLogs[0] }
+            const currentLogVal = typeof first.value === 'number' ? first.value : parseInt(String(first.value), 10) || 1
+            if (currentLogVal > 1) {
+              first.value = currentLogVal - 1
+              updatedLogs[0] = first
+            } else {
+              updatedLogs.shift()
+            }
+          }
+        } else if (numVal > 0 || note) {
+          const newLog: ProgressLog = {
+            id: `log-${Date.now()}`,
+            goal_id: goalId,
+            value: numVal,
+            note: note || '',
+            timestamp: new Date().toISOString(),
+          }
+          updatedLogs = [newLog, ...updatedLogs]
         }
-        const updatedLogs = [newLog, ...(existing.progress_logs || [])]
-        const newCurrentVal =
+        const newCurrentVal = Math.max(
+          0,
           existing.goal_type === 'counter'
             ? (existing.current_value || 0) + numVal
             : existing.goal_type === 'manual'
-            ? (existing.current_value || 0) + 1
+            ? (existing.current_value || 0) + (numVal >= 0 ? 1 : -1)
             : existing.current_value
+        )
         const isDone = existing.target > 0 && newCurrentVal >= existing.target
         const fallbackGoal: Goal = {
           ...existing,

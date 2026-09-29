@@ -133,6 +133,16 @@ async function request<T>(
   }
 
   if (!res.ok) {
+    // If a Supabase JWT expires mid-session and cannot be refreshed, cleanly redirect to login
+    if (res.status === 401 && authenticated) {
+      localStorage.removeItem('ontrack_token')
+      localStorage.removeItem('ontrack_refresh_token')
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        const currentLoc = encodeURIComponent(window.location.pathname + window.location.search)
+        window.location.href = `/login?expired=1&redirect=${currentLoc}`
+      }
+    }
+
     // Backend error shape: { error: string, code: string }
     const err: StandardError = {
       error: body?.error ?? `HTTP ${res.status}`,
@@ -475,11 +485,19 @@ export const api = {
       intValue = Math.round(payload.value)
     }
 
-    intValue = Math.max(0, intValue)
-
     // For locally created goals, throw directly to trigger client-side ledger persistence
     if (typeof payload.goal_id === 'string' && (payload.goal_id.startsWith('goal-') || payload.goal_id.startsWith('local-'))) {
       throw { error: 'Offline / local goal logged to client ledger', code: 'LOCAL_ONLY' }
+    }
+
+    if (intValue < 0) {
+      await request('/api/progress', {
+        method: 'DELETE',
+        body: JSON.stringify({
+          goal_id: payload.goal_id,
+        }),
+      })
+      return api.getGoal(payload.goal_id)
     }
 
     await request('/api/progress', {
@@ -530,7 +548,7 @@ export const api = {
   /**
    * POST /api/chat  { message, goal_id? }
    * Nemotron AI Coach conversational check-in and accountability partner.
-   * Powered by pgvector RAG memory over the user's past progress logs and goals.
+   * Powered by pgvector persistent memory over the user's past progress logs and goals.
    */
   async sendChatMessage(
     message: string,

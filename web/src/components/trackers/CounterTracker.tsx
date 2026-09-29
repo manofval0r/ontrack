@@ -5,7 +5,7 @@ import { Button } from '../Button'
 
 interface CounterTrackerProps {
   goal: Goal
-  onUpdate: (newValue: number, note?: string) => Promise<void>
+  onUpdate: (delta: number, note?: string) => Promise<void>
 }
 
 export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }) => {
@@ -14,17 +14,21 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
   const [isListeningNote, setIsListeningNote] = useState(false)
   const [noteError, setNoteError] = useState<string | null>(null)
   const recognitionRef = useRef<any>(null)
+  const isListeningRef = useRef<boolean>(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const percent = Math.min(100, Math.round((goal.current_value / goal.target) * 100))
 
   const stopNoteDictation = () => {
+    isListeningRef.current = false
     if (recognitionRef.current) {
       try {
         recognitionRef.current.onresult = null
         recognitionRef.current.onerror = null
         recognitionRef.current.onend = null
         recognitionRef.current.stop()
-      } catch {}
+      } catch {
+        /* already stopped */
+      }
       recognitionRef.current = null
     }
     setIsListeningNote(false)
@@ -45,10 +49,22 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
       return
     }
 
-    try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        await navigator.mediaDevices.getUserMedia({ audio: true })
+    // Verify microphone permission and immediately release stream so hardware isn't locked
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        stream.getTracks().forEach((track) => track.stop())
+      } catch (err: any) {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setNoteError('Microphone permission blocked. Please allow microphone in browser address bar.')
+        } else {
+          setNoteError('Could not access microphone hardware. Please check your system audio settings.')
+        }
+        return
       }
+    }
+
+    try {
       const recognition = new SpeechRecognition()
       recognition.continuous = true
       recognition.interimResults = true
@@ -60,30 +76,46 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
           transcript += event.results[i][0].transcript + ' '
         }
         setNote(transcript.trim())
+        setNoteError(null)
       }
 
       recognition.onerror = (event: any) => {
-        if (event?.error === 'not-allowed') {
+        const err = event?.error
+        if (err === 'not-allowed' || err === 'service-not-allowed') {
           setNoteError('Microphone permission blocked. Please allow microphone in browser address bar.')
-        } else if (event?.error === 'network') {
+          stopNoteDictation()
+        } else if (err === 'no-speech') {
+          // Non-fatal — keep listening so user can speak when ready
+          setNoteError('Listening... Speak into your microphone.')
+        } else if (err === 'audio-capture') {
+          setNoteError('No microphone detected. Please check your laptop audio input.')
+          stopNoteDictation()
+        } else if (err === 'network') {
           setNoteError('Speech service network issue.')
+          stopNoteDictation()
         }
-        stopNoteDictation()
       }
 
       recognition.onend = () => {
-        setIsListeningNote(false)
+        // Keep alive if user hasn't explicitly stopped dictating
+        if (isListeningRef.current && recognitionRef.current) {
+          try {
+            recognition.start()
+          } catch {
+            setIsListeningNote(false)
+            isListeningRef.current = false
+          }
+        } else {
+          setIsListeningNote(false)
+        }
       }
 
       recognition.start()
       recognitionRef.current = recognition
+      isListeningRef.current = true
       setIsListeningNote(true)
     } catch (err: any) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setNoteError('Microphone permission was denied.')
-      } else {
-        setNoteError('Could not start microphone.')
-      }
+      setNoteError('Could not start microphone speech recognition.')
       stopNoteDictation()
     }
   }
@@ -95,10 +127,9 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
   }, [])
 
   const handleIncrement = async (delta: number) => {
-    const nextVal = Math.max(0, goal.current_value + delta)
     setSubmitting(true)
     try {
-      await onUpdate(nextVal, delta > 0 ? `Incremented target count by +${delta}` : `Decremented target count by ${delta}`)
+      await onUpdate(delta, delta > 0 ? `+${delta} logged` : `${delta} logged`)
     } finally {
       setSubmitting(false)
     }
@@ -115,7 +146,8 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
     stopNoteDictation()
     setSubmitting(true)
     try {
-      await onUpdate(goal.current_value, note.trim())
+      // Delta is 0 for note-only log so progress counter does not inflate
+      await onUpdate(0, note.trim())
       setNote('')
     } finally {
       setSubmitting(false)
@@ -226,23 +258,32 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder={isListeningNote ? 'Listening to your voice...' : "Attach a context note (e.g. 'Signed Apex agreement, $18k ARR')..."}
-              className={`w-full px-4 py-2.5 pr-11 rounded-xl border-2 ${
+              placeholder={isListeningNote ? 'Listening... Speak your note now' : "Attach a context note (e.g. 'Signed Apex agreement, $18k ARR')..."}
+              className={`w-full px-4 py-2.5 pr-20 rounded-xl border-2 ${
                 isListeningNote
-                  ? 'border-[#00C4B3] ring-2 ring-[#00C4B3]/30 bg-[#ECFEFF]/20 dark:bg-[#00C4B3]/10'
+                  ? 'border-red-500 ring-2 ring-red-400/30 bg-red-50/20 dark:bg-red-950/20'
                   : 'border-[#071E2D]/20 dark:border-[#1E3A52] bg-white dark:bg-[#091824]'
               } focus:border-[#00C4B3] dark:focus:border-[#00C4B3] text-sm text-[#071E2D] dark:text-white placeholder:text-[#071E2D]/40 dark:placeholder:text-slate-500 outline-none transition-colors`}
             />
+
+            {/* Listening Indicator / Waveform inside input */}
+            {isListeningNote && (
+              <div className="absolute right-10 flex items-center gap-0.5 h-4 px-1" aria-hidden="true">
+                <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_100ms] h-full rounded" />
+                <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_250ms] h-3/4 rounded" />
+                <span className="w-1 bg-red-500 animate-[bounce_0.6s_infinite_400ms] h-full rounded" />
+              </div>
+            )}
 
             {/* Voice Dictation Button */}
             <button
               type="button"
               onClick={toggleNoteDictation}
-              title={isListeningNote ? 'Stop voice recording' : 'Dictate note with microphone'}
-              aria-label={isListeningNote ? 'Stop voice recording' : 'Dictate note with microphone'}
+              title={isListeningNote ? 'Stop microphone dictation' : 'Dictate note with microphone'}
+              aria-label={isListeningNote ? 'Stop microphone dictation' : 'Dictate note with microphone'}
               className={`absolute right-2 p-1.5 rounded-lg transition-all cursor-pointer ${
                 isListeningNote
-                  ? 'bg-red-500 text-white animate-pulse'
+                  ? 'bg-red-500 text-white animate-pulse shadow-sm'
                   : 'text-[#071E2D]/60 dark:text-slate-400 hover:text-[#006D6A] dark:hover:text-[#00C4B3] hover:bg-[#F3F6F8] dark:hover:bg-[#152E42]'
               }`}
             >

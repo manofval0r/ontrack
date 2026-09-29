@@ -30,6 +30,11 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   const completeRef = useRef(onTranscriptionComplete)
   completeRef.current = onTranscriptionComplete
 
+  // Check browser support: do not render mic button at all if browser lacks SpeechRecognition
+  const isSpeechSupported =
+    typeof window !== 'undefined' &&
+    Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+
   const stopAllAudio = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current)
@@ -45,10 +50,19 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       recognitionRef.current = null
     }
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((t) => t.stop())
+      try {
+        mediaStreamRef.current.getTracks().forEach((t) => t.stop())
+      } catch { /* tracks already stopped */ }
       mediaStreamRef.current = null
     }
   }
+
+  // Unconditional unmount cleanup to release mic hardware tracks if user navigates away mid-recording
+  useEffect(() => {
+    return () => {
+      stopAllAudio()
+    }
+  }, [])
 
   const handleStart = async () => {
     setErrorMessage(null)
@@ -56,9 +70,6 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
     if (!SpeechRecognition) {
-      setErrorMessage(
-        'Speech recognition is not supported in this browser. Please use Chrome or Edge, or type your message.'
-      )
       return
     }
 
@@ -122,11 +133,17 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
             if (errType === 'not-allowed') {
               setErrorMessage('Microphone blocked. Please grant microphone permission.')
               onStopRecording()
+            } else if (errType === 'no-speech') {
+              setErrorMessage('No speech detected. Please speak closer to the mic or type your message.')
+              onStopRecording()
             } else if (errType === 'network') {
-              setErrorMessage('Speech service network issue. Check your connection.')
+              setErrorMessage('Speech service network issue. Check your connection or type your message.')
               onStopRecording()
             } else if (errType === 'audio-capture') {
               setErrorMessage('No microphone detected. Please plug in an audio input.')
+              onStopRecording()
+            } else {
+              setErrorMessage('Speech recognition error. Please try again or type.')
               onStopRecording()
             }
           }
@@ -177,6 +194,10 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
     const mins = Math.floor(sec / 60)
     const s = sec % 60
     return `${mins}:${s < 10 ? '0' : ''}${s}`
+  }
+
+  if (!isSpeechSupported) {
+    return null
   }
 
   if (!isRecording) {

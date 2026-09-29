@@ -67,8 +67,8 @@ export const GoalWorkspace: React.FC = () => {
     )
   }
 
-  const handleCounterUpdate = async (newVal: number, note?: string) => {
-    await logProgress(activeGoal.id, newVal, note)
+  const handleCounterUpdate = async (delta: number, note?: string) => {
+    await logProgress(activeGoal.id, delta, note)
   }
 
   const handleChecklistUpdate = async (items: any[]) => {

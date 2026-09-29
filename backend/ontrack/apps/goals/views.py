@@ -387,6 +387,26 @@ class ProgressCreateView(APIView):
         payload["exceeded"] = goal.target is not None and raw_value > goal.target
         return Response(payload, status=status.HTTP_201_CREATED)
 
+    def delete(self, request):
+        data = request.data if isinstance(request.data, dict) else {}
+        goal_id = data.get("goal_id") or request.query_params.get("goal_id")
+        if not goal_id:
+            raise ApiError("goal_id is required", "VALIDATION_ERROR")
+        goal = get_object_or_404(Goal, pk=goal_id, user_id=request.user_id)
+        latest_log = (
+            ProgressLog.objects.filter(goal=goal, user_id=request.user_id)
+            .order_by("-logged_at")
+            .first()
+        )
+        if latest_log:
+            if latest_log.value > 1:
+                latest_log.value -= 1
+                latest_log.save(update_fields=["value"])
+            else:
+                latest_log.delete()
+        goal = Goal.objects.prefetch_related("items", "progress_logs").get(pk=goal.pk)
+        return Response(GoalSerializer(goal).data, status=status.HTTP_200_OK)
+
 
 def _template_context(goal):
     """Per-goal tracker context for template copy/icons.

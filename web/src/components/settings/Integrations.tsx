@@ -61,17 +61,41 @@ const CATALOG: CatalogEntry[] = [
 
 function getProviderTokens(): Record<string, string> {
   try {
-    return JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
+    const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
+    let changed = false
+    // Scrub Supabase JWTs accidentally stored as provider tokens
+    if (stored.github && (stored.github.startsWith('eyJ') || stored.github.split('.').length === 3)) {
+      delete stored.github
+      changed = true
+    }
+    if (stored['google-cal'] && (stored['google-cal'].startsWith('eyJ') || stored['google-cal'].split('.').length === 3)) {
+      delete stored['google-cal']
+      changed = true
+    }
+    if (changed) {
+      localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
+    }
+    return stored
   } catch {
     return {}
   }
 }
 
 async function verifyGithubIdentity(token: string): Promise<string> {
+  if (!token || token.startsWith('eyJ') || token.split('.').length === 3) {
+    throw new Error('Invalid GitHub token format.')
+  }
   const res = await fetch('https://api.github.com/user', {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
   })
-  if (!res.ok) throw new Error('GitHub verification failed — token may have expired.')
+  if (!res.ok) {
+    if (res.status === 401) {
+      const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
+      delete stored.github
+      localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
+    }
+    throw new Error('GitHub verification failed — token may have expired.')
+  }
   const body = await res.json()
   return typeof body.login === 'string' && body.login ? body.login : 'GitHub'
 }
@@ -155,6 +179,11 @@ export const Integrations: React.FC = () => {
 
   useEffect(() => {
     refresh()
+    const errorNotice = sessionStorage.getItem('ontrack_integration_error')
+    if (errorNotice) {
+      setLoadError(errorNotice)
+      sessionStorage.removeItem('ontrack_integration_error')
+    }
     const completedProvider = localStorage.getItem('ontrack_oauth_provider_completed')
     if (completedProvider) {
       setNotice(`Successfully connected ${completedProvider === 'github' ? 'GitHub' : completedProvider}!`)
@@ -170,7 +199,7 @@ export const Integrations: React.FC = () => {
     let cancelled = false
     ;(async () => {
       try {
-        if (tokens.github && tokens.github !== 'connected') {
+        if (tokens.github && tokens.github !== 'connected' && !tokens.github.startsWith('eyJ')) {
           try {
             const login = await verifyGithubIdentity(tokens.github)
             localStorage.setItem('ontrack_github_login', login)

@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter, Navigate, Routes, Route, useParams } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route, useParams, useLocation } from 'react-router-dom'
 import { GoalProvider } from './context/GoalContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { Landing } from './pages/Landing'
@@ -23,17 +23,23 @@ import { CommunityPanel } from './components/dashboard/panels/CommunityPanel'
 import { IntegrationsPanel } from './components/dashboard/panels/IntegrationsPanel'
 import { CalendarPanel } from './components/dashboard/panels/CalendarPanel'
 import { AccountPanel } from './components/dashboard/panels/AccountPanel'
+import { BackendWakeupBanner } from './components/common/BackendWakeupBanner'
+import { PanelErrorBoundary } from './components/common/PanelErrorBoundary'
 import { captureAuthFromUrl } from './utils/auth'
 
 // Capture any incoming OAuth callback tokens on load
 captureAuthFromUrl()
 
-/** Redirects unauthenticated visitors to /login.
+/** Redirects unauthenticated visitors to /login preserving deep link.
  * Rejects mock/dev tokens so a stale mock token can never 401-loop
  * against the real backend — user is sent back to /login instead. */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('ontrack_token')
-  if (!token || token.startsWith('mock_')) return <Navigate to="/login" replace />
+  const location = useLocation()
+  if (!token || token.startsWith('mock_')) {
+    const redirectParam = encodeURIComponent(location.pathname + location.search)
+    return <Navigate to={`/login?redirect=${redirectParam}`} replace />
+  }
   return <>{children}</>
 }
 
@@ -42,6 +48,9 @@ function App() {
     <ThemeProvider>
       <GoalProvider>
         <BrowserRouter>
+          {/* Render cold-start detection and keep-alive health pings */}
+          <BackendWakeupBanner />
+
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
@@ -62,21 +71,101 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<DashboardOverview />} />
-              <Route path="calendar" element={<CalendarPanel />} />
-              <Route path="activity" element={<ActivityPanel />} />
-              <Route path="goals" element={<ManagePanel />} />
-              <Route path="program" element={<ProgramPanel />} />
-              <Route path="reports" element={<ReportsPanel />} />
-              <Route path="community" element={<CommunityPanel />} />
-              <Route path="integrations" element={<IntegrationsPanel />} />
-              <Route path="account" element={<AccountPanel />} />
-              <Route path="chat" element={<Chat />} />
-              <Route path="goal/:id" element={<GoalWorkspace />} />
+              <Route
+                index
+                element={
+                  <PanelErrorBoundary panelName="Dashboard Overview">
+                    <DashboardOverview />
+                  </PanelErrorBoundary>
+                }
+              />
+              <Route
+                path="calendar"
+                element={
+                  <PanelErrorBoundary panelName="Calendar">
+                    <CalendarPanel />
+                  </PanelErrorBoundary>
+                }
+              />
+              <Route
+                path="activity"
+                element={
+                  <PanelErrorBoundary panelName="Activity">
+                    <ActivityPanel />
+                  </PanelErrorBoundary>
+                }
+              />
+              <Route
+                path="goals"
+                element={
+                  <PanelErrorBoundary panelName="Goal Management">
+                    <ManagePanel />
+                  </PanelErrorBoundary>
+                }
+              />
+              <Route
+                path="program"
+                element={
+                  <PanelErrorBoundary panelName="Program">
+                    <ProgramPanel />
+                  </PanelErrorBoundary>
+                }
+              />
+              <Route
+                path="reports"
+                element={
+                  <PanelErrorBoundary panelName="Reports">
+                    <ReportsPanel />
+                  </PanelErrorBoundary>
+                }
+              />
+              <Route
+                path="community"
+                element={
+                  <PanelErrorBoundary panelName="Community">
+                    <CommunityPanel />
+                  </PanelErrorBoundary>
+                }
+              />
+              <Route
+                path="integrations"
+                element={
+                  <PanelErrorBoundary panelName="Integrations">
+                    <IntegrationsPanel />
+                  </PanelErrorBoundary>
+                }
+              />
+              <Route
+                path="account"
+                element={
+                  <PanelErrorBoundary panelName="Account">
+                    <AccountPanel />
+                  </PanelErrorBoundary>
+                }
+              />
+              <Route
+                path="chat"
+                element={
+                  <PanelErrorBoundary panelName="Chat">
+                    <Chat />
+                  </PanelErrorBoundary>
+                }
+              />
+              <Route
+                path="goal/:id"
+                element={
+                  <PanelErrorBoundary panelName="Goal Workspace">
+                    <GoalWorkspace />
+                  </PanelErrorBoundary>
+                }
+              />
             </Route>
 
+            {/* Shortcuts and deep links */}
             <Route path="/settings" element={<Navigate to="/dashboard/integrations" replace />} />
             <Route path="/chat" element={<Navigate to="/dashboard/chat" replace />} />
+            <Route path="/goals" element={<Navigate to="/dashboard/goals" replace />} />
+            <Route path="/goals/:id" element={<GoalIdRedirect />} />
             <Route path="/goal/:id" element={<GoalIdRedirect />} />
 
             <Route path="*" element={<NotFound />} />

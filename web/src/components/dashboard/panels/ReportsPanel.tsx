@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Download,
   Printer,
@@ -10,13 +11,63 @@ import {
   BarChart3,
   Flame,
   FileSpreadsheet,
+  RefreshCw,
 } from 'lucide-react'
 import { useGoals } from '../../../context/GoalContext'
+import { EmptyState } from '../../common/EmptyState'
+import { Loader } from '../../common/Loader'
 import type { GoalDomain } from '../../../types'
 
 export const ReportsPanel: React.FC = () => {
-  const { goals } = useGoals()
+  const navigate = useNavigate()
+  const { goals, loading, error, fetchGoals } = useGoals()
   const [selectedDomain, setSelectedDomain] = useState<string>('all')
+
+  if (loading && !goals.length) {
+    return (
+      <div className="py-20 flex justify-center">
+        <Loader label="Generating performance analytics & reports..." />
+      </div>
+    )
+  }
+
+  if (error && !goals.length) {
+    return (
+      <div className="p-8 rounded-3xl border-2 border-[#071E2D] dark:border-rose-900 bg-rose-50 dark:bg-rose-950/30 text-center flex flex-col items-center gap-3 shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000]">
+        <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-900/50 border-2 border-[#071E2D] dark:border-rose-700 flex items-center justify-center text-rose-700 dark:text-rose-300">
+          <AlertCircle className="w-6 h-6 stroke-[2.5]" />
+        </div>
+        <h3
+          className="text-lg sm:text-xl font-extrabold text-[#071E2D] dark:text-white"
+          style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+        >
+          Could not load reports
+        </h3>
+        <p className="text-xs text-[#071E2D]/70 dark:text-slate-300 max-w-sm leading-relaxed">
+          We had trouble retrieving your goals data for reporting. Please check your connection and retry.
+        </p>
+        <button
+          type="button"
+          onClick={() => fetchGoals()}
+          className="btn-pill btn-pill-primary text-xs !py-2 !px-5 inline-flex items-center gap-2 cursor-pointer mt-1"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Retry Loading Reports</span>
+        </button>
+      </div>
+    )
+  }
+
+  if (goals.length === 0) {
+    return (
+      <EmptyState
+        title="No goals to report on yet"
+        description="Once you create and track goals with your AI coach, detailed velocity analytics, CSV exports, and domain breakdowns will appear here."
+        actionLabel="Create your first goal"
+        onAction={() => navigate('/dashboard/chat')}
+      />
+    )
+  }
 
   const totalGoals = goals.length
   const completedGoals = goals.filter((g) => g.status === 'completed').length

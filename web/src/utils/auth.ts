@@ -24,26 +24,66 @@ export function captureAuthFromUrl(): void {
   const refresh = params.get('refresh_token')
   const providerToken = params.get('provider_token')
   const type = params.get('type')
+  const error = params.get('error')
+  const errorDescription = params.get('error_description')
+  const errorCode = params.get('error_code')
   const pendingProvider = localStorage.getItem('ontrack_oauth_provider')
 
+  // Handle OAuth errors returned by provider (e.g. Google unverified app access_denied or user cancel)
+  if (error) {
+    localStorage.removeItem('ontrack_oauth_provider')
+    const cleanPath = window.location.pathname
+    window.history.replaceState({}, '', cleanPath || '/')
+
+    if (
+      pendingProvider === 'google_calendar' ||
+      error === 'access_denied' ||
+      (errorDescription && errorDescription.toLowerCase().includes('access_denied'))
+    ) {
+      sessionStorage.setItem(
+        'ontrack_integration_error',
+        "Calendar access isn't available for this account yet. The Google integration is currently in testing mode."
+      )
+      window.location.href = '/dashboard/integrations'
+      return
+    }
+
+    const readableMessage =
+      errorDescription || errorCode || error || 'Authentication could not be completed. Please try again.'
+    window.location.href = `/login?error=${encodeURIComponent(readableMessage)}`
+    return
+  }
+
   if (access) {
+    // Validate JWT format (3 parts separated by dots)
+    const jwtParts = access.split('.')
+    if (jwtParts.length !== 3) {
+      console.warn('[auth] Malformed access token received in URL hash')
+      localStorage.removeItem('ontrack_token')
+      const cleanPath = window.location.pathname
+      window.history.replaceState({}, '', cleanPath || '/')
+      window.location.href = '/login?error=' + encodeURIComponent('Malformed authentication token received. Please sign in again.')
+      return
+    }
+
     localStorage.setItem('ontrack_token', access)
     if (refresh) localStorage.setItem('ontrack_refresh_token', refresh)
     if (type === 'recovery') {
       localStorage.setItem('ontrack_recovery_token', access)
     }
 
-    // Save provider token and integration marker if returning from provider OAuth
-    if (pendingProvider || providerToken) {
-      const provider = pendingProvider || 'github'
+    // Save provider token and integration marker if returning from provider OAuth with an actual provider token
+    if (pendingProvider && providerToken && !providerToken.startsWith('eyJ')) {
       try {
         const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
-        stored[provider] = providerToken || access
+        stored[pendingProvider] = providerToken
         localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
-        localStorage.setItem('ontrack_oauth_provider_completed', provider)
+        localStorage.setItem('ontrack_oauth_provider_completed', pendingProvider)
       } catch (err) {
         console.warn('[auth] Could not persist provider token:', err)
       }
+      localStorage.removeItem('ontrack_oauth_provider')
+    } else if (pendingProvider) {
       localStorage.removeItem('ontrack_oauth_provider')
     }
 

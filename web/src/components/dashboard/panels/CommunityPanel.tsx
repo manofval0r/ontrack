@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Flame, Heart, Award, Trophy, Rocket, Code2, Zap, Palette, Check, UserPlus, Users, Share2 } from 'lucide-react'
+import { Flame, Heart, Award, Trophy, Rocket, Code2, Zap, Palette, Check, UserPlus, Users, Share2, Layers } from 'lucide-react'
 import { useGoals } from '../../../context/GoalContext'
 import { Modal } from '../../common/Modal'
 import { Button } from '../../Button'
@@ -25,11 +25,12 @@ const COMMUNITY_SQUADS = [
 
 export const CommunityPanel: React.FC = () => {
   const { user, goals, dashboardData } = useGoals()
-  const [selectedSquad, setSelectedSquad] = useState(() => localStorage.getItem('ontrack_user_squad') || 'founders')
+  const [selectedSquad, setSelectedSquad] = useState<string>(() => localStorage.getItem('ontrack_user_squad') || 'all')
   const [cheeredMembers, setCheeredMembers] = useState<Record<string, boolean>>({})
   const [showAddPartner, setShowAddPartner] = useState(false)
   const [partnerName, setPartnerName] = useState('')
   const [partnerDomain, setPartnerDomain] = useState('')
+  const [partnerSquad, setPartnerSquad] = useState('founders')
   const [copiedInvite, setCopiedInvite] = useState(false)
 
   // Real user data
@@ -37,7 +38,7 @@ export const CommunityPanel: React.FC = () => {
   const userCompleted = goals.filter((g) => g.status === 'completed').length
   const userRate = goals.length > 0 ? Math.round((userCompleted / goals.length) * 100) : 0
 
-  // Real user-added accountability partners (no mock people)
+  // Real user-added accountability partners (persisted locally)
   const [partners, setPartners] = useState<Partner[]>(() => {
     try {
       const stored = localStorage.getItem('ontrack_partners')
@@ -48,8 +49,9 @@ export const CommunityPanel: React.FC = () => {
   })
 
   const handleSelectSquad = (id: string) => {
-    setSelectedSquad(id)
-    localStorage.setItem('ontrack_user_squad', id)
+    const nextSquad = selectedSquad === id ? 'all' : id
+    setSelectedSquad(nextSquad)
+    localStorage.setItem('ontrack_user_squad', nextSquad)
   }
 
   const handleCheer = (id: string) => {
@@ -73,7 +75,7 @@ export const CommunityPanel: React.FC = () => {
       completionRate: 100,
       domain: partnerDomain.trim() || 'General',
       lastActivity: 'Joined accountability circle',
-      squad: selectedSquad,
+      squad: partnerSquad || (selectedSquad !== 'all' ? selectedSquad : 'founders'),
       cheers: 0,
     }
     const updated = [...partners, newPartner]
@@ -85,7 +87,8 @@ export const CommunityPanel: React.FC = () => {
   }
 
   const handleCopyInvite = () => {
-    const inviteLink = `${window.location.origin}/signup?ref=squad-${selectedSquad}`
+    const squadParam = selectedSquad !== 'all' ? `?squad=${selectedSquad}` : ''
+    const inviteLink = `${window.location.origin}/dashboard${squadParam}`
     navigator.clipboard.writeText(inviteLink).then(() => {
       setCopiedInvite(true)
       setTimeout(() => setCopiedInvite(false), 2500)
@@ -93,6 +96,13 @@ export const CommunityPanel: React.FC = () => {
   }
 
   const challengeProgress = Math.min(100, Math.round((userStreak / 14) * 100))
+
+  // Filter partners based on active focus track
+  const filteredPartners = selectedSquad === 'all'
+    ? partners
+    : partners.filter((p) => p.squad === selectedSquad)
+
+  const activeSquadObj = COMMUNITY_SQUADS.find((s) => s.id === selectedSquad)
 
   return (
     <div className="flex flex-col gap-6 animate-fadeIn pb-12">
@@ -106,7 +116,7 @@ export const CommunityPanel: React.FC = () => {
             Accountability Community & Squads
           </h2>
           <p className="text-xs sm:text-sm text-[#071E2D]/60 dark:text-slate-400 mt-0.5 font-medium">
-            Select your focus squad, track personal velocity against daily milestones, and partner up for accountability.
+            Select a focus track below to organize your goals and partners by domain, or view everyone across all tracks.
           </p>
         </div>
 
@@ -119,10 +129,36 @@ export const CommunityPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Squad Cards Grid */}
+      {/* Focus Tracks Header with Clear Explanation & All-Tracks Toggle */}
+      <div className="flex items-center justify-between gap-3 pt-2">
+        <div className="flex items-center gap-2">
+          <Layers className="w-4 h-4 text-[#006D6A] dark:text-[#00C4B3]" />
+          <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#071E2D] dark:text-white">
+            Focus Tracks ({COMMUNITY_SQUADS.length})
+          </h3>
+          <span className="text-[11px] text-[#071E2D]/60 dark:text-slate-400 hidden md:inline">
+            — Click a track to filter peer momentum, or view all tracks
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setSelectedSquad('all')}
+          className={`px-3 py-1 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer ${
+            selectedSquad === 'all'
+              ? 'bg-[#071E2D] text-white border-[#071E2D] dark:bg-[#00C4B3] dark:text-[#071E2D] dark:border-[#00C4B3]'
+              : 'bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-slate-200 border-[#071E2D]/20 dark:border-[#1E3A52] hover:border-[#071E2D]'
+          }`}
+        >
+          View All Tracks ({partners.length})
+        </button>
+      </div>
+
+      {/* Squad Tracks Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {COMMUNITY_SQUADS.map((squad) => {
           const isSelected = selectedSquad === squad.id
+          const squadPartnerCount = partners.filter((p) => p.squad === squad.id).length
           return (
             <div
               key={squad.id}
@@ -135,12 +171,17 @@ export const CommunityPanel: React.FC = () => {
             >
               <div className="flex items-center justify-between">
                 <squad.icon className="w-5 h-5 text-current" />
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/40 dark:bg-white/10 border border-[#071E2D]/20">
-                  {isSelected ? 'Active Squad' : 'Select Track'}
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/50 dark:bg-white/10 border border-[#071E2D]/20">
+                  {isSelected ? 'Active Track ✓' : 'Filter by Track'}
                 </span>
               </div>
               <div className="mt-3">
-                <h4 className="font-bold text-sm leading-tight">{squad.name}</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-sm leading-tight">{squad.name}</h4>
+                  <span className="text-[10px] font-mono font-bold opacity-75">
+                    {squadPartnerCount} {squadPartnerCount === 1 ? 'partner' : 'partners'}
+                  </span>
+                </div>
                 <span className="text-[11px] font-semibold opacity-80 mt-1 block">
                   {squad.focus}
                 </span>
@@ -154,18 +195,28 @@ export const CommunityPanel: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Peer Leaderboard (2 Cols) */}
         <div className="lg:col-span-2 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_#071E2D] dark:shadow-[5px_5px_0px_#000000] flex flex-col gap-4">
-          <div className="flex items-center justify-between pb-3 border-b-2 border-[#071E2D]/10 dark:border-white/10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#071E2D]/10 dark:border-white/10">
             <div className="flex items-center gap-2">
               <Award className="w-5 h-5 text-[#006D6A] dark:text-[#00C4B3]" />
-              <h3 className="font-bold text-base text-[#071E2D] dark:text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
-                Squad Momentum Board
-              </h3>
+              <div>
+                <h3 className="font-bold text-base text-[#071E2D] dark:text-white" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+                  Squad Momentum Board
+                </h3>
+                <span className="text-[11px] font-medium text-[#071E2D]/60 dark:text-slate-400">
+                  {selectedSquad === 'all'
+                    ? 'Showing all accountability circles'
+                    : `Filtered to: ${activeSquadObj?.name ?? 'Track'}`}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShowAddPartner(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-[#071E2D] dark:border-[#00C4B3] text-xs font-bold bg-[#E6F7F5] dark:bg-[#00C4B3]/20 text-[#071E2D] dark:text-white hover:bg-[#00C4B3] transition-colors"
+                onClick={() => {
+                  setPartnerSquad(selectedSquad !== 'all' ? selectedSquad : 'founders')
+                  setShowAddPartner(true)
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-[#071E2D] dark:border-[#00C4B3] text-xs font-bold bg-[#E6F7F5] dark:bg-[#00C4B3]/20 text-[#071E2D] dark:text-white hover:bg-[#00C4B3] transition-colors cursor-pointer"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>Add Partner</span>
@@ -173,11 +224,11 @@ export const CommunityPanel: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCopyInvite}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-white/20 text-xs font-bold bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-slate-200 hover:border-[#071E2D] transition-colors"
-                title="Copy squad invite link"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-[#071E2D]/20 dark:border-white/20 text-xs font-bold bg-white dark:bg-[#0E202D] text-[#071E2D] dark:text-slate-200 hover:border-[#071E2D] transition-colors cursor-pointer"
+                title="Copy dashboard link to share with partners"
               >
                 <Share2 className="w-3.5 h-3.5" />
-                <span>{copiedInvite ? 'Copied Link!' : 'Invite'}</span>
+                <span>{copiedInvite ? 'Copied Dashboard Link!' : 'Invite'}</span>
               </button>
             </div>
           </div>
@@ -216,8 +267,8 @@ export const CommunityPanel: React.FC = () => {
             </div>
 
             {/* Real Partners Rows */}
-            {partners.length > 0 ? (
-              partners.map((m, idx) => (
+            {filteredPartners.length > 0 ? (
+              filteredPartners.map((m, idx) => (
                 <div key={m.id} className="py-3.5 flex items-center justify-between gap-3 hover:bg-[#F8FAFB] dark:hover:bg-white/5 px-2 rounded-xl transition-colors">
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-mono font-bold text-[#071E2D]/40 dark:text-slate-500 w-4">
@@ -227,7 +278,12 @@ export const CommunityPanel: React.FC = () => {
                       {m.initial}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-xs sm:text-sm text-[#071E2D] dark:text-white truncate">{m.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-xs sm:text-sm text-[#071E2D] dark:text-white truncate">{m.name}</p>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                          {COMMUNITY_SQUADS.find((s) => s.id === m.squad)?.name || m.squad}
+                        </span>
+                      </div>
                       <p className="text-[11px] text-[#071E2D]/60 dark:text-slate-400 truncate mt-0.5">
                         {m.domain} · {m.lastActivity}
                       </p>
@@ -267,20 +323,38 @@ export const CommunityPanel: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-[#071E2D] dark:text-white">
-                    No Accountability Partners Added Yet
+                    {selectedSquad !== 'all'
+                      ? `No Partners in ${activeSquadObj?.name ?? 'This Track'} Yet`
+                      : 'No Accountability Partners Added Yet'}
                   </h4>
                   <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-                    Pair up with a colleague, friend, or accountability partner to share daily check-in momentum and celebrate wins.
+                    {selectedSquad !== 'all'
+                      ? `Pair up with a colleague in ${activeSquadObj?.name ?? 'this discipline'} or click 'View All Tracks' above.`
+                      : 'Pair up with a colleague, friend, or partner to share daily check-in momentum and celebrate wins.'}
                   </p>
                 </div>
-                <Button
-                  variant="primary"
-                  onClick={() => setShowAddPartner(true)}
-                  className="text-xs !py-2 !px-4 mt-1"
-                >
-                  <UserPlus className="w-3.5 h-3.5 mr-1.5" />
-                  <span>Add Accountability Partner</span>
-                </Button>
+                <div className="flex items-center gap-2 mt-1">
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      setPartnerSquad(selectedSquad !== 'all' ? selectedSquad : 'founders')
+                      setShowAddPartner(true)
+                    }}
+                    className="text-xs !py-2 !px-4"
+                  >
+                    <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+                    <span>Add Partner</span>
+                  </Button>
+                  {selectedSquad !== 'all' && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSquad('all')}
+                      className="text-xs font-bold px-3 py-2 rounded-xl border border-[#071E2D]/20 hover:border-[#071E2D] text-[#071E2D] dark:text-slate-200 transition-colors"
+                    >
+                      Show All Tracks
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -351,6 +425,23 @@ export const CommunityPanel: React.FC = () => {
               placeholder="e.g. Alex M."
               className="w-full px-4 py-2.5 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] outline-none"
             />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-[#071E2D] dark:text-slate-200">
+              Assign to Focus Track
+            </label>
+            <select
+              value={partnerSquad}
+              onChange={(e) => setPartnerSquad(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border-2 bg-white dark:bg-[#0E202D] font-sans text-sm border-[#071E2D]/20 focus:border-[#00C4B3] outline-none"
+            >
+              {COMMUNITY_SQUADS.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.focus})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex flex-col gap-1.5">
