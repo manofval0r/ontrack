@@ -2,6 +2,8 @@
 (X-Debug-Key header, never JWT)."""
 import hmac
 import time
+import urllib.parse
+import urllib.request
 
 from django.conf import settings
 from rest_framework.permissions import AllowAny, BasePermission
@@ -12,6 +14,7 @@ from apps.goals.models import AudioCache, CheckIn, Goal
 from apps.goals.serializers import GoalSerializer
 
 START_MONOTONIC = time.monotonic()
+AI_PROBE_TIMEOUT_SECONDS = 3
 
 
 class HasDebugKey(BasePermission):
@@ -33,6 +36,40 @@ class HealthView(APIView):
         return Response({"status": "ok", "instance": settings.INSTANCE_NAME})
 
 
+def _ai_status():
+    """AI liveness for /api/debug: config presence + cheap /models probe.
+
+    Never includes keys or full URLs — host + model + reachable only.
+    Any failure => reachable False (fallbacks are serving). Never raises.
+    """
+    base = (getattr(settings, "NVIDIA_BASE_URL", "") or "").rstrip("/")
+    model = getattr(settings, "NVIDIA_MODEL_NAME", "") or ""
+    key = getattr(settings, "NVIDIA_API_KEY", "") or ""
+    try:
+        host = urllib.parse.urlparse(base).hostname or ""
+    except Exception:
+        host = ""
+    status = {"configured": bool(base and model and key), "base_host": host, "model": model}
+    if not status["configured"]:
+        return {**status, "reachable": False, "latency_ms": None}
+    started = time.monotonic()
+    try:
+        req = urllib.request.Request(
+            "%s/models" % base,
+            headers={"Authorization": "Bearer %s" % key},
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=AI_PROBE_TIMEOUT_SECONDS) as resp:
+            reachable = 200 <= resp.status < 500
+    except Exception:
+        reachable = False
+    return {
+        **status,
+        "reachable": reachable,
+        "latency_ms": round((time.monotonic() - started) * 1000, 1),
+    }
+
+
 class DebugView(APIView):
     permission_classes = [HasDebugKey]
     authentication_classes = []
@@ -45,6 +82,7 @@ class DebugView(APIView):
             {
                 "instance": settings.INSTANCE_NAME,
                 "uptime_seconds": round(time.monotonic() - START_MONOTONIC, 1),
+                "ai": _ai_status(),
                 "recent_goals": GoalSerializer(goals, many=True).data,
                 "recent_checkins": [
                     {
