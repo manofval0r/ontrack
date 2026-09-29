@@ -1,0 +1,24 @@
+{
+  "name": "ontrack",
+  "version": "1.0.0",
+  "description": "> **Say your goal. Get your tracker.**   > A conversational goal and accountability tracker powered by AI.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/manofval0r/ontrack.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/manofval0r/ontrack/issues"
+  },
+  "homepage": "https://github.com/manofval0r/ontrack#readme"
+}
