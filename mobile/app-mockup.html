@@ -65,7 +65,7 @@
   .tick{opacity:0; animation:tickin .4s forwards;}
   @keyframes tickin{to{opacity:1;}}
   /* Home */
-  .greet{font-family:"Original Surfer",Georgia,serif; font-weight:400; font-size:34px;}
+  .greet{font-family:"Original Surfer",Georgia,serif; font-weight:400; font-size:40px;}
   .goalrow{background:#fff; border:2px solid var(--navy); border-radius:20px; box-shadow:4px 4px 0 var(--navy); padding:16px;}
   .goalrow b.t{font-size:16px;}
   .fab{position:absolute; right:16px; bottom:100px; width:54px; height:54px; border-radius:999px; background:var(--turquoise);
@@ -83,7 +83,7 @@
   .tabpane{display:none; flex-direction:column; gap:12px; flex:1; overflow:hidden;}
   .tabpane.on{display:flex;}
   /* Chat */
-  .bubble{border:2px solid var(--navy); border-radius:16px; padding:13px 15px; font-size:16px; line-height:1.45; max-width:88%;
+  .bubble{border:2px solid var(--navy); border-radius:16px; padding:13px 15px; font-size:17px; line-height:1.45; max-width:88%;
     box-shadow:3px 3px 0 var(--navy); animation:rise .35s cubic-bezier(.22,1,.36,1) backwards;}
   .bubble.ai{background:#fff; align-self:flex-start;}
   .bubble.user{background:var(--navy); color:#fff; align-self:flex-end; box-shadow:3px 3px 0 var(--turquoise);}
@@ -109,6 +109,16 @@
   .switch{width:44px; height:26px; border-radius:999px; background:var(--turquoise); border:2px solid var(--navy); position:relative;}
   .switch::after{content:""; position:absolute; right:2px; top:1.5px; width:18px; height:18px; border-radius:999px; background:#fff; border:2px solid var(--navy);}
   .note{font-size:12px; opacity:.55; text-align:center; max-width:640px; margin:26px auto 0; line-height:1.6;}
+  /* Animated backdrop layers (mockup mirror of BackdropArt) */
+  .bgwrap{position:absolute; inset:0; overflow:hidden; pointer-events:none;}
+  .blob{position:absolute; border-radius:999px; animation:drift 7s ease-in-out infinite alternate;}
+  .blob.b1{width:230px; height:230px; top:-70px; right:-60px; background:rgba(0,196,179,.30);}
+  .blob.b2{width:280px; height:280px; bottom:-60px; left:-70px; background:rgba(51,214,197,.32); animation-duration:9s;}
+  .blob.b3{width:150px; height:150px; top:42%; left:-80px; background:rgba(0,196,179,.25); animation-duration:6s;}
+  @keyframes drift{from{transform:translate(0,0) scale(1);} to{transform:translate(24px,18px) scale(1.08);}}
+  .dotgrid{position:absolute; inset:0; opacity:.5;}
+  .ring{position:absolute; border:3px dashed rgba(0,196,179,.55); border-radius:999px; animation:spin 26s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
   .obpane{display:none; flex-direction:column; gap:12px; flex:1;}
   .obpane.on{display:flex;}
   .checkrow{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:13px; font-weight:600;}
@@ -142,47 +152,105 @@
       </div></div>
       <div class="cap">M1 · Splash<small>logo + tagline + progress → routes by session</small></div></div>
 
-    <!-- ONBOARDING (interactive: click Continue) -->
+    <!-- ONBOARDING STEP 1 -->
     <div class="shot"><div class="phone"><div class="notch"></div>
-      <div class="screen" id="obscreen">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div class="dots"><i class="on"></i><i></i><i></i></div>
-          <span style="font-weight:700;color:var(--teal);font-size:13px;">Skip</span>
+      <div class="screen">
+        <div class="bgwrap"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;position:relative;">
+          <div class="dots"><i class="on" style="width:30px;height:10px;border-radius:5px;"></i><i style="width:10px;height:10px;border-radius:5px;"></i><i style="width:10px;height:10px;border-radius:5px;"></i></div>
+          <span style="font-weight:700;color:var(--teal);font-size:14px;">Skip</span>
         </div>
-        <div class="obpane on" data-ob="0" style="justify-content:center;">
-          <div class="art">
-            <svg width="170" height="130" viewBox="0 0 200 160">
+        <div style="display:flex;justify-content:center;position:relative;">
+          <div class="art" style="width:100%;height:220px;">
+            <svg width="200" height="150" viewBox="0 0 200 160">
               <path class="draw" d="M45 62 C 80 62, 105 50, 140 30 M140 30 l-14 4 M140 30 l-2 14" fill="none" stroke="#071E2D" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
               <path class="draw d2" d="M60 130 C 95 130, 120 118, 155 98 M155 98 l-14 4 M155 98 l-2 14" fill="none" stroke="#071E2D" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         </div>
-        <div class="obpane" data-ob="1" style="justify-content:center;">
-          <div class="card">
-            <div class="bar"><div></div></div>
-            <div class="checkrow"><span class="checkbox tick">✓</span>Morning run</div>
-            <div class="checkrow"><span class="checkbox tick" style="animation-delay:.3s;">✓</span>Read 20 pages</div>
-            <div class="checkrow"><span class="checkbox tick" style="animation-delay:.6s;">✓</span>Ship the demo</div>
+        <p style="text-align:center;font-size:12px;font-weight:700;color:var(--teal);position:relative;">STEP 1 · MEET YOUR COACH</p>
+        <div class="card" style="position:relative;">
+          <div class="surfer" style="font-size:32px;">Welcome to OnTrack</div>
+          <p style="font-size:15px;margin-top:8px;line-height:1.5;">Chat-first accountability. Say a goal, get a tracker, prove progress.</p>
+        </div>
+        <div class="pillbtn primary" style="position:relative;">Continue</div>
+        <p style="text-align:center;font-size:12px;opacity:.5;position:relative;">Step 1 of 3</p>
+      </div></div>
+      <div class="cap">Onboarding · Step 1<small>brand mark draws itself · animated backdrop</small></div></div>
+
+    <!-- ONBOARDING STEP 2 -->
+    <div class="shot"><div class="phone"><div class="notch"></div>
+      <div class="screen">
+        <div class="bgwrap"><span class="blob b1"></span><span class="blob b2"></span><span class="ring" style="width:170px;height:170px;bottom:40px;right:-50px;"></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;position:relative;">
+          <div class="dots"><i style="width:10px;height:10px;border-radius:5px;"></i><i class="on" style="width:30px;height:10px;border-radius:5px;"></i><i style="width:10px;height:10px;border-radius:5px;"></i></div>
+          <span style="font-weight:700;color:var(--teal);font-size:14px;">Skip</span>
+        </div>
+        <div class="card" style="position:relative;">
+          <div class="bar"><div></div></div>
+          <div class="checkrow"><span class="checkbox tick">✓</span>Morning run</div>
+          <div class="checkrow"><span class="checkbox tick" style="animation-delay:.3s;">✓</span>Read 20 pages</div>
+          <div class="checkrow"><span class="checkbox tick" style="animation-delay:.6s;">✓</span>Ship the demo</div>
+        </div>
+        <p style="text-align:center;font-size:12px;font-weight:700;color:var(--teal);position:relative;">STEP 2 · WATCH IT BUILD</p>
+        <div class="card" style="position:relative;">
+          <div class="surfer" style="font-size:30px;">Trackers that build themselves</div>
+          <p style="font-size:15px;margin-top:8px;line-height:1.5;">Counters, checklists and logs appear from plain words — then update live.</p>
+        </div>
+        <div class="pillbtn primary" style="position:relative;">Continue</div>
+        <p style="text-align:center;font-size:12px;opacity:.5;position:relative;">Step 2 of 3</p>
+      </div></div>
+      <div class="cap">Onboarding · Step 2<small>live tracker preview · checklist ticks in</small></div></div>
+
+    <!-- ONBOARDING STEP 3 -->
+    <div class="shot"><div class="phone"><div class="notch"></div>
+      <div class="screen">
+        <div class="bgwrap"><span class="blob b2"></span><span class="blob b3"></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;position:relative;">
+          <div class="dots"><i style="width:10px;height:10px;border-radius:5px;"></i><i style="width:10px;height:10px;border-radius:5px;"></i><i class="on" style="width:30px;height:10px;border-radius:5px;"></i></div>
+          <span style="font-weight:700;color:var(--teal);font-size:14px;">Skip</span>
+        </div>
+        <div class="bubble ai" style="position:relative;">You're at 3 of 5. On pace for Friday?</div>
+        <div class="bubble user" style="position:relative;">Closed one more — 4 of 5!</div>
+        <p style="text-align:center;font-size:12px;font-weight:700;color:var(--teal);position:relative;">STEP 3 · YOUR TURN</p>
+        <div class="card" style="position:relative;">
+          <div class="surfer" style="font-size:30px;">Try your first goal</div>
+          <p style="font-size:15px;margin-top:8px;line-height:1.5;">Type it below to preview — no account needed yet.</p>
+          <input style="margin-top:10px;width:100%;border:2px solid rgba(7,30,45,.35);border-radius:12px;padding:12px;font-size:14px;" placeholder="e.g. Run 3 mornings a week" value="I want to run 3 mornings a week" />
+          <div style="margin-top:10px;border:2px solid var(--turquoise);border-radius:12px;background:#ECFEFF;padding:10px;font-size:12px;font-weight:700;color:var(--teal);">Counter · target 3 · runs — this is what your words become</div>
+        </div>
+        <div class="pillbtn primary" style="position:relative;">Preview my tracker</div>
+        <p style="text-align:center;font-size:12px;opacity:.5;position:relative;">Step 3 of 3</p>
+      </div></div>
+      <div class="cap">Onboarding · Step 3<small>goal draft + live tracker preview chip</small></div></div>
+
+    <!-- LOGIN -->
+    <div class="shot"><div class="phone"><div class="notch"></div>
+      <div class="screen" style="justify-content:center;">
+        <div class="bgwrap"><span class="blob b1"></span><span class="blob b3"></span></div>
+        <div class="card" style="position:relative;">
+          <div class="surfer" style="font-size:30px;text-align:center;">Welcome back</div>
+          <p style="font-size:13px;opacity:.6;text-align:center;">Pick up right where you left off.</p>
+          <div class="surfer" style="font-size:28px;margin-top:10px;">Log in</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+            <div style="border:2px solid rgba(7,30,45,.45);border-radius:12px;padding:12px;font-size:14px;color:rgba(7,30,45,.6);">you@example.com</div>
+            <div style="border:2px solid rgba(7,30,45,.45);border-radius:12px;padding:12px;font-size:14px;color:rgba(7,30,45,.6);">Password</div>
+            <div class="pillbtn primary" style="font-size:15px;">Log in</div>
+            <div style="display:flex;gap:10px;">
+              <div class="pillbtn" style="flex:1;font-size:13px;">Google</div>
+              <div class="pillbtn primary" style="flex:1;font-size:13px;">GitHub</div>
+            </div>
           </div>
         </div>
-        <div class="obpane" data-ob="2" style="justify-content:center;">
-          <div class="bubble ai">You're at 3 of 5. On pace for Friday?</div>
-          <div class="bubble user">Closed one more — 4 of 5!</div>
-        </div>
-        <div class="card" id="obcard">
-          <div class="surfer" style="font-size:26px;">Welcome to OnTrack</div>
-          <p style="font-size:14px;margin-top:6px;line-height:1.5;" id="obbody">Chat-first accountability. Say a goal, get a tracker, prove progress.</p>
-          <input id="obdraft" style="display:none;margin-top:10px;width:100%;border:2px solid rgba(7,30,45,.2);border-radius:12px;padding:10px;font-size:13px;" placeholder="I want to sell 5 cars this week" />
-        </div>
-        <div id="obactions"><div class="pillbtn primary" id="obnext">Continue</div></div>
-        <p style="text-align:center;font-size:12px;opacity:.5;" id="obstep">Step 1 of 3</p>
+        <p style="text-align:center;font-size:13px;color:var(--teal);font-weight:600;position:relative;">No account? Sign up</p>
       </div></div>
-      <div class="cap">M2 · Onboarding — all 3 steps<small>click Continue to walk through them</small></div></div>
+      <div class="cap">Login<small>brand header · visible placeholders · social-first</small></div></div>
 
     <!-- SIGNUP -->
     <div class="shot"><div class="phone"><div class="notch"></div>
       <div class="screen" style="justify-content:center;">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div class="bgwrap"><span class="blob b1"></span><span class="blob b2"></span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;">
           <span style="width:64px;height:64px;border-radius:18px;background:var(--turquoise);border:2px solid var(--navy);display:flex;align-items:center;justify-content:center;">
             <svg width="40" height="40" viewBox="0 0 100 100"><path d="M22 62 C 40 62, 55 52, 78 32 M78 32 l-11 3 M78 32 l-1 11" fill="none" stroke="#071E2D" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </span>
@@ -261,7 +329,7 @@
         </div>
         <!-- GOALS -->
         <div class="tabpane" data-pane="goals">
-          <div class="surfer" style="font-size:32px;">Goals</div>
+          <div class="surfer" style="font-size:34px;">Goals</div>
           <div style="font-size:13px;opacity:.65;">2 active · 1 shipped</div>
           <div class="goalrow"><div style="display:flex;justify-content:space-between;align-items:center;">
             <b style="font-size:14px;">Close 5 Enterprise Deals</b><span class="status st-track">active</span></div>
@@ -441,30 +509,8 @@
     document.querySelectorAll('.tabpane').forEach(x => x.classList.remove('on'));
     document.querySelector(`[data-pane="chat"]`).classList.add('on');
   }));
-  // Onboarding walkthrough (all 3 steps)
-  const OB_TITLES = ['Welcome to OnTrack', 'Trackers that build themselves', 'Try your first goal'];
-  const OB_BODIES = [
-    'Chat-first accountability. Say a goal, get a tracker, prove progress.',
-    'Counters, checklists and logs appear from plain words — then update live.',
-    'Type it below to preview — no account needed yet.'
-  ];
-  let obStep = 0;
-  const obNext = document.getElementById('obnext');
-  if (obNext) obNext.addEventListener('click', () => {
-    if (obStep >= 2) return;
-    obStep++;
-    document.querySelectorAll('.obpane').forEach(p => p.classList.toggle('on', p.dataset.ob == obStep));
-    document.querySelectorAll('#obscreen .dots i').forEach((d, i) => d.classList.toggle('on', i === obStep));
-    document.querySelector('#obcard .surfer').textContent = OB_TITLES[obStep];
-    document.getElementById('obbody').textContent = OB_BODIES[obStep];
-    document.getElementById('obdraft').style.display = obStep === 2 ? 'block' : 'none';
-    document.getElementById('obactions').innerHTML = obStep === 2
-      ? '<div class="pillbtn primary">Create account</div><div class="pillbtn" style="margin-top:10px;">I already have an account</div>'
-      : '<div class="pillbtn primary" id="obnext2">Continue</div>';
-    document.getElementById('obstep').textContent = `Step ${obStep + 1} of 3`;
-    const n2 = document.getElementById('obnext2');
-    if (n2) n2.addEventListener('click', () => obNext.click());
-  });
+  // Onboarding is now three static phones (steps 1–3); no walkthrough JS needed.
+
 </script>
 </body>
 </html>
