@@ -12,6 +12,8 @@
 -- policies = deny). service_role bypasses RLS as before, so Django is
 -- unaffected. goals_audiocache is DELIBERATELY left without policies
 -- (global, unowned cache that can hold user reflections — service_role only).
+-- NOTE: some databases have no public.profiles table (Supabase-owned,
+-- env-dependent) — its block is gated on existence, safe to run anywhere.
 --
 -- Safe to re-run: every policy is dropped first. Run as the postgres /
 -- dashboard SQL editor role, then re-check the security advisor.
@@ -23,7 +25,13 @@ ALTER TABLE public.goals_progresslog  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.goals_checkin      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.goals_audiocache   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.accounts_integration ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.profiles           ENABLE ROW LEVEL SECURITY;
+-- profiles is Supabase-owned and absent in some environments: gate it.
+DO $$
+BEGIN
+  IF to_regclass('public.profiles') IS NOT NULL THEN
+    EXECUTE 'ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY';
+  END IF;
+END $$;
 
 -- ── 2. Owner-scoped policies (authenticated role only) ────────────────────
 DROP POLICY IF EXISTS owner_all ON public.goals_goal;
@@ -44,11 +52,19 @@ CREATE POLICY owner_all ON public.goals_progresslog
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
-DROP POLICY IF EXISTS owner_all ON public.profiles;
-CREATE POLICY owner_all ON public.profiles
-  FOR ALL TO authenticated
-  USING (id = auth.uid())
-  WITH CHECK (id = auth.uid());
+-- profiles: gated — absent in some environments (Supabase-owned table).
+DO $$
+BEGIN
+  IF to_regclass('public.profiles') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS owner_all ON public.profiles';
+    EXECUTE $pol$
+      CREATE POLICY owner_all ON public.profiles
+        FOR ALL TO authenticated
+        USING (id = auth.uid())
+        WITH CHECK (id = auth.uid())
+    $pol$;
+  END IF;
+END $$;
 
 -- Child rows inherit ownership through the parent goal (no user_id column).
 DROP POLICY IF EXISTS owner_via_goal ON public.goals_goalitem;
@@ -77,13 +93,24 @@ CREATE POLICY owner_via_goal ON public.goals_checkin
 
 -- goals_audiocache: intentionally NO policy (service_role/Django only).
 
--- ── 3. Verify (run these, expect the noted results) ───────────────────────
+-- ── 3. Close the RLS bypass: TRUNCATE ignores policies ───────────────────
+-- anon/authenticated still hold broad table grants (needed so the policies
+-- above are usable), but TRUNCATE is never needed through PostgREST and it
+-- bypasses RLS entirely. Revoke it; everything else stays so Django,
+-- dashboard, and the owner policies keep working unchanged.
+REVOKE TRUNCATE ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+
+-- ── 4. Verify (run these, expect the noted results) ───────────────────────
 -- Coverage: every public table RLS-on with >=1 policy, except the
 -- deliberately locked goals_audiocache (and Django-internal tables):
 --   SELECT tablename, rowsecurity FROM pg_tables
 --     WHERE schemaname = 'public' ORDER BY tablename;
 --   SELECT tablename, COUNT(*) FROM pg_policies
 --     WHERE schemaname = 'public' GROUP BY tablename ORDER BY tablename;
+-- Grants: no TRUNCATE left for anon/authenticated on any public table:
+--   SELECT table_name, grantee, privilege_type FROM information_schema.role_table_grants
+--     WHERE grantee IN ('anon', 'authenticated') AND privilege_type = 'TRUNCATE';
+--   -- expect 0 rows.
 -- Negative test with the ANON key (REST): SELECT from any table must
 -- return 0 rows. Positive test with a user JWT: only own rows visible.
 -- Then re-run the security advisor: rls_enabled_no_policy INFO rows for
