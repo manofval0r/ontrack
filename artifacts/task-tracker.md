@@ -51,6 +51,8 @@ Updated: 2026-09-28.
 - [x] Reminders/alarms: `lib/reminders.ts` local scheduling (cadence nudges, 8am streak ping, per-goal deadline alarms), quiet-hours-safe daytime triggers, permission-gated toggles, passive resync on goal changes
 - [x] Hackathon gaps closed (mobile-side): time-remaining on cards, quick-log from card, swipe-to-delete on Goals, check-in cadence wired to real nudges, deadline alarms, sync status everywhere
 - [x] RefreshArc: chunky arc→tick sync mark on Home + Goals (Reanimated+SVG, no three.js — documented why in code)
+- [x] Three.js showpiece: `ThreeHero` (twin extruded chevrons, orbiting proof-blocks, studio lighting, transparent tile) on onboarding step 1 with flat-art fallback, reduced-motion single frame, unmount disposal; `expo-gl` + `three` installed
+- [x] Demo-ready audit: tsc green, `expo config` resolves (notifications plugin, OTA channels, runtime policy verified); fresh preview build still required (gesture-handler, notifications, gl)
 - [x] Absorbed teammate merges (legal pages, voice/integrations overhaul, audio plugin): no conflicts, tsc clean, backend consumes new serializer fields
 
 ## Left — Web (Eniola unless noted)

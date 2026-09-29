@@ -8,6 +8,7 @@ import { Brand, Colors } from '../constants/colors';
 import { Radii, Spacing } from '../constants/spacing';
 import { FontFamily, Typography } from '../constants/typography';
 import { OnboardingArt } from '../components/OnboardingArt';
+import { ThreeHero } from '../components/ThreeHero';
 import { BackdropArt } from '../components/BackdropArt';
 import { Card, PillButton } from '../components/ui';
 import { templateMeta } from '../lib/templates';
@@ -35,6 +36,7 @@ const STEPS = [  {
 export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState('');
+  const [glOk, setGlOk] = useState(true);
 
   const goAuth = (login: boolean) => {
     const params = !login && draft.trim() ? { pendingGoal: draft.trim().slice(0, 500) } : {};
@@ -77,9 +79,15 @@ export default function Onboarding() {
 
       <View style={{ flex: 1, justifyContent: 'center', gap: 14 }}>
         <Animated.View key={step} entering={FadeInRight.duration(300)} exiting={FadeOutLeft.duration(200)}>
-          <View accessibilityLabel={STEPS[step].artLabel} accessibilityRole="image" style={{ transform: [{ scale: 1.3 }], marginVertical: 18 }}>
-            <OnboardingArt step={step} />
-          </View>
+          {step === 0 && glOk ? (
+            <View accessibilityLabel={STEPS[step].artLabel} accessibilityRole="image" style={{ marginVertical: 6 }}>
+              <ThreeHero height={250} onFail={() => setGlOk(false)} />
+            </View>
+          ) : (
+            <View accessibilityLabel={STEPS[step].artLabel} accessibilityRole="image" style={{ transform: [{ scale: 1.3 }], marginVertical: 18 }}>
+              <OnboardingArt step={step} />
+            </View>
+          )}
         </Animated.View>
         <Text style={{ textAlign: 'center', fontSize: 12, fontWeight: '700', color: Brand.teal }}>
           {STEPS[step].caption}
