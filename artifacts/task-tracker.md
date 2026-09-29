@@ -38,6 +38,7 @@ Updated: 2026-09-28.
 - [x] Mockup updated (dock, signup, 404, font preview)
 - [x] Bug-fix round (device feedback): animated BackdropArt backgrounds (onboarding/auth), explicit placeholder colors on all inputs, streak View/Text nesting fix, work-block pause-in-place, signup email-confirmation gate, onboarding tracker preview, TTS prefetch + 8s fast fallback, optimistic progress with rollback, canned-fallback badge, package quality-gate scripts
 - [x] Fullness round 2: visible animated backdrops (stronger blobs/dots), onboarding overhaul (1.3x art, captions, 34px titles, big dots), type scale wave 2 (40 greeting, 36 headers, 17 body/button, 22 cards, 17 chat)
+- [x] OTA updates: expo-updates installed, runtimeVersion appVersion policy + updates URL in app.json, preview/production channels in eas.json, `lib/updates.ts` check/download/restart hook, Settings → App updates card with progress bar, `update:preview` / `update:production` scripts
 - [x] Absorbed teammate merges (legal pages, voice/integrations overhaul, audio plugin): no conflicts, tsc clean, backend consumes new serializer fields
 
 ## Left — Web (Eniola unless noted)

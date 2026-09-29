@@ -8,6 +8,12 @@
     "icon": "./assets/icon.png",
     "scheme": "ontrack",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/05280680-78e6-484a-a927-248e9d12e79c"
+    },
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/icon.png",

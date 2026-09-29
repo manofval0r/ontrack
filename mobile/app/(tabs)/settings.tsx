@@ -10,6 +10,7 @@ import { Brand } from '../../constants/colors';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { Card } from '../../components/ui';
+import { updateInfo, useAppUpdate } from '../../lib/updates';
 import { api, request } from '../../lib/api';
 import { clearSession, clearProviderToken, getProviderToken, signInWithProvider } from '../../lib/auth';
 import { useGoals } from '../../lib/store';
@@ -30,6 +31,8 @@ export default function Settings() {
   const [quiet, setQuiet] = useState(false);
   const [cadence, setCadence] = useState('30min');
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
+  const update = useAppUpdate();
+  const ota = updateInfo();
 
   const load = async () => {
     setLoading(true);
@@ -285,6 +288,65 @@ export default function Settings() {
           <Text style={{ fontSize: 13, color: Brand.navy, opacity: 0.7, marginTop: 4 }}>
             OnTrack {Constants.expoConfig?.version ?? '1.0.0'} · SDK 57 · {active} active goals
           </Text>
+        </Card>
+
+        <Card>
+          <Text style={{ fontWeight: '700', color: Brand.navy }}>App updates</Text>
+          <Text style={{ fontSize: 12, color: Brand.navy, opacity: 0.6, marginTop: 4 }}>
+            Channel {ota.channel} · Runtime {ota.runtime}
+            {ota.updateId ? ` · Build ${ota.updateId.slice(0, 8)}` : ''}
+          </Text>
+          <Pressable
+            onPress={update.check}
+            disabled={update.checking || update.downloading}
+            accessibilityLabel={
+              update.downloading
+                ? `Downloading update, ${Math.round(Math.min(update.progress, 100))} percent`
+                : update.pending
+                  ? 'Restart to apply downloaded update'
+                  : 'Check for app updates'
+            }
+            accessibilityRole="button"
+            style={{
+              marginTop: 10, minHeight: Touch.min, flexDirection: 'row', alignItems: 'center',
+              justifyContent: 'center', gap: 8, borderWidth: 2, borderColor: Brand.navy,
+              borderRadius: Radii.pill, backgroundColor: Brand.navy,
+              opacity: update.checking || update.downloading ? 0.6 : 1,
+            }}
+          >
+            {(update.checking || update.downloading) && (
+              <ActivityIndicator size="small" color={Brand.white} />
+            )}
+            <Text style={{ color: Brand.white, fontWeight: '700' }}>
+              {update.downloading
+                ? `Downloading ${Math.round(Math.min(update.progress, 100))}%`
+                : update.pending
+                  ? 'Restart to apply update'
+                  : update.checking
+                    ? 'Checking…'
+                    : 'Check for app updates'}
+            </Text>
+          </Pressable>
+          {update.downloading && !update.hidden && (
+            <View style={{ marginTop: 10 }}>
+              <View style={{ height: 6, borderRadius: 3, backgroundColor: Brand.grayCanvas, borderWidth: 1, borderColor: Brand.navy, overflow: 'hidden' }}>
+                <View style={{ height: '100%', borderRadius: 3, backgroundColor: Brand.turquoise, width: `${Math.min(update.progress, 100)}%` }} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                <Text style={{ fontSize: 11, color: Brand.navy, opacity: 0.6 }}>
+                  The app restarts automatically when the download completes.
+                </Text>
+                <Pressable onPress={() => update.setHidden(true)} accessibilityLabel="Hide download progress" accessibilityRole="button" hitSlop={8}>
+                  <Text style={{ fontSize: 11, color: Brand.teal, textDecorationLine: 'underline' }}>Hide</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+          {update.downloading && update.hidden && (
+            <Pressable onPress={() => update.setHidden(false)} accessibilityLabel="Show download progress" accessibilityRole="button" style={{ marginTop: 8, alignItems: 'center', minHeight: Touch.min, justifyContent: 'center' }}>
+              <Text style={{ fontSize: 12, color: Brand.teal, fontWeight: '600' }}>Show download progress</Text>
+            </Pressable>
+          )}
         </Card>
 
         <Pressable
