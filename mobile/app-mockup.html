@@ -35,8 +35,8 @@
   /* Shared bits */
   .h-display{font-family:"Fraunces",Georgia,serif; font-weight:700;}
   .card{background:#fff; border:2px solid var(--navy); border-radius:20px; box-shadow:4px 4px 0 var(--navy); padding:16px;}
-  .pillbtn{display:flex; align-items:center; justify-content:center; min-height:46px; padding:10px 18px; border-radius:999px;
-    border:2px solid var(--navy); font-weight:600; font-size:14px; box-shadow:3px 3px 0 var(--navy); background:#fff; color:var(--navy);}
+  .pillbtn{display:flex; align-items:center; justify-content:center; min-height:48px; padding:12px 20px; border-radius:999px;
+    border:2px solid var(--navy); font-weight:600; font-size:16px; box-shadow:3px 3px 0 var(--navy); background:#fff; color:var(--navy);}
   .pillbtn.primary{background:var(--navy); color:#fff;}
   .status{display:inline-flex; align-items:center; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; border:2px solid;}
   .st-track{background:#ECFEFF; color:var(--teal); border-color:var(--turquoise);}
@@ -46,9 +46,9 @@
   @keyframes fill{from{width:34%;} to{width:82%;}}
   /* Splash */
   .splash{background:var(--navy); color:#fff; align-items:center; justify-content:center; text-align:center; gap:12px;}
-  .splash img{width:110px; height:110px; border-radius:26px;}
-  .splash h2{font-family:"Fraunces",Georgia,serif; font-size:32px;}
-  .splash p{color:var(--turquoise); font-weight:600; font-size:13px;}
+  .splash img{width:120px; height:120px; border-radius:28px;}
+  .splash h2{font-family:"Original Surfer",Georgia,serif; font-weight:400; font-size:42px;}
+  .splash p{color:var(--turquoise); font-weight:600; font-size:14px;}
   .loadbar{width:100%; height:8px; border-radius:99px; background:rgba(255,255,255,.15); overflow:hidden; margin-top:10px;}
   .loadbar > div{height:100%; background:var(--turquoise); border-radius:99px; animation:load 1.1s ease-in-out infinite alternate;}
   @keyframes load{from{width:10%;} to{width:100%;}}
@@ -65,15 +65,16 @@
   .tick{opacity:0; animation:tickin .4s forwards;}
   @keyframes tickin{to{opacity:1;}}
   /* Home */
-  .greet{font-family:"Fraunces",Georgia,serif; font-size:23px;}
-  .goalrow{background:#fff; border:2px solid var(--navy); border-radius:20px; box-shadow:4px 4px 0 var(--navy); padding:14px;}
+  .greet{font-family:"Original Surfer",Georgia,serif; font-weight:400; font-size:34px;}
+  .goalrow{background:#fff; border:2px solid var(--navy); border-radius:20px; box-shadow:4px 4px 0 var(--navy); padding:16px;}
+  .goalrow b.t{font-size:16px;}
   .fab{position:absolute; right:16px; bottom:100px; width:54px; height:54px; border-radius:999px; background:var(--turquoise);
     border:2px solid var(--navy); font-size:26px; font-weight:700; color:var(--navy); display:flex; align-items:center; justify-content:center; box-shadow:3px 3px 0 var(--navy);}
   /* Tabs — floating dock with joined center action */
   .dockwrap{margin-top:auto; position:relative; padding:0 2px 2px;}
   .tabbar{display:flex; background:#fff; border:2px solid var(--navy); border-radius:20px; box-shadow:4px 4px 0 var(--navy); padding:6px; align-items:stretch;}
   .tabside{flex:1; display:flex;}
-  .tab{flex:1; display:flex; flex-direction:column; align-items:center; gap:1px; padding:8px 0 6px; font-size:10px; font-weight:700; cursor:pointer; border-radius:14px; color:var(--navy); min-height:64px; justify-content:center;}
+  .tab{flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 0 8px; font-size:11px; font-weight:700; cursor:pointer; border-radius:14px; color:var(--navy); min-height:70px; justify-content:center;}
   .tab.on{background:var(--cyan-bg); color:var(--teal);}
   .tab svg{width:25px; height:25px;}
   .dockfab{width:72px; display:flex; flex-direction:column; align-items:center;}
@@ -82,7 +83,7 @@
   .tabpane{display:none; flex-direction:column; gap:12px; flex:1; overflow:hidden;}
   .tabpane.on{display:flex;}
   /* Chat */
-  .bubble{border:2px solid var(--navy); border-radius:16px; padding:11px 13px; font-size:13.5px; max-width:88%;
+  .bubble{border:2px solid var(--navy); border-radius:16px; padding:13px 15px; font-size:16px; line-height:1.45; max-width:88%;
     box-shadow:3px 3px 0 var(--navy); animation:rise .35s cubic-bezier(.22,1,.36,1) backwards;}
   .bubble.ai{background:#fff; align-self:flex-start;}
   .bubble.user{background:var(--navy); color:#fff; align-self:flex-end; box-shadow:3px 3px 0 var(--turquoise);}
@@ -90,7 +91,7 @@
   @keyframes rise{from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;}}
   .proposal{background:#ECFEFF; border:2px solid var(--navy); border-radius:14px; padding:11px; margin-top:8px;}
   .composer{display:flex; gap:8px; align-items:center; margin-top:auto;}
-  .composer .field{flex:1; border:2px solid var(--navy); border-radius:999px; padding:10px 14px; font-size:13px; background:#fff; color:#94a3b8;}
+  .composer .field{flex:1; border:2px solid var(--navy); border-radius:999px; padding:12px 16px; font-size:15px; background:#fff; color:#94a3b8;}
   .roundbtn{width:44px; height:44px; border-radius:999px; border:2px solid var(--navy); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;}
   /* Modal overlay inside phone */
   .overlay{position:absolute; inset:0; background:rgba(7,30,45,.55); display:flex; align-items:flex-end; z-index:4;}
@@ -102,7 +103,7 @@
     display:flex; align-items:center; justify-content:center; margin:6px auto; animation:pulse 1.2s ease-in-out infinite;}
   @keyframes pulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.09);}}
   .workbg{position:absolute; inset:0; background:rgba(7,30,45,.94); z-index:4; display:flex; align-items:center; justify-content:center; padding:20px;}
-  .timer{font-family:"Fraunces",Georgia,serif; font-size:52px; text-align:center;}
+  .timer{font-family:"Original Surfer",Georgia,serif; font-weight:400; font-size:64px; text-align:center;}
   /* Settings */
   .setrow{display:flex; justify-content:space-between; align-items:center; padding:9px 0; font-size:13.5px;}
   .switch{width:44px; height:26px; border-radius:999px; background:var(--turquoise); border:2px solid var(--navy); position:relative;}
@@ -117,7 +118,7 @@
   .recdot i{width:8px; height:8px; border-radius:4px; background:#fff; display:block;}
   .ghpanel{background:var(--navy); border:2px solid var(--navy); border-radius:20px; padding:16px; color:#fff; display:flex; flex-direction:column; gap:12px;}
   .ghstat{flex:1; background:rgba(255,255,255,.08); border-radius:12px; padding:10px 0; text-align:center;}
-  .ghstat b{font-family:"Fraunces",Georgia,serif; font-size:20px; display:block;}
+  .ghstat b{font-family:"Original Surfer",Georgia,serif; font-weight:400; font-size:24px; display:block;}
   .ghstat span{font-size:11px; font-weight:600; color:var(--turquoise);}
   .strip{display:flex; gap:6px;}
   .strip i{flex:1; height:26px; border-radius:6px; border:1px solid rgba(255,255,255,.25); display:block;}
@@ -169,8 +170,8 @@
           <div class="bubble user">Closed one more — 4 of 5!</div>
         </div>
         <div class="card" id="obcard">
-          <div class="h-display" style="font-size:21px;">Welcome to OnTrack</div>
-          <p style="font-size:13.5px;margin-top:6px;line-height:1.5;" id="obbody">Chat-first accountability. Say a goal, get a tracker, prove progress.</p>
+          <div class="surfer" style="font-size:26px;">Welcome to OnTrack</div>
+          <p style="font-size:14px;margin-top:6px;line-height:1.5;" id="obbody">Chat-first accountability. Say a goal, get a tracker, prove progress.</p>
           <input id="obdraft" style="display:none;margin-top:10px;width:100%;border:2px solid rgba(7,30,45,.2);border-radius:12px;padding:10px;font-size:13px;" placeholder="I want to sell 5 cars this week" />
         </div>
         <div id="obactions"><div class="pillbtn primary" id="obnext">Continue</div></div>
@@ -215,13 +216,13 @@
           </div>
           <div class="card">
             <div style="font-size:11px;font-weight:700;color:var(--teal);">TODAY'S FOCUS</div>
-            <div style="font-size:17px;font-weight:700;margin-top:2px;">Close 5 Enterprise Deals</div>
-            <div style="font-size:12px;opacity:.6;">3/5 deals</div>
+            <div class="surfer" style="font-size:24px;margin-top:2px;">Close 5 Enterprise Deals</div>
+            <div style="font-size:13px;opacity:.6;">3 of 5 deals · 60% shipped</div>
           </div>
-          <b style="font-size:13px;">Active goals (2)</b>
+          <b style="font-size:14px;">Active goals (2)</b>
           <div class="goalrow">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8;">
-              <b style="font-size:14px;">Close 5 Enterprise Deals</b><span class="status st-track">active</span>
+              <b style="font-size:16px;">Close 5 Enterprise Deals</b><span class="status st-track">active</span>
             </div>
             <div class="bar" style="margin-top:10px;"><div></div></div>
             <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-weight:600;color:var(--teal);">
@@ -230,7 +231,7 @@
           </div>
           <div class="goalrow">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8;">
-              <b style="font-size:14px;">Morning pushups</b><span class="status st-track">active</span>
+              <b style="font-size:16px;">Morning pushups</b><span class="status st-track">active</span>
             </div>
             <div class="bar" style="margin-top:10px;"><div></div></div>
             <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-weight:600;color:var(--teal);">
@@ -240,20 +241,28 @@
         </div>
         <!-- CHAT -->
         <div class="tabpane" data-pane="chat">
-          <div class="bubble ai">Tell me what you want to make progress on.</div>
-          <div class="bubble user">I want to sell 5 cars this week</div>
-          <div class="bubble ai">Understood! I structured this as a counter goal (target 5).
+          <div class="bubble ai">Morning brief: "Close 5 Enterprise Deals" sits at 3 of 5, and you're on a 14-day streak. What's today's move?
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+              <span class="status st-track">Log progress</span><span class="status st-track">New goal</span>
+            </div>
+          </div>
+          <div class="bubble user">Did 1 more viewing today</div>
+          <div class="bubble ai">Logged +1 on "Close 5 Enterprise Deals" — now 4 of 5.
             <div class="proposal"><b>Close 5 Enterprise Deals</b>
               <div style="font-size:11px;color:var(--teal);font-weight:600;">counter tracker</div>
               <div class="pillbtn primary" style="margin-top:8px;min-height:38px;font-size:13px;">Use this tracker</div>
             </div>
+          </div>
+          <div style="display:flex;gap:6px;overflow:hidden;">
+            <span class="status st-track">Close deals</span><span class="status st-track">Get fit</span><span class="status st-track">Read more</span><span class="status st-track">Auto-voice: on</span>
           </div>
           <div class="composer"><span class="roundbtn" style="background:var(--turquoise);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#071E2D" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3"/></svg></span>
             <span class="field">Message OnTrack…</span><span class="roundbtn" style="background:var(--navy);color:#fff;">↑</span></div>
         </div>
         <!-- GOALS -->
         <div class="tabpane" data-pane="goals">
-          <div class="h-display" style="font-size:23px;">Goals</div>
+          <div class="surfer" style="font-size:32px;">Goals</div>
+          <div style="font-size:13px;opacity:.65;">2 active · 1 shipped</div>
           <div class="goalrow"><div style="display:flex;justify-content:space-between;align-items:center;">
             <b style="font-size:14px;">Close 5 Enterprise Deals</b><span class="status st-track">active</span></div>
             <div class="bar" style="margin-top:10px;"><div></div></div></div>
@@ -266,17 +275,29 @@
         </div>
         <!-- SETTINGS -->
         <div class="tabpane" data-pane="settings">
-          <div class="h-display" style="font-size:23px;">Settings</div>
-          <div class="card"><b>Profile</b><div style="margin-top:4px;">OnTrack user</div>
-            <div style="font-size:12px;opacity:.6;">you@example.com</div></div>
+          <div class="surfer" style="font-size:32px;">Settings</div>
+          <div class="card"><b>Profile</b><div style="margin-top:4px;font-size:15px;">Adaeze · 2 active · 5 shipped · 14 streak</div>
+            <div style="font-size:12px;opacity:.6;">adaeze@example.com</div></div>
           <div class="card"><b>Audio</b>
             <div class="setrow"><span>Text-to-speech</span><span class="switch"></span></div>
-            <div class="setrow"><span>Voice input</span><span class="switch"></span></div></div>
+            <div class="setrow"><span>Voice input</span><span class="switch"></span></div>
+            <div class="setrow"><span>Auto-play coach voice</span><span class="switch"></span></div></div>
+          <div class="card"><b>Coach</b>
+            <div style="font-size:12px;opacity:.6;margin:4px 0;">Check-in cadence</div>
+            <div style="display:flex;gap:6px;">
+              <span class="status st-track">Off</span><span class="status" style="background:var(--turquoise);border-color:var(--navy);color:var(--navy);">30 min</span><span class="status st-track">1 hour</span>
+            </div></div>
           <div class="card"><b>Notifications</b>
-            <div class="setrow"><span>Reminders &amp; check-ins</span><span class="switch"></span></div></div>
+            <div class="setrow"><span>Reminders &amp; check-ins</span><span class="switch"></span></div>
+            <div class="setrow"><span>Quiet hours (10pm–7am)</span><span class="switch"></span></div></div>
           <div class="card"><b>Integrations</b>
-            <div style="font-size:13px;margin-top:4px;">○ GitHub · ○ Notion</div></div>
-          <p style="text-align:center;color:#B45309;font-weight:700;font-size:13px;">Sign out</p>
+            <div class="setrow"><span>GitHub · <b style="color:var(--teal);">Connected</b></span><span class="pillbtn" style="min-height:36px;font-size:12px;">Manage</span></div>
+            <div class="setrow"><span>Google Calendar · <b style="color:var(--teal);">Connected</b></span><span class="pillbtn" style="min-height:36px;font-size:12px;">Manage</span></div>
+            <div class="setrow"><span>Slack · Notion</span><span style="font-size:11px;opacity:.55;">on web</span></div></div>
+          <div class="card"><b>Focus &amp; blocking</b>
+            <div style="font-size:12.5px;opacity:.65;margin-top:4px;">Android app limits arrive next build — timers work today.</div>
+            <div class="pillbtn primary" style="margin-top:8px;font-size:13px;">Open focus timer</div></div>
+          <p style="text-align:center;color:#B45309;font-weight:700;font-size:14px;">Sign out</p>
         </div>
         <!-- YOU -->
         <div class="tabpane" data-pane="you">
@@ -434,7 +455,7 @@
     obStep++;
     document.querySelectorAll('.obpane').forEach(p => p.classList.toggle('on', p.dataset.ob == obStep));
     document.querySelectorAll('#obscreen .dots i').forEach((d, i) => d.classList.toggle('on', i === obStep));
-    document.querySelector('#obcard .h-display').textContent = OB_TITLES[obStep];
+    document.querySelector('#obcard .surfer').textContent = OB_TITLES[obStep];
     document.getElementById('obbody').textContent = OB_BODIES[obStep];
     document.getElementById('obdraft').style.display = obStep === 2 ? 'block' : 'none';
     document.getElementById('obactions').innerHTML = obStep === 2
