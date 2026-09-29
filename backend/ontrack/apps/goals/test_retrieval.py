@@ -20,7 +20,14 @@ from services.embeddings import generate_embedding
 from services.retrieval import get_relevant_context
 
 
-@override_settings(SUPABASE_JWT_SECRET=TEST_SECRET)
+@override_settings(
+    SUPABASE_JWT_SECRET=TEST_SECRET,
+    # Force the deterministic offline embedding path: tests must never
+    # depend on a developer .env or on network access to an AI server.
+    NVIDIA_BASE_URL="",
+    NVIDIA_API_KEY="",
+    EMBEDDING_API_URL="",
+)
 class RetrievalAugmentedContextTests(TestCase):
     def setUp(self):
         self.client = APIClient()
