@@ -74,7 +74,7 @@ export function ChatBubble({
           borderWidth: 2,
           borderColor: Brand.navy,
           borderRadius: Radii.bubble,
-          padding: 14,
+          padding: 16,
           shadowColor: Brand.navy,
           shadowOffset: { width: 3, height: 3 },
           shadowOpacity: 1,

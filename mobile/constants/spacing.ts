@@ -27,14 +27,14 @@ export const Borders = {
   regular: 2,
 } as const;
 
-/** Minimum touch target (44×44pt) + key component sizes. */
+/** Minimum touch target (48×48pt) + key component sizes. */
 export const Touch = {
-  min: 44,
+  min: 48,
   bubble: 32, // pill-button inner circle
-  iconButton: 48, // mic / send / 🔊 buttons
-  plusButton: 64, // counter +1 circle
+  iconButton: 52, // mic / send / 🔊 buttons
+  plusButton: 72, // counter +1 circle
   checkbox: 28,
-  micHero: 96, // voice modal pulsing mic
+  micHero: 104, // voice modal pulsing mic
   iconSquircle: 48,
   tabIcon: 44,
 } as const;

@@ -26,7 +26,7 @@ export default function Goals() {
         data={[...active, ...done]}
         keyExtractor={(g) => String(g.id)}
         accessibilityLabel="Goals list"
-        contentContainerStyle={{ padding: Spacing.lg, gap: 12 }}
+        contentContainerStyle={{ padding: Spacing.lg, gap: 14 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { clearError(); refresh(); }} />}
         ListHeaderComponent={
           <View style={{ gap: 8, marginBottom: 4 }}>

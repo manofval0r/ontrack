@@ -57,7 +57,7 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
         borderWidth: 2,
         borderColor: Brand.navy,
         borderRadius: Radii.card,
-        padding: Spacing.lg,
+        padding: Spacing.xl,
         transform: [{ scale: pressed ? 0.97 : 1 }],
         shadowColor: Brand.navy,
         shadowOffset: { width: 4, height: 4 },

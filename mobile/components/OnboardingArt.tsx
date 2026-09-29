@@ -53,7 +53,7 @@ function MarkScene({ reduce }: { reduce: boolean }) {
 
   return (
     <Animated.View style={wrapStyle}>
-      <Svg width={200} height={160} viewBox="0 0 200 160">
+      <Svg width={230} height={185} viewBox="0 0 200 160">
         <Rect x={8} y={8} width={184} height={144} rx={28} fill={Brand.turquoise} stroke={Brand.navy} strokeWidth={4} />
         <AnimatedPath
           d="M45 62 C 80 62, 105 50, 140 30 M140 30 l-14 4 M140 30 l-2 14"
@@ -128,7 +128,7 @@ function TrackerScene({ reduce }: { reduce: boolean }) {
   );
 
   return (
-    <View style={{ width: 220, backgroundColor: Brand.white, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.card, padding: 16 }}>
+    <View style={{ width: 250, backgroundColor: Brand.white, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.card, padding: 18 }}>
       <View style={{ height: 12, borderRadius: 999, borderWidth: 2, borderColor: Brand.navy, backgroundColor: Brand.gray, overflow: 'hidden' }}>
         <Animated.View style={[{ height: '100%', backgroundColor: Brand.turquoise }, barStyle]} />
       </View>
@@ -169,7 +169,7 @@ function ChatScene({ reduce }: { reduce: boolean }) {
   const userStyle = useAnimatedStyle(() => ({ opacity: user.value, transform: [{ translateY: (1 - user.value) * 10 }] }));
 
   return (
-    <View style={{ width: 240, gap: 10 }}>
+    <View style={{ width: 270, gap: 12 }}>
       <Animated.View style={[{ alignSelf: 'flex-start', maxWidth: '90%', backgroundColor: Brand.white, borderWidth: 2, borderColor: Brand.navy, borderRadius: 16, padding: 12 }, aiStyle]}>
         <Text style={{ fontSize: 13, color: Brand.navy }}>You're at 3 of 5. On pace for Friday?</Text>
       </Animated.View>
@@ -188,7 +188,7 @@ function ChatScene({ reduce }: { reduce: boolean }) {
 export function OnboardingArt({ step }: { step: number }) {
   const reduce = useReduceMotion();
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 220 }}>
+    <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 250 }}>
       {step === 0 && <MarkScene reduce={reduce} />}
       {step === 1 && <TrackerScene reduce={reduce} />}
       {step === 2 && <ChatScene reduce={reduce} />}
