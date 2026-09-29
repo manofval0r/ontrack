@@ -91,6 +91,7 @@ export function TrackerBody({ goal, onChanged }: { goal: any; onChanged: (g: any
           value={note}
           onChangeText={setNote}
           placeholder="Log a reflection or update…"
+          placeholderTextColor={Brand.placeholder}
           accessibilityLabel="Progress note"
           multiline
           maxLength={500}
@@ -153,6 +154,7 @@ export function TrackerBody({ goal, onChanged }: { goal: any; onChanged: (g: any
         value={note}
         onChangeText={setNote}
         placeholder="Progress note (optional)"
+        placeholderTextColor={Brand.placeholder}
         accessibilityLabel="Progress note"
         maxLength={500}
         style={{

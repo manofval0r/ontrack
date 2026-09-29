@@ -56,6 +56,7 @@ export function ChatComposer({
         value={value}
         onChangeText={onChange}
         placeholder={recording ? 'Listening… tap stop when done' : 'Message OnTrack…'}
+        placeholderTextColor={Brand.placeholder}
         accessibilityLabel="Message OnTrack coach"
         multiline
         maxLength={500}

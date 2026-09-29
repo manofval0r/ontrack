@@ -16,6 +16,7 @@ export const Brand = {
   amberDot: '#F59E0B',
   cyanBg: '#ECFEFF', // on-track pill + AI proposal card
   mint: '#99F6E4', // mid-intensity activity strip only
+  placeholder: 'rgba(7,30,45,0.55)', // input placeholders — always visible
   // Error red — text/icons only, never shadows or fills.
   error: '#dc2626',
   // Overlays

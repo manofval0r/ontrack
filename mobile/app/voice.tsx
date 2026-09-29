@@ -145,6 +145,7 @@ export default function VoiceModal() {
             value={transcript}
             onChangeText={(t) => setTranscript(t.slice(0, 500))}
             placeholder="Your words appear here…"
+            placeholderTextColor={Brand.placeholder}
             accessibilityLabel="Voice transcript, editable"
             multiline
             maxLength={500}

@@ -26,17 +26,18 @@ function spoken(s: number) {
 export default function WorkBlock() {
   const { title } = useLocalSearchParams<{ title?: string }>();
   const [left, setLeft] = useState(FOCUS_SECONDS);
+  const [paused, setPaused] = useState(false);
   const done = left <= 0;
   const goalTitle = typeof title === 'string' && title ? title : 'your goal';
 
   useEffect(() => {
-    if (done) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    if (done || paused) {
+      if (done) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       return;
     }
     const t = setInterval(() => setLeft((s) => (s > 0 ? s - 1 : 0)), 1000);
     return () => clearInterval(t);
-  }, [done]);
+  }, [done, paused]);
 
   const confirmExit = () =>
     Alert.alert('End this session?', 'Your timer stops here, but logged progress is kept.', [
@@ -62,8 +63,10 @@ export default function WorkBlock() {
         <View style={{ marginTop: 16, gap: 10 }}>
           {done ? (
             <PillButton title="Log progress" primary onPress={() => router.back()} accessibilityHint="Returns to the goal to log what you finished" />
+          ) : paused ? (
+            <PillButton title="Resume timer" primary onPress={() => setPaused(false)} accessibilityHint="Resumes the countdown where it stopped" />
           ) : (
-            <PillButton title="Keep working" primary onPress={() => router.back()} />
+            <PillButton title="Pause timer" primary onPress={() => setPaused(true)} accessibilityHint="Pauses the countdown in place — the session stays open" />
           )}
           {!done && <PillButton title="End session" onPress={confirmExit} />}
         </View>

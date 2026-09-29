@@ -19,6 +19,7 @@ import { Brand, Colors } from '../../constants/colors';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { Card, PillButton } from '../../components/ui';
+import { BackdropArt } from '../../components/BackdropArt';
 import { signInWithProvider, signUpWithEmail } from '../../lib/auth';
 import { api } from '../../lib/api';
 import { useGoals } from '../../lib/store';
@@ -66,6 +67,7 @@ export default function Signup() {
   const [error, setError] = useState<string | null>(null);
   const [goalWarning, setGoalWarning] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
   const afterAuth = async () => {
     if (typeof pendingGoal === 'string' && pendingGoal.trim()) {
@@ -91,7 +93,12 @@ export default function Signup() {
     try {
       setBusy(true);
       setError(null);
-      await signUpWithEmail(name.trim(), email.trim(), password);
+      const token = await signUpWithEmail(name.trim(), email.trim(), password);
+      if (!token) {
+        // Email confirmation required — no session yet. Do NOT enter tabs.
+        setNeedsConfirmation(true);
+        return;
+      }
       await afterAuth();
     } catch (e: any) {
       setError(e.message ?? 'Sign up failed. Try a different email.');
@@ -116,8 +123,27 @@ export default function Signup() {
 
   const hasPending = typeof pendingGoal === 'string' && !!pendingGoal.trim();
 
+  if (needsConfirmation) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl, justifyContent: 'center' }}>
+        <Card>
+          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 28, color: Brand.navy, textAlign: 'center' }}>
+            Check your inbox
+          </Text>
+          <Text style={{ marginTop: 8, fontSize: 14, color: Brand.navy, opacity: 0.7, textAlign: 'center' }}>
+            We sent a confirmation link to {email.trim()}. Tap it, then log in — your first goal will be waiting.
+          </Text>
+          <View style={{ marginTop: 14 }}>
+            <PillButton title="Go to log in" primary onPress={() => router.replace('/(auth)/login')} />
+          </View>
+        </Card>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
+      <BackdropArt variant="blobs" />
       <View style={{ flex: 1, padding: Spacing.xl, justifyContent: 'center', gap: 14 }}>
         <Animated.View entering={FadeInDown.duration(350)} style={{ alignItems: 'center', gap: 8 }}>
           <DrawnMark />
@@ -174,9 +200,9 @@ export default function Signup() {
               <View style={{ flex: 1, height: 2, backgroundColor: Colors.light.inputBorder }} />
             </View>
             <View style={{ gap: 10 }}>
-              <TextInput value={name} onChangeText={setName} placeholder="Your name" accessibilityLabel="Full name" autoComplete="name" returnKeyType="next" style={input} />
-              <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" accessibilityLabel="Email address" autoCapitalize="none" autoComplete="email" keyboardType="email-address" returnKeyType="next" style={input} />
-              <TextInput value={password} onChangeText={setPassword} placeholder="Password (8+ characters)" accessibilityLabel="Password, 8 or more characters" autoComplete="new-password" secureTextEntry returnKeyType="done" onSubmitEditing={onSignup} style={input} />
+              <TextInput value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor={Brand.placeholder} accessibilityLabel="Full name" autoComplete="name" returnKeyType="next" style={input} />
+              <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={Brand.placeholder} accessibilityLabel="Email address" autoCapitalize="none" autoComplete="email" keyboardType="email-address" returnKeyType="next" style={input} />
+              <TextInput value={password} onChangeText={setPassword} placeholder="Password (8+ characters)" placeholderTextColor={Brand.placeholder} accessibilityLabel="Password, 8 or more characters" autoComplete="new-password" secureTextEntry returnKeyType="done" onSubmitEditing={onSignup} style={input} />
               {password.length > 0 && password.length < 8 && (
                 <Text style={{ color: Brand.amberText, fontSize: 12 }}>Password needs 8 or more characters.</Text>
               )}

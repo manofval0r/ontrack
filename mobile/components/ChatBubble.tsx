@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Brand } from '../constants/colors';
 import { Radii } from '../constants/spacing';
-import { speakText, stopSpeaking } from '../lib/speech';
+import { speakText, stopSpeaking, prefetchSpeech } from '../lib/speech';
 
 export interface ChatMsg {
   id: string;
@@ -21,7 +21,7 @@ export interface ChatMsg {
   content: string;
   proposal?: any;
   chips?: string[];
-  source?: 'ai' | 'offline';
+  source?: 'ai' | 'offline' | 'fallback';
   timestamp: string;
 }
 
@@ -40,6 +40,10 @@ export function ChatBubble({
 }) {
   const isUser = msg.sender === 'user';
   const [speaking, setSpeaking] = useState(false);
+
+  useEffect(() => {
+    if (!isUser && msg.content) prefetchSpeech(msg.content);
+  }, [isUser, msg.content]);
 
   const replay = async () => {    if (speaking) {
       stopSpeaking();
@@ -79,9 +83,9 @@ export function ChatBubble({
         }}
       >
         <Text style={{ fontSize: 16, lineHeight: 23, color: isUser ? Brand.white : Brand.navy }}>{msg.content}</Text>
-        {!isUser && msg.source === 'offline' && (
+        {!isUser && msg.source && msg.source !== 'ai' && (
           <Text style={{ fontSize: 10, fontWeight: '700', color: Brand.amberText, marginTop: 6 }}>
-            OFFLINE MODE · DEVICE-ONLY
+            {msg.source === 'offline' ? 'OFFLINE MODE · DEVICE-ONLY' : 'BASIC MODE · RETRY FOR FULL AI'}
           </Text>
         )}
         {!!msg.chips?.length && onChip && (

@@ -25,9 +25,7 @@ Updated: 2026-09-28.
 - [ ] EAS preview APK rebuild with bundle fix (Owner runs `eas build --platform android --profile preview`)
 - [ ] Fresh Qwen tunnel URL from owner Brev env (Owner) → verify live parse → chat lights up
 
-## Done — revival build (mobile)
-
-- [x] OAuth receiver `app/auth.tsx` + global URL listener (cold/deferred deep links)
+## Done — revival build (mobile)- [x] OAuth receiver `app/auth.tsx` + global URL listener (cold/deferred deep links)
 - [x] OAuth separation: login swaps session, integrations vault provider tokens (no more sign-in hijack/hang); exp:// dev URLs accepted; auth screen never hangs
 - [x] Custom `+not-found` ("You are off track" + sitemap) + web NotFound upgrade
 - [x] Floating dock tab bar with joined center action (Duolingo-style)
@@ -38,6 +36,7 @@ Updated: 2026-09-28.
 - [x] Round 2: 5-tab dock (Home/Goals/Chat-center/Settings/You), Profile tab, headerless chat, composer dock clearance, expressive type expansion, integration detail screens (repos/commits/PRs, calendar sync, capability toggles, sync-to-goal), staggered lists
 - [x] OAuth separation fix: login-only session swap, warm-path vaulting, exp:// dev URLs, no-hang auth screen
 - [x] Mockup updated (dock, signup, 404, font preview)
+- [x] Bug-fix round (device feedback): animated BackdropArt backgrounds (onboarding/auth), explicit placeholder colors on all inputs, streak View/Text nesting fix, work-block pause-in-place, signup email-confirmation gate, onboarding tracker preview, TTS prefetch + 8s fast fallback, optimistic progress with rollback, canned-fallback badge, package quality-gate scripts
 - [x] Absorbed teammate merges (legal pages, voice/integrations overhaul, audio plugin): no conflicts, tsc clean, backend consumes new serializer fields
 
 ## Left — Web (Eniola unless noted)

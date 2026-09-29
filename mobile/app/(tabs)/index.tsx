@@ -59,12 +59,16 @@ export default function Home() {
               <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 34, color: Brand.navy }}>
                 {greeting()}
               </Text>
-              <Text accessibilityLabel={`${streak} day streak`} style={{ fontWeight: '700', color: Brand.navy }}>
+              <View
+                accessibilityLabel={`${streak} day streak`}
+                accessibilityRole="text"
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+              >
                 <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' }, flickerStyle]}>
                   <Ionicons name="flame" size={16} color={Brand.amberDot} />
                 </Animated.View>
-                {' '}{streak}
-              </Text>
+                <Text style={{ fontWeight: '700', color: Brand.navy }}>{streak}</Text>
+              </View>
             </View>
             {focus && (
               <Pressable

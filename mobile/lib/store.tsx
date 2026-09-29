@@ -90,12 +90,25 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
 
   const logProgress = useCallback(
     async (goalId: string, value: number, note?: string) => {
-      await api.logProgress(goalId, value, note);
-      // Re-read the goal, then re-merge dashboard progress (detail payload
-      // carries no progress value on its own).
-      const updated = await api.getGoal(goalId);
-      await refresh();
-      return updated;
+      // Optimistic: paint immediately, reconcile with the server after.
+      let previous: Goal[] = [];
+      setGoals((prev) => {
+        previous = prev;
+        return prev.map((g) =>
+          String(g.id) === String(goalId)
+            ? { ...g, current_value: value, progress_pct: g.target ? Math.min(100, Math.round((value / g.target) * 100)) : g.progress_pct }
+            : g
+        );
+      });
+      try {
+        await api.logProgress(goalId, value, note);
+        const updated = await api.getGoal(goalId);
+        await refresh();
+        return updated;
+      } catch (e) {
+        setGoals(previous);
+        throw e;
+      }
     },
     [refresh]
   );

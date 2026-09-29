@@ -8,10 +8,11 @@ import { Brand, Colors } from '../constants/colors';
 import { Radii, Spacing } from '../constants/spacing';
 import { FontFamily, Typography } from '../constants/typography';
 import { OnboardingArt } from '../components/OnboardingArt';
+import { BackdropArt } from '../components/BackdropArt';
 import { Card, PillButton } from '../components/ui';
+import { templateMeta } from '../lib/templates';
 
-const STEPS = [
-  {
+const STEPS = [  {
     title: 'Welcome to OnTrack',
     body: 'Chat-first accountability. Say a goal, get a tracker, prove progress.',
     artLabel: 'Illustration: the OnTrack arrow mark drawing itself',
@@ -39,6 +40,7 @@ export default function Onboarding() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl }}>
+      <BackdropArt variant="full" />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44 }}>
         <View
           accessibilityLabel={`Step ${step + 1} of ${STEPS.length}`}
@@ -84,24 +86,28 @@ export default function Onboarding() {
             {STEPS[step].body}
           </Text>
           {step === 2 && (
-            <TextInput
-              value={draft}
-              onChangeText={(t) => setDraft(t.slice(0, 500))}
-              placeholder="e.g. Run 3 mornings a week"
-              accessibilityLabel="Your first goal"
-              accessibilityHint="Typed goal is queued and created after signup"
-              returnKeyType="done"
-              maxLength={500}
-              style={{
-                marginTop: Spacing.md,
-                borderWidth: 2,
-                borderColor: Colors.light.inputBorder,
-                borderRadius: Radii.input,
-                padding: Spacing.md,
-                fontSize: Typography.body.fontSize,
-                backgroundColor: Brand.white,
-              }}
-            />
+            <>
+              <TextInput
+                value={draft}
+                onChangeText={(t) => setDraft(t.slice(0, 500))}
+                placeholder="e.g. Run 3 mornings a week"
+                placeholderTextColor={Brand.placeholder}
+                accessibilityLabel="Your first goal"
+                accessibilityHint="Typed goal is queued and created after signup"
+                returnKeyType="done"
+                maxLength={500}
+                style={{
+                  marginTop: Spacing.md,
+                  borderWidth: 2,
+                  borderColor: Colors.light.inputBorder,
+                  borderRadius: Radii.input,
+                  padding: Spacing.md,
+                  fontSize: Typography.body.fontSize,
+                  backgroundColor: Brand.white,
+                }}
+              />
+              {draft.trim().length > 0 && <DraftPreview text={draft} />}
+            </>
           )}
         </Card>
         {step < 2 ? (
@@ -122,5 +128,38 @@ export default function Onboarding() {
         Step {step + 1} of 3
       </Text>
     </SafeAreaView>
+  );
+}
+
+/** Local tracker preview — keyword shape detection, no network needed.
+ * Shows the user what kind of tracker their words will become. */
+function DraftPreview({ text }: { text: string }) {
+  const lower = text.toLowerCase();
+  const num = text.match(/\b(\d+)\b/);
+  const type = /book|read|ship|task|checklist|steps/.test(lower)
+    ? 'checklist'
+    : /reflect|journal|meditat|habit|mood/.test(lower)
+    ? 'manual'
+    : 'counter';
+  const meta = templateMeta({ goal_template: undefined, goal_type: type });
+  return (
+    <View
+      accessibilityLabel={`Preview: ${meta.label} tracker${num ? `, target ${num[1]}` : ''}`}
+      style={{
+        marginTop: Spacing.md,
+        borderWidth: 2,
+        borderColor: Brand.turquoise,
+        borderRadius: Radii.input,
+        backgroundColor: Brand.cyanBg,
+        padding: Spacing.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.teal }}>
+        {type === 'counter' ? `Counter${num ? ` · target ${num[1]}` : ''}` : type === 'checklist' ? 'Checklist' : 'Daily log'} · {meta.unit}
+      </Text>
+    </View>
   );
 }

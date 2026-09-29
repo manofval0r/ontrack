@@ -5,8 +5,9 @@ import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand, Colors } from '../../constants/colors';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
-import { Typography } from '../../constants/typography';
+import { FontFamily, Typography } from '../../constants/typography';
 import { Card, PillButton } from '../../components/ui';
+import { BackdropArt } from '../../components/BackdropArt';
 import { signInWithEmail, signInWithProvider } from '../../lib/auth';
 import { useGoals } from '../../lib/store';
 
@@ -59,13 +60,20 @@ export default function Login() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl, justifyContent: 'center' }}>
+      <BackdropArt variant="dots" />
+      <View style={{ flex: 1, justifyContent: 'center', gap: 14 }}>
       <Card>
+        <View style={{ alignItems: 'center', gap: 4, marginBottom: 4 }}>
+          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 30, color: Brand.navy }}>Welcome back</Text>
+          <Text style={{ fontSize: 13, color: Brand.navy, opacity: 0.6 }}>Pick up right where you left off.</Text>
+        </View>
         <Text style={{ fontFamily: Typography.title.fontFamily, fontSize: Typography.title.fontSize, color: Brand.navy }}>Log in</Text>
         <View style={{ marginTop: Spacing.md, gap: 10 }}>
           <TextInput
             value={email}
             onChangeText={setEmail}
             placeholder="you@example.com"
+            placeholderTextColor={Brand.placeholder}
             accessibilityLabel="Email address"
             autoCapitalize="none"
             autoComplete="email"
@@ -77,6 +85,7 @@ export default function Login() {
             value={password}
             onChangeText={setPassword}
             placeholder="Password"
+            placeholderTextColor={Brand.placeholder}
             accessibilityLabel="Password"
             autoComplete="password"
             secureTextEntry
@@ -97,6 +106,7 @@ export default function Login() {
       <Link href="/(auth)/signup" accessibilityLabel="Go to sign up" style={{ marginTop: Spacing.lg, textAlign: 'center', color: Brand.teal, fontWeight: '600', minHeight: Touch.min }}>
         No account? Sign up
       </Link>
+      </View>
     </SafeAreaView>
   );
 }

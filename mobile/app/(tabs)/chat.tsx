@@ -191,7 +191,10 @@ export default function Chat() {
         ai(ai_response_text);
         return;
       }
+      const canned = ai_response_text.includes('I set this up as a manual goal');
       ai(ai_response_text, {
+        source: canned ? 'fallback' : 'ai',
+        chips: canned ? ['Try again'] : undefined,
         proposal: {
           title: goal_proposal.title || raw,
           goal_type: goal_proposal.goal_type || 'manual',
