@@ -1,4 +1,6 @@
-/** Chat composer — text input + inline dictation + send. */
+/** Chat composer — text input + inline dictation + send.
+ * Focus ring on the field, 0.97 press physics on both buttons. */
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '../constants/colors';
@@ -26,6 +28,7 @@ export function ChatComposer({
   onToggleDictation: () => void;
 }) {
   const t = useTheme();
+  const [focused, setFocused] = useState(false);
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: Spacing.md, paddingBottom: Spacing.lg }}>
@@ -36,7 +39,7 @@ export function ChatComposer({
         accessibilityRole="button"
         accessibilityHint="Records audio and transcribes it into the message field"
         accessibilityState={{ disabled: transcribing, busy: recording || transcribing }}
-        style={{
+        style={({ pressed }) => ({
           width: Touch.iconButton,
           height: Touch.iconButton,
           borderRadius: Radii.pill,
@@ -46,7 +49,8 @@ export function ChatComposer({
           alignItems: 'center',
           justifyContent: 'center',
           opacity: transcribing ? 0.5 : 1,
-        }}
+          transform: [{ scale: pressed ? 0.97 : 1 }],
+        })}
       >
         {transcribing ? (
           <ActivityIndicator color={Brand.navy} size="small" />
@@ -57,6 +61,8 @@ export function ChatComposer({
       <TextInput
         value={value}
         onChangeText={onChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         placeholder={recording ? 'Listening… tap stop when done' : 'Message OnTrack…'}
         placeholderTextColor={t.inkSoft}
         accessibilityLabel="Message OnTrack"
@@ -68,7 +74,7 @@ export function ChatComposer({
           minHeight: Touch.min,
           maxHeight: 110,
           borderWidth: 2,
-          borderColor: recording ? Brand.error : t.border,
+          borderColor: recording ? Brand.error : focused ? Brand.turquoise : t.border,
           borderRadius: Radii.pill,
           paddingHorizontal: Spacing.lg,
           paddingVertical: 10,
@@ -82,7 +88,7 @@ export function ChatComposer({
         accessibilityLabel="Send message"
         accessibilityRole="button"
         accessibilityState={{ disabled: !canSend }}
-        style={{
+        style={({ pressed }) => ({
           width: Touch.iconButton,
           height: Touch.iconButton,
           borderRadius: Radii.pill,
@@ -92,7 +98,8 @@ export function ChatComposer({
           alignItems: 'center',
           justifyContent: 'center',
           opacity: !canSend ? 0.4 : 1,
-        }}
+          transform: [{ scale: pressed && canSend ? 0.97 : 1 }],
+        })}
       >
         <Ionicons name="arrow-up" size={20} color={t.primaryInk} />
       </Pressable>

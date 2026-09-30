@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useURL } from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '../constants/colors';
@@ -23,20 +24,53 @@ function isAuthUrl(url: string): boolean {
 
 export default function AuthCallback() {
   const t = useTheme();
-  const url = useURL();
+  const initialUrl = useURL();
+  // The redirect event can fire BEFORE this route mounts (root listener
+  // navigates here after the fact), so useURL() may miss it. Track late
+  // arrivals with our own subscription as well as the initial URL.
+  const [lateUrl, setLateUrl] = useState<string | null>(null);
+  const url = lateUrl ?? initialUrl;
   const [error, setError] = useState<string | null>(null);
   const [errMode, setErrMode] = useState<string>('login');
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    const sub = Linking.addEventListener('url', ({ url: incoming }) => {
+      if (isAuthUrl(incoming)) setLateUrl(incoming);
+    });
+    return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
     if (done) return;
-    // No deep link (e.g. opened directly): fail fast, never hang.
+    // No deep link (e.g. opened directly): the warm browser session may still
+    // own this sign-in and set the session at any moment. Poll briefly for a
+    // session before declaring failure — erroring here while logged in is
+    // exactly what stranded users on the "link broke" screen.
     if (url === null) {
-      const t = setTimeout(
-        () => setError('No sign-in data arrived. Return and try again.'),
-        4000
-      );
-      return () => clearTimeout(t);
+      let cancelled = false;
+      let tries = 0;
+      const tick = async () => {
+        if (cancelled) return;
+        tries += 1;
+        try {
+          if (await getToken()) {
+            setDone(true);
+            router.replace('/(tabs)');
+            return;
+          }
+        } catch {}
+        if (tries * 500 >= 6000) {
+          setError('No sign-in data arrived. Return and try again.');
+          return;
+        }
+        timer = setTimeout(tick, 500);
+      };
+      let timer = setTimeout(tick, 500);
+      return () => {
+        cancelled = true;
+        clearTimeout(timer);
+      };
     }
     (async () => {
       let mode = 'login';

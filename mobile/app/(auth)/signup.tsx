@@ -11,7 +11,7 @@ import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { BrandMark, Card, PillButton, SocialButton } from '../../components/ui';
 import { BackdropArt } from '../../components/BackdropArt';
-import { signInWithProvider, signUpWithEmail } from '../../lib/auth';
+import { signInWithProvider, signUpWithEmail, awaitSession } from '../../lib/auth';
 import { api } from '../../lib/api';
 import { useGoals } from '../../lib/store';
 
@@ -70,7 +70,11 @@ export default function Signup() {
     try {
       setBusy(true);
       setError(null);
-      await signInWithProvider(provider);
+      const { owned } = await signInWithProvider(provider);
+      // Same lost-claim guard as login: never enter tabs without a session.
+      if (!owned && !(await awaitSession())) {
+        throw new Error(`${provider === 'google' ? 'Google' : 'GitHub'} sign-in didn't finish. Try again.`);
+      }
       await afterAuth();
     } catch (e: any) {
       setError(e.message ?? `${provider === 'google' ? 'Google' : 'GitHub'} sign-in failed.`);

@@ -34,7 +34,10 @@ export default function GoalDetail() {
   const [celebrating, setCelebrating] = useState(false);
 
   const load = async () => {
-    if (!id) return;
+    if (!id) {
+      setError('This goal link is missing its ID. Go back and open the goal again.');
+      return;
+    }
     setError(null);
     try {
       const g = await api.getGoal(String(id));

@@ -99,7 +99,17 @@ export function ChatBubble({
                 onPress={() => onChip(chip)}
                 accessibilityLabel={`Reply: ${chip}`}
                 accessibilityRole="button"
-                style={{ borderWidth: 2, borderColor: t.border, borderRadius: Radii.pill, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: t.surface, minHeight: 44, justifyContent: 'center' }}
+                style={({ pressed }) => ({
+                  borderWidth: 2,
+                  borderColor: t.border,
+                  borderRadius: Radii.pill,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: pressed ? Brand.turquoise : t.surface,
+                  minHeight: 44,
+                  justifyContent: 'center',
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                })}
               >
                 <Text style={{ fontSize: 13, fontWeight: '700', color: t.ink }}>{chip}</Text>
               </Pressable>
@@ -107,7 +117,11 @@ export function ChatBubble({
           </View>
         )}
         {!!msg.references?.length && (
-          <View style={{ marginTop: 10 }} accessibilityLabel={`Sources: ${msg.references.join(', ')}`}>
+          <Animated.View
+            entering={FadeInUp.duration(280).delay(120)}
+            style={{ marginTop: 10 }}
+            accessibilityLabel={`Sources: ${msg.references.join(', ')}`}
+          >
             <Text style={{ fontSize: 10, fontWeight: '700', color: t.teal, marginBottom: 4 }}>SOURCES</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {msg.references.map((ref, i) => (
@@ -120,7 +134,7 @@ export function ChatBubble({
                 </View>
               ))}
             </View>
-          </View>
+          </Animated.View>
         )}
         {!isUser && (
           <Pressable
@@ -155,7 +169,17 @@ export function ChatBubble({
               onPress={() => onActivate(msg.proposal)}
               accessibilityLabel={`Use this tracker: ${msg.proposal.title ?? 'new goal'}`}
               accessibilityRole="button"
-              style={{ marginTop: 8, backgroundColor: Brand.navy, borderRadius: Radii.pill, paddingVertical: 12, alignItems: 'center', minHeight: 44, justifyContent: 'center' }}
+              style={({ pressed }) => ({
+                marginTop: 8,
+                backgroundColor: Brand.navy,
+                borderRadius: Radii.pill,
+                paddingVertical: 12,
+                alignItems: 'center',
+                minHeight: 44,
+                justifyContent: 'center',
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+                opacity: pressed ? 0.85 : 1,
+              })}
             >
               <Text style={{ color: Brand.white, fontWeight: '700' }}>Use this tracker</Text>
             </Pressable>

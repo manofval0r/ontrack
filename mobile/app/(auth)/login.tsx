@@ -10,7 +10,7 @@ import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { BrandMark, Card, PillButton, SocialButton } from '../../components/ui';
 import { BackdropArt } from '../../components/BackdropArt';
-import { signInWithEmail, signInWithProvider } from '../../lib/auth';
+import { signInWithEmail, signInWithProvider, awaitSession } from '../../lib/auth';
 import { useGoals } from '../../lib/store';
 
 export default function Login() {
@@ -52,7 +52,13 @@ export default function Login() {
     try {
       setBusy(true);
       setError(null);
-      await signInWithProvider(provider);
+      const { owned } = await signInWithProvider(provider);
+      // Lost the claim race: the cold-start receiver owns this redirect and
+      // may still be writing the session. Wait for it instead of entering
+      // the app session-less (or erroring while actually logged in).
+      if (!owned && !(await awaitSession())) {
+        throw new Error(`${provider === 'google' ? 'Google' : 'GitHub'} sign-in didn't finish. Try again.`);
+      }
       await afterAuth();
     } catch (e: any) {
       setError(e.message ?? `${provider === 'google' ? 'Google' : 'GitHub'} sign-in failed.`);

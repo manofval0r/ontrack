@@ -1,7 +1,8 @@
 /** M10–M14 Settings — profile, audio, check-ins, notifications, focus,
  * integrations (GitHub + Calendar connect), data, about, sign out. */
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Share, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ import { updateInfo, useAppUpdate } from '../../lib/updates';
 import { api, request } from '../../lib/api';
 import { clearSession, clearProviderToken, getProviderToken, signInWithProvider } from '../../lib/auth';
 import { useGoals } from '../../lib/store';
+import { useReduceMotion } from '../../lib/useReduceMotion';
 
 const CALENDAR_SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 
@@ -535,14 +537,60 @@ function Row({ label, hint, value, onChange }: { label: string; hint: string; va
         <Text style={{ color: t.ink, fontWeight: '600' }}>{label}</Text>
         <Text style={{ color: t.inkSoft, fontSize: 12 }}>{hint}</Text>
       </View>
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        trackColor={{ true: Brand.turquoise }}
-        accessibilityLabel={label}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: value }}
-      />
+      <Toggle value={value} onChange={onChange} label={label} />
     </View>
+  );
+}
+
+/** Tactile toggle — thumb slides on the UI thread, track crossfades.
+ * press: 0.97 scale · toggle: 180ms ease-out · instant under reduced motion. */
+function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
+  const t = useTheme();
+  const reduce = useReduceMotion();
+  const slide = useSharedValue(value ? 1 : 0);
+  const INTRO = { duration: 180, easing: Easing.bezier(0.23, 1, 0.32, 1) } as const;
+  useEffect(() => {
+    slide.value = reduce ? (value ? 1 : 0) : withTiming(value ? 1 : 0, INTRO);
+  }, [value, reduce, slide]);
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: slide.value * 20 }],
+    backgroundColor: slide.value > 0.5 ? Brand.turquoise : t.surface,
+  }));
+  const trackStyle = useAnimatedStyle(() => ({
+    backgroundColor: slide.value > 0.5 ? Brand.turquoise : t.inputTrack,
+  }));
+  return (
+    <Pressable
+      onPress={() => onChange(!value)}
+      accessibilityLabel={label}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      hitSlop={8}
+      style={({ pressed }) => ({
+        transform: [{ scale: pressed ? 0.97 : 1 }],
+      })}
+    >
+      <Animated.View
+        style={[{
+          width: 52,
+          height: 32,
+          borderRadius: 16,
+          borderWidth: 2,
+          borderColor: t.border,
+          justifyContent: 'center',
+          paddingHorizontal: 2,
+        }, trackStyle]}
+      >
+        <Animated.View
+          style={[{
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            borderWidth: 2,
+            borderColor: t.border,
+          }, thumbStyle]}
+        />
+      </Animated.View>
+    </Pressable>
   );
 }

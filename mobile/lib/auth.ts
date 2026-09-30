@@ -143,6 +143,20 @@ export function oauthRedirectUrl(): string {
   return Linking.createURL('auth');
 }
 
+/** Wait for a session to appear (the cold-start receiver may still be writing
+ * it after winning the claim). Returns the token, or null after timeoutMs. */
+export async function awaitSession(timeoutMs = 8000): Promise<string | null> {
+  const start = Date.now();
+  for (;;) {
+    try {
+      const token = await getToken();
+      if (token) return token;
+    } catch {}
+    if (Date.now() - start >= timeoutMs) return null;
+    await new Promise((r) => setTimeout(r, 400));
+  }
+}
+
 export async function saveProviderToken(key: string, token: string) {
   try {
     const raw = await SecureStore.getItemAsync('ontrack_provider_tokens');

@@ -4,14 +4,22 @@
  * structuring. Offline/fallback paths are badged, never disguised. */
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   Text,
   View,
 } from 'react-native';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +29,7 @@ import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { api } from '../../lib/api';
 import { useDictation } from '../../lib/useDictation';
+import { useReduceMotion } from '../../lib/useReduceMotion';
 import { useGoals } from '../../lib/store';
 import { rescheduleReminders, requestReminderPermission } from '../../lib/reminders';
 import { useTheme } from '../../lib/theme';
@@ -45,6 +54,43 @@ const VAGUE = /^(get better|be (better|productive|consistent)|i need motivation|
 const LOG_VERBS = /(did|logged|finished|sold|read|ran|completed|hit|shipped|closed|worked out|meditated|wrote)\b|\+/;
 const CLARIFY_CHIPS = ['Fitness', 'Study', 'Work', 'Just chatting'];
 
+/** Staged thinking indicator — procedural status phases (threejs-animation
+ * timing principles: one Clock, eased loop) with a UI-thread dot pulse.
+ * Purpose: state indication. 900ms ease-in-out, instant under reduced motion. */
+const THINK_STAGES = ['Reading that…', 'Shaping the answer…', 'Polishing…'];
+
+function ThinkingIndicator() {
+  const t = useTheme();
+  const reduce = useReduceMotion();
+  const [stage, setStage] = useState(0);
+  const pulse = useSharedValue(0.35);
+  useEffect(() => {
+    const id = setInterval(() => setStage((s) => (s + 1) % THINK_STAGES.length), 1600);
+    pulse.value = reduce
+      ? 1
+      : withRepeat(
+          withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+          -1,
+          true
+        );
+    return () => {
+      clearInterval(id);
+      cancelAnimation(pulse);
+    };
+  }, [pulse, reduce]);
+  const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+  return (
+    <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.lg }}>
+      <Animated.View style={[{ flexDirection: 'row', gap: 3 }, dotStyle]} accessibilityElementsHidden>
+        {[0, 1, 2].map((i) => (
+          <View key={i} style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: Brand.turquoise }} />
+        ))}
+      </Animated.View>
+      <Text style={{ color: t.teal, fontWeight: '600' }}>{THINK_STAGES[stage]}</Text>
+    </View>
+  );
+}
+
 export default function Chat() {
   const { goals, dashboard, createGoal, logProgress, updateGoal } = useGoals();
   const t = useTheme();
@@ -58,6 +104,17 @@ export default function Chat() {
   const [activating, setActivating] = useState(false);
   const [dictError, setDictError] = useState<string | null>(null);
   const [autoplay, setAutoplay] = useState(false);
+  // When the keyboard is up the dock is covered, so the composer needs only
+  // ~10px clearance; when hidden it needs full dock clearance (~108px).
+  const [keyboardUp, setKeyboardUp] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardUp(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardUp(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
   const briefedRef = useRef(false);
   const listRef = useRef<FlatList>(null);
 
@@ -369,11 +426,16 @@ export default function Chat() {
           deadline: goal_proposal.deadline,
         },
       });
-    } catch {
-      ai(`You're offline, so I can't reach the AI parser right now. Your words are saved above — reconnect and send again, and I'll structure the tracker.`, {
-        source: 'offline',
-        chips: ['Try again'],
-      });
+    } catch (e: any) {
+      // Honest errors: a dead/timed-out network is not the same as the
+      // server or AI being down. Never cry "offline" for a server hiccup.
+      const offline = e?.code === 'NETWORK_ERROR';
+      ai(
+        offline
+          ? `Couldn't reach OnTrack HQ — check your connection, or the server may be waking up. Your words are saved above; send again in a few seconds.`
+          : `OnTrack's brain hiccuped and couldn't answer that. Your words are saved above — send again to retry.`,
+        { source: offline ? 'offline' : 'fallback', chips: ['Try again'] }
+      );
     } finally {
       setThinking(false);
     }
@@ -537,18 +599,13 @@ export default function Chat() {
             </View>
           </View>
         )}
-        {thinking && (
-          <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.lg }}>
-            <ActivityIndicator color={Brand.turquoise} size="small" />
-            <Text style={{ color: t.teal, fontWeight: '600' }}>Thinking…</Text>
-          </View>
-        )}
+        {thinking && <ThinkingIndicator />}
         {(dictError ?? dictation.error) && (
           <Text accessibilityLiveRegion="polite" style={{ paddingHorizontal: Spacing.lg, color: Brand.error, fontSize: Typography.caption.fontSize }}>
             {dictError ?? dictation.error}
           </Text>
         )}
-        <View style={{ marginBottom: 108 }}>
+        <View style={{ marginBottom: keyboardUp ? 10 : 108 }}>
           {dictation.recording && (
             <View style={{ alignItems: 'center', paddingBottom: 6 }}>
               <View

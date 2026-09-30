@@ -4,19 +4,21 @@
  * there. Taps work as before. No haptics, no bounce — motion is a smooth
  * glide (withTiming). Stops are MEASURED via onLayout (never computed), so
  * the pill always lands centered on the active icon. When chat is focused
- * the pill parks under the center button and morphs into its ring. */
+ * the pill fades out and the center island's own ring takes over.
+ * Crash-proofing: the gesture NEVER navigates directly. onEnd only schedules
+ * a state update (scheduleOnRN + stable setState — no stale closures); a
+ * React effect performs navigation with fresh closures inside try/catch. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  interpolateColor,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brand } from '../../constants/colors';
 import { Radii } from '../../constants/spacing';
@@ -31,7 +33,10 @@ const TABS: Record<string, { icon: keyof typeof Ionicons.glyphMap; outline: keyo
 
 const STOP_ORDER = ['index', 'goals', 'settings', 'you'] as const;
 type StopName = (typeof STOP_ORDER)[number];
-const PILL = 56;
+// Pill hugs the icon row: tab content is 70 tall starting under 6px bar
+// padding, icon center ≈ y32 — a 52px pill at top:6 centers exactly there.
+const PILL = 52;
+const PILL_TOP = 6;
 const CENTER_W = 72;
 const BAR_PAD = 6;
 const GLIDE_MS = 260;
@@ -146,11 +151,13 @@ function FloatingDock({ state, navigation }: DockProps) {
   // relative to the bar. Sum = bar-relative stop. Never computed from math.
   const [slots, setSlots] = useState<Record<string, number>>({});
   const [sideX, setSideX] = useState<{ left: number; right: number }>({ left: 0, right: 0 });
+  // Drop target delivered from the gesture (UI thread) to React land.
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
 
   const dragX = useSharedValue(0);
   const dragging = useSharedValue(false);
   const startX = useSharedValue(0);
-  const ringMix = useSharedValue(0); // 0 = tile pill, 1 = chat ring
+  const ringMix = useSharedValue(0); // 0 = pill visible, 1 = chat (pill fades, island ring shows)
   const ready = useRef(false);
 
   const activeName = state.routes[state.index]?.name ?? 'index';
@@ -182,27 +189,39 @@ function FloatingDock({ state, navigation }: DockProps) {
     [stops]
   );
 
-  const committed = useRef(activeName);
+  const hasStop = stopLeft(activeName) != null;
 
-  const commit = useCallback(
-    (name: string) => {
-      if (name === committed.current) return;
-      const idx = byName[name];
-      if (idx === undefined) return;
-      committed.current = name;
-      const route = state.routes[idx];
-      const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-      if (!event.defaultPrevented) navigation.navigate(route.name);
-    },
-    [byName, navigation, state.routes]
-  );
-  const commitRef = useRef(commit);
-  commitRef.current = commit;
+  // Drop commit — runs in React land with fresh closures, never in a worklet.
+  useEffect(() => {
+    if (!dropTarget) return;
+    const target = stopLeft(dropTarget);
+    if (target != null && !reduce) {
+      dragX.value = withTiming(target, { duration: GLIDE_MS });
+    } else if (target != null) {
+      dragX.value = target;
+    }
+    try {
+      if (dropTarget !== state.routes[state.index]?.name) {
+        const idx = byName[dropTarget];
+        if (idx !== undefined) {
+          const route = state.routes[idx];
+          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!event.defaultPrevented) navigation.navigate(route.name);
+        }
+      }
+    } catch {
+      // A failed drop navigation must never strand the pill: snap it back
+      // to the actually-active tab.
+      const fallback = stopLeft(state.routes[state.index]?.name ?? 'index');
+      if (fallback != null) dragX.value = fallback;
+    } finally {
+      setDropTarget(null);
+    }
+  }, [dropTarget, stopLeft, byName, navigation, state.routes, state.index, dragX, reduce]);
 
   // Glide the pill to the active stop on every navigation (tap or drop).
-  // Ring morph follows chat focus. Instant when reduced motion is on.
+  // Ring fade follows chat focus. Instant when reduced motion is on.
   useEffect(() => {
-    committed.current = activeName;
     const target = stopLeft(activeName);
     if (target == null) return;
     const chat = activeName === 'chat';
@@ -264,8 +283,8 @@ function FloatingDock({ state, navigation }: DockProps) {
           if (target != null) {
             dragX.value = reduce ? target : withTiming(target, { duration: GLIDE_MS });
           }
-          // Single commit, after the gesture is over — never mid-drag.
-          runOnJS((n: string) => commitRef.current(n))(name);
+          // Hand off to React: stable setState, no closures, no navigation here.
+          scheduleOnRN(setDropTarget, name);
         }),
     [barWidth, dragX, dragging, startX, nearestStop, stopLeft, reduce]
   );
@@ -276,10 +295,7 @@ function FloatingDock({ state, navigation }: DockProps) {
     const proximity = barWidth > 0 ? Math.max(0, 1 - Math.abs(c - gapC) / 52) : 0;
     return {
       transform: [{ translateX: dragX.value }, { scale: 1 - 0.14 * proximity }],
-      opacity: barWidth > 0 ? 1 : 0,
-      backgroundColor: interpolateColor(ringMix.value, [0, 1], [Brand.turquoise, 'transparent']),
-      borderColor: interpolateColor(ringMix.value, [0, 1], [Brand.navy, Brand.turquoise]),
-      borderWidth: 2 + ringMix.value,
+      opacity: 1 - ringMix.value,
     };
   });
 
@@ -343,28 +359,31 @@ function FloatingDock({ state, navigation }: DockProps) {
             elevation: 6,
           }}
         >
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              {
-                position: 'absolute',
-                top: '50%',
-                marginTop: -PILL / 2,
-                left: 0,
-                width: PILL,
-                height: PILL,
-                borderRadius: 16,
-                borderWidth: 2,
-                shadowColor: Brand.navy,
-                shadowOffset: { width: 2, height: 2 },
-                shadowOpacity: 1,
-                shadowRadius: 0,
-                elevation: 2,
-                zIndex: 1,
-              },
-              pillStyle,
-            ]}
-          />
+          {hasStop && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                {
+                  position: 'absolute',
+                  top: PILL_TOP,
+                  left: 0,
+                  width: PILL,
+                  height: PILL,
+                  borderRadius: 16,
+                  borderWidth: 2,
+                  borderColor: Brand.navy,
+                  backgroundColor: Brand.turquoise,
+                  shadowColor: Brand.navy,
+                  shadowOffset: { width: 2, height: 2 },
+                  shadowOpacity: 1,
+                  shadowRadius: 0,
+                  elevation: 2,
+                  zIndex: 1,
+                },
+                pillStyle,
+              ]}
+            />
+          )}
           <View
             style={{ flex: 1, flexDirection: 'row', zIndex: 2 }}
             onLayout={(e) => {
