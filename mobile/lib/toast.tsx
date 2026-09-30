@@ -1,9 +1,11 @@
-/** In-app toasts — tactile, queued, auto-dismissing. goey-toast-inspired API
- * (show/success/error/info, actions, maxQueue drop-oldest) rebuilt with
- * Reanimated for native. No DOM-isms, fixed Brand palette. */
+/** In-app toasts — top-anchored, tactile, queued, auto-dismissing.
+ * goey-toast-inspired API (show/success/error/info, actions, maxQueue
+ * drop-oldest) rebuilt with Reanimated for native. X button top-right plus
+ * tap-to-dismiss plus timer. No DOM-isms, fixed Brand palette. */
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import Animated, { FadeInUp, FadeOutDown, LinearTransition } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
@@ -95,15 +97,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           position: 'absolute',
           left: 16,
           right: 16,
-          bottom: Math.max(insets.bottom, 12) + 96,
+          top: Math.max(insets.top, 12),
           gap: 8,
         }}
       >
         {items.map((item) => (
           <Animated.View
             key={item.id}
-            entering={reduce ? FadeInUp.duration(80) : FadeInUp.duration(280).springify().damping(18)}
-            exiting={FadeOutDown.duration(180)}
+            entering={reduce ? FadeInDown.duration(80) : FadeInDown.duration(280).springify().damping(18)}
+            exiting={FadeOutUp.duration(180)}
             layout={LinearTransition.duration(200)}
           >
             <Pressable
@@ -158,6 +160,24 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                     <Text style={{ fontWeight: '700', color: Brand.navy, fontSize: 13 }}>{item.action.label}</Text>
                   </Pressable>
                 )}
+                <Pressable
+                  onPress={() => dismiss(item.id)}
+                  accessibilityLabel={`Dismiss: ${item.title}`}
+                  accessibilityRole="button"
+                  hitSlop={10}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 2,
+                    borderColor: t.border,
+                    backgroundColor: t.surface2,
+                  }}
+                >
+                  <Ionicons name="close" size={16} color={t.ink} />
+                </Pressable>
               </View>
             </Pressable>
           </Animated.View>

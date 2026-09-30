@@ -5,7 +5,6 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Swipeable } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Brand } from '../../constants/colors';
 import { useTheme } from '../../lib/theme';
 import { Spacing, Touch } from '../../constants/spacing';
 import { FontFamily } from '../../constants/typography';
@@ -46,6 +45,23 @@ export default function Goals() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Errors surface as dismissible top toasts (with Retry) — never as
+  // dead-end cards pinned into the feed.
+  const lastErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (error && error !== lastErrorRef.current) {
+      lastErrorRef.current = error;
+      toast.show({
+        type: 'error',
+        title: 'Could not sync',
+        message: error,
+        duration: 5000,
+        action: { label: 'Retry', onPress: () => { clearError(); refresh(); } },
+      });
+    }
+    if (!error) lastErrorRef.current = null;
+  }, [error, toast, clearError, refresh]);
 
   const confirmDelete = (goal: any) => {
     Alert.alert('Delete goal?', `"${goal.title}" and its logs go away for good.`, [
@@ -93,7 +109,7 @@ export default function Goals() {
         data={[...active, ...done]}
         keyExtractor={(g) => String(g.id)}
         accessibilityLabel="Goals list"
-        contentContainerStyle={{ padding: Spacing.lg, gap: 12 }}
+        contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 170 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { clearError(); refresh(); }} />}
         ListHeaderComponent={
           <View style={{ gap: 8, marginBottom: 4 }}>
@@ -106,14 +122,6 @@ export default function Goals() {
             <Text style={{ fontSize: 13, color: t.inkSoft }}>
               {active.length} active · {done.length} completed
             </Text>
-            {error && (
-              <Card>
-                <Text accessibilityLiveRegion="polite" style={{ color: Brand.error, fontSize: 13 }}>{error}</Text>
-                <Pressable onPress={() => { clearError(); refresh(); }} style={{ marginTop: 8, minHeight: Touch.min, justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Retry loading goals">
-                  <Text style={{ color: t.teal, fontWeight: '700' }}>Retry</Text>
-                </Pressable>
-              </Card>
-            )}
             {active.length > 0 && done.length > 0 && (
               <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal, marginTop: 4 }}>ACTIVE</Text>
             )}

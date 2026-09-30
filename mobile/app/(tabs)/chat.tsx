@@ -54,6 +54,21 @@ const VAGUE = /^(get better|be (better|productive|consistent)|i need motivation|
 const LOG_VERBS = /(did|logged|finished|sold|read|ran|completed|hit|shipped|closed|worked out|meditated|wrote)\b|\+/;
 const CLARIFY_CHIPS = ['Fitness', 'Study', 'Work', 'Just chatting'];
 
+/** How close is this text to a trackable goal prompt? 0..1.
+ * Drives the "Set as a goal" escape hatch: mid-band scores get the offer
+ * instead of a dead-end clarify or a pure conversational reply. */
+export function trackerScore(text: string): number {
+  const lower = text.toLowerCase();
+  let s = 0;
+  if (/\d/.test(text)) s += 0.35;
+  if (/(week|month|day|morning|evening|daily|friday|monday|deadline|by |before |until )/i.test(lower)) s += 0.25;
+  if (/(sell|run|read|ship|close|journal|workout|pushup|meditat|write|save|learn|exercise|call|visit)/i.test(lower)) s += 0.2;
+  if (text.trim().split(/\s+/).length > 6) s += 0.1;
+  if (/(want|goal|target|track|achieve|plan)/i.test(lower)) s += 0.1;
+  return Math.min(1, Math.round(s * 100) / 100);
+}
+const SET_AS_GOAL_MIN = 0.35;
+
 /** Staged thinking indicator — procedural status phases (threejs-animation
  * timing principles: one Clock, eased loop) with a UI-thread dot pulse.
  * Purpose: state indication. 900ms ease-in-out, instant under reduced motion. */
@@ -409,7 +424,14 @@ export default function Chat() {
       if (!goal_proposal) {
         // Server-side conversational reply (greeting, small talk, real
         // questions) — answered like a chatbot, references shown when given.
-        ai(ai_response_text, references?.length ? { references } : undefined);
+        // Tracker-ish messages keep the escape hatch to structure them.
+        const score = trackerScore(raw);
+        ai(
+          ai_response_text,
+          score >= SET_AS_GOAL_MIN
+            ? { references, chips: ['Set as a goal'] }
+            : references?.length ? { references } : undefined
+        );
         return;
       }
       const canned = ai_response_text.includes('I set this up as a manual goal');
@@ -467,6 +489,19 @@ export default function Chat() {
       if (lastUser) send(lastUser.content);
       return;
     }
+    // "Set as a goal" escape hatch: re-run the user's own last message
+    // straight through goal structuring, skipping the clarify gate.
+    if (raw === 'Set as a goal') {
+      setInput('');
+      const lastUser = [...messages].reverse().find((m) => m.sender === 'user');
+      if (lastUser) {
+        push({ id: `u-${Date.now()}`, sender: 'user', content: lastUser.content, timestamp: now() });
+        await goalFlow(lastUser.content);
+      } else {
+        ai(`Tell me the goal first — then I'll track it.`);
+      }
+      return;
+    }
     setInput('');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     push({ id: `u-${Date.now()}`, sender: 'user', content: raw, timestamp: now() });
@@ -497,8 +532,14 @@ export default function Chat() {
       return;
     }
     // 2. Vague input → clarifying question, not a tracker.
+    // Mid-band tracker scores get the escape hatch instead of a dead end.
     if (VAGUE.test(lower) || (raw.split(/\s+/).length <= 3 && !/\d/.test(raw))) {
-      ai(`Got it — let's sharpen that. Which arena is this in?`, { chips: CLARIFY_CHIPS });
+      const score = trackerScore(raw);
+      if (score >= SET_AS_GOAL_MIN) {
+        ai(`Got it — let's sharpen that. Which arena is this in? (Looks ${Math.round(score * 100)}% like a trackable goal — I can also just track it.)`, { chips: ['Set as a goal', ...CLARIFY_CHIPS] });
+      } else {
+        ai(`Got it — let's sharpen that. Which arena is this in?`, { chips: CLARIFY_CHIPS });
+      }
       return;
     }
     if (['fitness', 'study', 'work', 'just chatting'].includes(lower)) {

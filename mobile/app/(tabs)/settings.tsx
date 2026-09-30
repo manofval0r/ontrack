@@ -2,7 +2,7 @@
  * integrations (GitHub + Calendar connect), data, about, sign out. */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,10 +22,10 @@ import { useReduceMotion } from '../../lib/useReduceMotion';
 
 const CALENDAR_SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 
-const THEMES: Array<{ key: 'light' | 'dark' | 'teal'; label: string; swatch: string }> = [
-  { key: 'light', label: 'Light', swatch: '#F8FAFB' },
-  { key: 'dark', label: 'Dark', swatch: '#07141E' },
-  { key: 'teal', label: 'Teal', swatch: '#006D6A' },
+const THEMES: Array<{ key: 'light' | 'dark' | 'teal'; label: string; glow: string; preview: { bg: string; card: string; dot: string } }> = [
+  { key: 'light', label: 'Light', glow: '#D8F7F3', preview: { bg: '#F8FAFB', card: '#FFFFFF', dot: '#00C4B3' } },
+  { key: 'dark', label: 'Dark', glow: '#0E3A4A', preview: { bg: '#030D16', card: '#082032', dot: '#00C4B3' } },
+  { key: 'teal', label: 'Teal', glow: '#B9EBDF', preview: { bg: '#DFF5EF', card: '#FFFFFF', dot: '#006D6A' } },
 ];
 
 export default function Settings() {
@@ -365,31 +365,52 @@ export default function Settings() {
                   accessibilityLabel={`${th.label} theme`}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
-                  style={{
+                  style={({ pressed }) => ({
                     flex: 1,
-                    borderWidth: 2,
-                    borderColor: t.border,
+                    borderWidth: selected ? 3 : 2,
+                    borderColor: selected ? Brand.turquoise : t.border,
                     borderRadius: Radii.input,
-                    backgroundColor: selected ? Brand.turquoise : t.surface,
+                    backgroundColor: selected ? th.glow : t.surface,
                     paddingVertical: 10,
                     alignItems: 'center',
-                    gap: 6,
+                    gap: 8,
                     minHeight: Touch.min,
                     justifyContent: 'center',
-                    shadowColor: t.shadow,
-                    shadowOffset: { width: selected ? 3 : 2, height: selected ? 3 : 2 },
+                    shadowColor: selected ? Brand.turquoise : t.shadow,
+                    shadowOffset: { width: selected ? 4 : 2, height: selected ? 4 : 2 },
                     shadowOpacity: 1,
                     shadowRadius: 0,
-                    elevation: 2,
-                  }}
+                    elevation: selected ? 4 : 2,
+                    transform: [{ scale: pressed ? 0.96 : 1 }],
+                  })}
                 >
-                  <View style={{ flexDirection: 'row', gap: 0 }}>
-                    <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: th.swatch, borderWidth: 1.5, borderColor: t.border }} />
-                    <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: Brand.turquoise, borderWidth: 1.5, borderColor: t.border, marginLeft: -6 }} />
+                  <View
+                    accessibilityElementsHidden
+                    style={{
+                      width: '70%',
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                      borderWidth: 1.5,
+                      borderColor: t.border,
+                      backgroundColor: th.preview.bg,
+                    }}
+                  >
+                    <View style={{ height: 8, backgroundColor: th.preview.bg }} />
+                    <View style={{ flexDirection: 'row', gap: 3, padding: 4, backgroundColor: th.preview.bg }}>
+                      <View style={{ flex: 1, height: 12, borderRadius: 4, backgroundColor: th.preview.card, borderWidth: 1, borderColor: t.border }} />
+                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: th.preview.dot }} />
+                    </View>
                   </View>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: selected ? Brand.navy : t.ink }}>
-                    {th.label}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    {selected && (
+                      <Animated.View entering={FadeInDown.duration(180)}>
+                        <Ionicons name="checkmark-circle" size={14} color={selected ? Brand.navy : t.teal} />
+                      </Animated.View>
+                    )}
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: selected ? Brand.navy : t.ink }}>
+                      {th.label}
+                    </Text>
+                  </View>
                 </Pressable>
               );
             })}

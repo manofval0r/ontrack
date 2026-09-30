@@ -19,6 +19,7 @@ import { SkeletonCard } from '../../components/Skeleton';
 import { RefreshArc, RefreshState } from '../../components/RefreshArc';
 import { Card } from '../../components/ui';
 import { useGoals } from '../../lib/store';
+import { useToast } from '../../lib/toast';
 import { displayProgress, templateMeta } from '../../lib/templates';
 import { useReduceMotion } from '../../lib/useReduceMotion';
 
@@ -96,6 +97,24 @@ export default function Home() {
   const doRefreshRef = useRef(doRefresh);
   doRefreshRef.current = doRefresh;
 
+  // Errors surface as dismissible top toasts (with Retry) — never as
+  // dead-end cards pinned into the feed.
+  const toast = useToast();
+  const lastErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (error && error !== lastErrorRef.current) {
+      lastErrorRef.current = error;
+      toast.show({
+        type: 'error',
+        title: 'Could not sync',
+        message: error,
+        duration: 5000,
+        action: { label: 'Retry', onPress: () => doRefreshRef.current() },
+      });
+    }
+    if (!error) lastErrorRef.current = null;
+  }, [error, toast]);
+
   const native = useMemo(() => Gesture.Native(), []);
   const pan = useMemo(
     () =>
@@ -154,7 +173,7 @@ export default function Home() {
           <GHFlatList
             data={active}
             keyExtractor={(g) => String(g.id)}
-            contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 130 }}
+            contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 170 }}
             scrollEventThrottle={16}
             onScroll={(e) => {
               atTop.value = e.nativeEvent.contentOffset.y <= 4;
@@ -192,14 +211,6 @@ export default function Home() {
                       </Text>
                     </Card>
                   </Pressable>
-                )}
-                {error && (
-                  <Card>
-                    <Text accessibilityLiveRegion="polite" style={{ color: Brand.error }}>{error}</Text>
-                    <Pressable onPress={doRefresh} style={{ marginTop: 8, minHeight: Touch.min, justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Retry loading goals">
-                      <Text style={{ color: t.teal, fontWeight: '700' }}>Retry</Text>
-                    </Pressable>
-                  </Card>
                 )}
                 {loading && active.length === 0 && (
                   <>

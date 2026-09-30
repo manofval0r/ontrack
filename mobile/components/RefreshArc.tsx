@@ -37,7 +37,14 @@ function PullArc({ progress }: { progress: SharedValue<number> }) {
   const props = useAnimatedProps(() => ({
     strokeDashoffset: C * (1 - Math.min(1, Math.max(0, progress.value))),
   }));
+  // Second visual channel: the ring rotates and grows with the pull, so
+  // progress reads even at a glance (and if dash rendering ever stalls).
+  const motionStyle = useAnimatedStyle(() => {
+    const p = Math.min(1, Math.max(0, progress.value));
+    return { transform: [{ rotate: `${p * 180}deg` }, { scale: 0.8 + p * 0.2 }] };
+  });
   return (
+    <Animated.View style={motionStyle}>
     <Svg width={30} height={30} viewBox="0 0 36 36">
       <Circle cx={18} cy={18} r={R} fill="none" stroke={t.ink} strokeOpacity={0.15} strokeWidth={4.5} />
       <AnimatedRing
@@ -53,6 +60,7 @@ function PullArc({ progress }: { progress: SharedValue<number> }) {
         transform="rotate(-90 18 18)"
       />
     </Svg>
+    </Animated.View>
   );
 }
 

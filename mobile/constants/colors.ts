@@ -70,9 +70,9 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     inputBorder: 'rgba(7, 30, 45, 0.2)',
   },
   dark: {
-    canvas: Brand.darkBg,
-    surface: Brand.darkSurface,
-    surface2: Brand.darkSurface2,
+    canvas: '#030D16',
+    surface: '#082032',
+    surface2: '#0E2F44',
     ink: '#FFFFFF',
     inkSoft: 'rgba(241, 245, 249, 0.65)',
     border: Brand.turquoise,
