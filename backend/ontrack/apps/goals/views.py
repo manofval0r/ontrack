@@ -167,35 +167,25 @@ def _smart_fallback(text, rel_deadline):
     """When LLM is unavailable or fails, construct a sensible goal proposal
     by analyzing text keywords and numbers rather than forcing an empty manual goal."""
     template = ai_module.infer_goal_template(text)
-    inferred_type = Goal.GOAL_TYPE_MANUAL
-    inferred_domain = "general"
-    
+    domain_map = {
+        Goal.TEMPLATE_SALES_COUNTER: "sales",
+        Goal.TEMPLATE_FITNESS_COUNTER: "fitness",
+        Goal.TEMPLATE_GITHUB_CHECKLIST: "engineering",
+        Goal.TEMPLATE_STUDY_CHECKLIST: "learning",
+        Goal.TEMPLATE_REFLECTION_MANUAL: "mindset",
+    }
+    inferred_domain = domain_map.get(template, "general")
+
     num_match = re.search(r"\b(\d+)\b", text)
     found_num = int(num_match.group(1)) if num_match else None
-    
-    if template in (Goal.TEMPLATE_SALES_COUNTER, Goal.TEMPLATE_FITNESS_COUNTER) and found_num is not None:
-        inferred_type = Goal.GOAL_TYPE_COUNTER
-        inferred_target = found_num
-        inferred_domain = "sales" if template == Goal.TEMPLATE_SALES_COUNTER else "fitness"
-    elif template in (Goal.TEMPLATE_GITHUB_CHECKLIST, Goal.TEMPLATE_STUDY_CHECKLIST) and (found_num is not None or "chapter" in text.lower() or "page" in text.lower()):
-        inferred_type = Goal.GOAL_TYPE_CHECKLIST
-        inferred_target = found_num if found_num is not None else 5
-        inferred_domain = "engineering" if template == Goal.TEMPLATE_GITHUB_CHECKLIST else "learning"
-    elif template == Goal.TEMPLATE_FITNESS_COUNTER:
-        inferred_type = Goal.GOAL_TYPE_COUNTER
-        inferred_target = 3
-        inferred_domain = "fitness"
-    elif template == Goal.TEMPLATE_STUDY_CHECKLIST:
-        inferred_type = Goal.GOAL_TYPE_CHECKLIST
-        inferred_target = 4
-        inferred_domain = "learning"
-    elif template == Goal.TEMPLATE_SALES_COUNTER:
-        inferred_type = Goal.GOAL_TYPE_COUNTER
-        inferred_target = 5
-        inferred_domain = "sales"
-    elif found_num is not None:
-        inferred_type = Goal.GOAL_TYPE_COUNTER
-        inferred_target = found_num
+
+    if found_num is not None:
+        if template in (Goal.TEMPLATE_GITHUB_CHECKLIST, Goal.TEMPLATE_STUDY_CHECKLIST):
+            inferred_type = Goal.GOAL_TYPE_CHECKLIST
+            inferred_target = found_num
+        else:
+            inferred_type = Goal.GOAL_TYPE_COUNTER
+            inferred_target = found_num
     else:
         inferred_type = Goal.GOAL_TYPE_MANUAL
         inferred_target = None
@@ -269,6 +259,24 @@ class GoalListCreateView(APIView):
         if data.get("domain") and isinstance(data.get("domain"), str):
             domain = str(data.get("domain"))[:100]
 
+        # Prevent counter tracker from initializing with target=0 or None
+        if goal_type == Goal.GOAL_TYPE_COUNTER and (target is None or target < 1):
+            target = 10
+
+        parse_dict = {} if used_fallback else {
+            "goal_type": goal_type,
+            "target": target,
+            "items": items,
+            "domain": domain,
+            "deadline": deadline.isoformat() if deadline else None,
+            "summary": summary or "",
+            "goal_template": goal_template,
+        }
+        if data.get("unit"):
+            parse_dict["unit"] = str(data.get("unit"))[:50]
+        if data.get("description"):
+            parse_dict["summary"] = clean_text(data.get("description"), field="description", max_length=2000)
+
         goal = Goal.objects.create(
             user_id=request.user_id,
             title=text[:255],
@@ -277,15 +285,7 @@ class GoalListCreateView(APIView):
             target=target,
             domain=domain,
             deadline=deadline,
-            parse_result={} if used_fallback else {
-                "goal_type": goal_type,
-                "target": target,
-                "items": items,
-                "domain": domain,
-                "deadline": deadline.isoformat() if deadline else None,
-                "summary": summary or "",
-                "goal_template": goal_template,
-            },
+            parse_result=parse_dict,
         )
         if goal_type == Goal.GOAL_TYPE_CHECKLIST and items:
             GoalItem.objects.bulk_create(
@@ -309,20 +309,53 @@ class GoalDetailView(APIView):
         return Response(payload)
 
     def put(self, request, goal_id):
-        """Partial update: title/target/domain/deadline/status/items/current_value.
+        """Partial update: title/target/domain/deadline/status/items/goal_type/unit/description.
         Unknown fields ignored."""
         goal = get_object_or_404(Goal, pk=goal_id, user_id=request.user_id)
         data = request.data if isinstance(request.data, dict) else {}
         updated = []
+        if not isinstance(goal.parse_result, dict):
+            goal.parse_result = {}
+
         if "title" in data:
             goal.title = clean_text(data.get("title"), field="title", max_length=255)
             updated.append("title")
+        if "goal_type" in data:
+            new_goal_type = data.get("goal_type")
+            if new_goal_type not in GOAL_TYPES:
+                raise ApiError(f"goal_type must be one of {sorted(GOAL_TYPES)}", "VALIDATION_ERROR")
+            goal.goal_type = new_goal_type
+            goal.parse_result["goal_type"] = new_goal_type
+            updated.append("goal_type")
+            if "parse_result" not in updated:
+                updated.append("parse_result")
         if "target" in data:
             target = data.get("target")
             if target is not None and (not _is_int(target) or target < 0):
                 raise ApiError("target must be a non-negative integer", "VALIDATION_ERROR")
+            if goal.goal_type == Goal.GOAL_TYPE_COUNTER and (target is None or target < 1):
+                target = 1
             goal.target = target
+            goal.parse_result["target"] = target
             updated.append("target")
+            if "parse_result" not in updated:
+                updated.append("parse_result")
+        elif goal.goal_type == Goal.GOAL_TYPE_COUNTER and (goal.target is None or goal.target < 1):
+            goal.target = 10
+            goal.parse_result["target"] = 10
+            if "target" not in updated:
+                updated.append("target")
+            if "parse_result" not in updated:
+                updated.append("parse_result")
+
+        if "unit" in data:
+            goal.parse_result["unit"] = str(data.get("unit") or "")[:50]
+            if "parse_result" not in updated:
+                updated.append("parse_result")
+        if "description" in data:
+            goal.parse_result["summary"] = str(data.get("description") or "")[:2000]
+            if "parse_result" not in updated:
+                updated.append("parse_result")
         if "domain" in data:
             domain = data.get("domain", "")
             if not isinstance(domain, str):

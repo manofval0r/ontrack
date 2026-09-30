@@ -371,7 +371,7 @@ export const api = {
     return mapGoal(raw)
   },
 
-  /** PUT /api/goals/:id  { title?, target?, domain?, deadline?, status?, items?, current_value? } */
+  /** PUT /api/goals/:id  { title?, target?, domain?, deadline?, status?, items?, goal_type?, unit?, description?, current_value? } */
   async updateGoal(id: string, updates: Partial<Goal>): Promise<Goal> {
     const allowed: Record<string, unknown> = {}
     if (updates.title !== undefined) allowed.title = updates.title
@@ -380,6 +380,9 @@ export const api = {
     if (updates.deadline !== undefined) allowed.deadline = updates.deadline
     if (updates.status !== undefined) allowed.status = updates.status
     if (updates.items !== undefined) allowed.items = updates.items
+    if (updates.goal_type !== undefined) allowed.goal_type = updates.goal_type
+    if (updates.unit !== undefined) allowed.unit = updates.unit
+    if (updates.description !== undefined) allowed.description = updates.description
 
     try {
       const raw = await request<any>(`/api/goals/${id}`, {

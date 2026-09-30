@@ -23,6 +23,8 @@ class GoalSerializer(serializers.ModelSerializer):
     items = GoalItemSerializer(many=True, read_only=True)
     progress_logs = ProgressLogSerializer(many=True, read_only=True)
     current_value = serializers.SerializerMethodField()
+    unit = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
 
     class Meta:
         model = Goal
@@ -30,6 +32,7 @@ class GoalSerializer(serializers.ModelSerializer):
             "id", "title", "goal_type", "goal_template", "target", "domain", "status",
             "deadline", "start_at", "result_value", "finished_at",
             "parse_result", "verdict", "items", "progress_logs", "current_value",
+            "unit", "description",
         ]
         read_only_fields = fields
 
@@ -41,3 +44,13 @@ class GoalSerializer(serializers.ModelSerializer):
         if obj.goal_type == Goal.GOAL_TYPE_MANUAL:
             return obj.progress_logs.count()
         return 0
+
+    def get_unit(self, obj):
+        if isinstance(obj.parse_result, dict):
+            return obj.parse_result.get("unit") or ""
+        return ""
+
+    def get_description(self, obj):
+        if isinstance(obj.parse_result, dict):
+            return obj.parse_result.get("summary") or obj.parse_result.get("description") or ""
+        return ""

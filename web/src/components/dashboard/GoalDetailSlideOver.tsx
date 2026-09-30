@@ -114,6 +114,7 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
                   onUpdate={async (delta, note) => {
                     await onLogProgress(goal.id, delta, note)
                   }}
+                  onOpenEdit={() => setIsEditOpen(true)}
                 />
               )}
 
@@ -128,6 +129,7 @@ export const GoalDetailSlideOver: React.FC<GoalDetailSlideOverProps> = ({
                       status: completedCount >= newItems.length ? 'completed' : 'active',
                     })
                   }}
+                  onOpenEdit={() => setIsEditOpen(true)}
                 />
               )}
 

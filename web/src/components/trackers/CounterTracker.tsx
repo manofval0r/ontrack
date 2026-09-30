@@ -6,9 +6,10 @@ import { Button } from '../Button'
 interface CounterTrackerProps {
   goal: Goal
   onUpdate: (delta: number, note?: string) => Promise<void>
+  onOpenEdit?: () => void
 }
 
-export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }) => {
+export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate, onOpenEdit }) => {
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [isListeningNote, setIsListeningNote] = useState(false)
@@ -16,7 +17,13 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
   const recognitionRef = useRef<any>(null)
   const isListeningRef = useRef<boolean>(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const percent = Math.min(100, Math.round((goal.current_value / goal.target) * 100))
+
+  const hasValidTarget = typeof goal.target === 'number' && goal.target > 0
+  const validTarget = hasValidTarget ? goal.target : 1
+  const percent = hasValidTarget
+    ? Math.min(100, Math.round(((goal.current_value || 0) / validTarget) * 100))
+    : 0
+  const isCompleted = (hasValidTarget && (goal.current_value || 0) >= validTarget) || goal.status === 'completed'
 
   const stopNoteDictation = () => {
     isListeningRef.current = false
@@ -154,8 +161,6 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
     }
   }
 
-  const isCompleted = goal.current_value >= goal.target
-
   return (
     <div className="flex flex-col gap-6 p-6 sm:p-8 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] transition-colors">
       {/* Tracker Header */}
@@ -168,9 +173,31 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-[#071E2D]/60 dark:text-slate-400">Target:</span>
-          <span className="px-3 py-1 rounded-full bg-[#ECFEFF] dark:bg-[#00C4B3]/15 border-2 border-[#071E2D] dark:border-[#1E3A52] text-xs font-bold text-[#006D6A] dark:text-[#00C4B3]">
-            {goal.target} {goal.unit || 'units'}
-          </span>
+          {onOpenEdit ? (
+            <button
+              type="button"
+              onClick={onOpenEdit}
+              className={`px-3 py-1 rounded-full border-2 text-xs font-bold transition-all flex items-center gap-1.5 shadow-[1px_1px_0px_#071E2D] cursor-pointer hover:-translate-y-0.5 ${
+                hasValidTarget
+                  ? 'bg-[#ECFEFF] dark:bg-[#00C4B3]/15 border-[#071E2D] dark:border-[#1E3A52] text-[#006D6A] dark:text-[#00C4B3]'
+                  : 'bg-amber-100 dark:bg-amber-950/60 border-amber-500 text-amber-800 dark:text-amber-300'
+              }`}
+              title="Click to edit target & tracker plan"
+            >
+              <span>{hasValidTarget ? `${goal.target} ${goal.unit || 'units'}` : 'Target: 0 (Set Target)'}</span>
+              <span className="text-[11px] opacity-75">✎</span>
+            </button>
+          ) : (
+            <span
+              className={`px-3 py-1 rounded-full border-2 text-xs font-bold ${
+                hasValidTarget
+                  ? 'bg-[#ECFEFF] dark:bg-[#00C4B3]/15 border-[#071E2D] dark:border-[#1E3A52] text-[#006D6A] dark:text-[#00C4B3]'
+                  : 'bg-amber-100 dark:bg-amber-950/60 border-amber-500 text-amber-800 dark:text-amber-300'
+              }`}
+            >
+              {hasValidTarget ? `${goal.target} ${goal.unit || 'units'}` : '0 units'}
+            </span>
+          )}
         </div>
       </div>
 
@@ -182,21 +209,41 @@ export const CounterTracker: React.FC<CounterTrackerProps> = ({ goal, onUpdate }
             className="text-6xl sm:text-7xl font-extrabold text-[#071E2D] dark:text-white tracking-tight"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
-            {goal.current_value}
+            {goal.current_value || 0}
           </span>
           <span className="text-2xl sm:text-3xl font-bold text-[#071E2D]/40 dark:text-slate-500">
-            / {goal.target}
+            / {hasValidTarget ? goal.target : '0'}
           </span>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#006D6A] dark:text-[#00C4B3] mb-6">
-          <span>{percent}% of target accomplished</span>
-          {isCompleted && (
-            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold ml-1">
-              <Trophy className="w-4 h-4" />
-              <span>Goal Reached!</span>
+
+        {!hasValidTarget ? (
+          <div className="flex flex-col items-center gap-1.5 mb-6">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 px-3 py-1 rounded-full">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>Target not set yet ({goal.unit || '0 units'})</span>
             </span>
-          )}
-        </span>
+            {onOpenEdit && (
+              <button
+                type="button"
+                onClick={onOpenEdit}
+                className="text-xs font-bold text-[#006D6A] dark:text-[#00C4B3] hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <span>Edit goal plan & set target</span>
+                <span>→</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#006D6A] dark:text-[#00C4B3] mb-6">
+            <span>{percent}% of target accomplished</span>
+            {isCompleted && (
+              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold ml-1">
+                <Trophy className="w-4 h-4" />
+                <span>Goal Reached!</span>
+              </span>
+            )}
+          </span>
+        )}
 
         {/* Tactile Increment Controls */}
         <div className="flex items-center gap-3">
