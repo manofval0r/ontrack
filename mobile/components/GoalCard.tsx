@@ -104,10 +104,9 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
     if (next < 0) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setBusy(true);
-    // Instant feedback: toast fires on press, network reconciles behind.
-    toast.show({ type: 'success', title: delta > 0 ? `+1 ${meta.unit} logged` : 'Entry corrected', message: `${goal.title} — now ${next}${prog.target ? ` of ${prog.target}` : ''}.` });
     try {
       await logProgress(String(goal.id), next);
+      toast.show({ type: 'success', title: delta > 0 ? `+1 ${meta.unit} logged` : 'Entry corrected', message: `${goal.title} — now ${next}${prog.target ? ` of ${prog.target}` : ''}.` });
     } catch (e: any) {
       toast.show({ type: 'error', title: 'Could not log', message: e?.error ?? e?.message ?? 'Try again in a moment.' });
     } finally {
@@ -119,9 +118,9 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
     if (busy) return;
     Haptics.selectionAsync().catch(() => {});
     setBusy(true);
-    toast.show({ type: 'success', title: 'Checked off', message: title });
     try {
       await logProgress(String(goal.id), prog.current + 1, title);
+      toast.show({ type: 'success', title: 'Checked off', message: title });
     } catch (e: any) {
       toast.show({ type: 'error', title: 'Could not log', message: e?.error ?? e?.message ?? 'Try again in a moment.' });
     } finally {

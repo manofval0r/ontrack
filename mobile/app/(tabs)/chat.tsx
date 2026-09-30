@@ -603,8 +603,8 @@ export default function Chat() {
     if (activating || thinking) return;
     try {
       setActivating(true);
-      toast.show({ type: 'info', title: 'Creating tracker…', message: proposal.title ?? proposal.summary ?? 'New goal' });
       const created = await createGoal(proposal.title ?? proposal.summary ?? 'Untitled goal');
+      toast.show({ type: 'success', title: 'Tracker live', message: `"${created.title}" is on your Home tab now.` });
       ai(`Tracker live: "${created.title}". It's on your Home tab now.`);
       router.push(`/goal/${created.id}`);
     } catch (e: any) {

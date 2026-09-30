@@ -28,8 +28,8 @@ export function TrackerBody({ goal, onChanged }: { goal: any; onChanged: (g: any
     try {
       setBusy(true);
       const next = displayProgress(goal).current + delta;
-      toast.show({ type: 'success', title: `Logged`, message: `${goal.title} — now ${next}.` });
       const updated = await logProgress(String(goal.id), next, text ?? note);
+      toast.show({ type: 'success', title: `Logged`, message: `${goal.title} — now ${next}.` });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       // Detail payload carries no progress value — keep the merged fields.
       onChanged({ ...goal, ...updated, progress_pct: goal.progress_pct, goal_template: goal.goal_template });
