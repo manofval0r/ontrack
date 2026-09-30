@@ -181,6 +181,18 @@ def _smart_fallback(text, rel_deadline):
         inferred_type = Goal.GOAL_TYPE_CHECKLIST
         inferred_target = found_num if found_num is not None else 5
         inferred_domain = "engineering" if template == Goal.TEMPLATE_GITHUB_CHECKLIST else "learning"
+    elif template == Goal.TEMPLATE_FITNESS_COUNTER:
+        inferred_type = Goal.GOAL_TYPE_COUNTER
+        inferred_target = 3
+        inferred_domain = "fitness"
+    elif template == Goal.TEMPLATE_STUDY_CHECKLIST:
+        inferred_type = Goal.GOAL_TYPE_CHECKLIST
+        inferred_target = 4
+        inferred_domain = "learning"
+    elif template == Goal.TEMPLATE_SALES_COUNTER:
+        inferred_type = Goal.GOAL_TYPE_COUNTER
+        inferred_target = 5
+        inferred_domain = "sales"
     elif found_num is not None:
         inferred_type = Goal.GOAL_TYPE_COUNTER
         inferred_target = found_num
@@ -633,8 +645,18 @@ class ChatParseGoalView(APIView):
                 "is_goal": False,
             })
 
-        # Check for casual affirmations / acknowledgments
-        if re.match(r"^(ok|okay|cool|nice|thanks|thank you|thx|ty|got it|awesome|great|sure|alright|perfect|sounds good|yes|no)[\s!.]*$", stripped, re.IGNORECASE):
+        # Check if this is an explicit plan drafting request or has topic context
+        topic = data.get("topic") or data.get("context")
+        is_plan_draft = (
+            topic
+            or "draft a plan" in lower
+            or "make it a goal" in lower
+            or "commit to" in lower
+            or (("draft" in lower or "plan" in lower) and any(w in lower for w in ("fitness", "fit", "study", "code", "sale", "habit", "routine")))
+        )
+
+        # Check for casual affirmations / acknowledgments when NOT drafting a plan
+        if not is_plan_draft and re.match(r"^(ok|okay|cool|nice|thanks|thank you|thx|ty|got it|awesome|great|sure|alright|perfect|sounds good|yes|no)[\s!.]*$", stripped, re.IGNORECASE):
             return Response({
                 "ai_response_text": "Locked in! Whenever you're ready to log progress or start tracking a new goal, just say the word.",
                 "goal_proposal": None,
@@ -642,14 +664,18 @@ class ChatParseGoalView(APIView):
             })
 
         # Too short or generic questions without action target
-        if len(stripped) < 4 and not any(char.isdigit() for char in stripped):
+        if not is_plan_draft and len(stripped) < 4 and not any(char.isdigit() for char in stripped):
             return Response({
                 "ai_response_text": "I'm your AI accountability coach. Tell me what goal or target you'd like to work on!",
                 "goal_proposal": None,
                 "is_goal": False,
             })
 
-        goal_type, target, items, domain, deadline, summary, goal_template, used_fallback = parse_goal_safely(prompt)
+        effective_prompt = prompt
+        if is_plan_draft and topic and len(stripped) < 10:
+            effective_prompt = f"Goal plan for {topic}: 3 weekly sessions"
+
+        goal_type, target, items, domain, deadline, summary, goal_template, used_fallback = parse_goal_safely(effective_prompt)
         proposal = {
             "title": summary or prompt[:255],
             "goal_type": goal_type,

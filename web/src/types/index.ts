@@ -64,6 +64,8 @@ export interface ChatMessage {
   retrieved_context?: string[]
   rag_active?: boolean
   actionButtons?: { label: string; goalId: string; delta: number }[]
+  suggestedGoalPrompt?: string
+  suggestedTopic?: string
 }
 
 export interface DashboardStats {

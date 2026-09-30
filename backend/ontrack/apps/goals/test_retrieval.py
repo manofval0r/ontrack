@@ -194,3 +194,46 @@ class RetrievalAugmentedContextTests(TestCase):
             self.assertNotIn("Marathon Training", item)
             self.assertNotIn("User B", item)
             self.assertNotIn("Sunday run in the rain", item)
+
+    def test_5_informal_question_yields_goal_suggestion(self):
+        """When user asks an informal question on a trackable topic (e.g. fitness advantages),
+        AI responds with advice and suggests drafting a plan as a goal."""
+        mock_ai_reply = (
+            "Being fit provides massive physical vitality, sharper mental focus, and long-term resilience. "
+            "Should I draft a plan and make it a goal you can commit to?"
+        )
+        with patch("services.ai_coach._chat", return_value=mock_ai_reply):
+            resp = self.client.post(
+                "/api/chat",
+                {"message": "what are the advantages of being fit"},
+                format="json",
+            )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("Should I draft a plan and make it a goal you can commit to?", data["reply"])
+        self.assertIsNotNone(data.get("suggested_goal_prompt"))
+        self.assertEqual(data.get("suggested_topic"), "fitness")
+
+    def test_6_confirm_draft_plan_returns_goal_proposal(self):
+        """When user confirms ('Yes, draft a plan') after discussing fitness,
+        the endpoint drafts a structured goal proposal."""
+        resp = self.client.post(
+            "/api/chat",
+            {
+                "message": "Yes, draft a plan and make it a goal you can commit to",
+                "conversation_history": [
+                    {"role": "user", "content": "what are the advantages of being fit"},
+                    {"role": "assistant", "content": "Should I draft a plan and make it a goal you can commit to?"},
+                ],
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data.get("is_goal"))
+        self.assertIsNotNone(data.get("goal_proposal"))
+        proposal = data["goal_proposal"]
+        self.assertIn("title", proposal)
+        self.assertIn("goal_type", proposal)
+        self.assertIn("target", proposal)
+

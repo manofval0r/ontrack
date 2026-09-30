@@ -552,7 +552,9 @@ export const api = {
    */
   async sendChatMessage(
     message: string,
-    goalId?: string
+    goalId?: string,
+    history?: Array<{ role: string; content: string }>,
+    draftGoal?: boolean
   ): Promise<{
     reply: string
     message: string
@@ -560,12 +562,18 @@ export const api = {
     retrieved_context: string[]
     rag_active: boolean
     ai_fallback_used?: boolean
+    suggested_goal_prompt?: string
+    suggested_topic?: string
+    goal_proposal?: any
+    is_goal?: boolean
   }> {
     return request('/api/chat', {
       method: 'POST',
       body: JSON.stringify({
         message,
         goal_id: goalId || undefined,
+        history: history || undefined,
+        draft_goal: draftGoal || undefined,
       }),
     })
   },
