@@ -35,12 +35,14 @@ export default function Signup() {
         setGoalWarning(true);
       }
     }
+    // Same as login: enter tabs first, reconcile behind. Never trap a
+    // freshly authenticated user on a spinner behind a cold backend.
+    router.replace('/(tabs)');
     try {
       await refresh();
     } catch {
       setGoalWarning(true);
     }
-    router.replace('/(tabs)');
   };
 
   const valid =

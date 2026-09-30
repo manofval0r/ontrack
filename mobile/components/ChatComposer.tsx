@@ -80,6 +80,7 @@ export function ChatComposer({
           paddingVertical: 10,
           backgroundColor: t.surface,
           fontSize: Typography.body.fontSize,
+          color: t.ink,
         }}
       />
       <Pressable

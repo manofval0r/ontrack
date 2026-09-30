@@ -1,10 +1,11 @@
-/** Goal card — one design per goal family (never one-size-fits-all).
- * Counter → Concept C week-strip + inline stepper. Checklist → tick rows.
- * Manual → entries + log CTA. All carry time-remaining + TTS replay. */
-import { useEffect, useState } from 'react';
+/** GoalCard v2 — one unified design for every goal family.
+ * The PaceDial is the whole story: shipped ring vs should-be needle, big
+ * count in the middle, pace verdict beside it. Counters get the inline
+ * stepper, checklists get tap-to-check rows, manuals get a log button.
+ * GitHub goals surface their commit count when the backend provides it. */
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
 import { useTheme } from '../lib/theme';
@@ -12,31 +13,12 @@ import { Radii, Spacing } from '../constants/spacing';
 import { Typography } from '../constants/typography';
 import { speakText, stopSpeaking } from '../lib/speech';
 import { displayProgress, templateMeta } from '../lib/templates';
-import { daysLeft, stripColor, weekStrip } from '../lib/goalStats';
+import { daysLeft, paceInfo } from '../lib/goalStats';
 import { useGoals } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { StatusPill } from './ui';
-
-function DayDots({ dots }: { dots: number[] }) {
-  const t = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', gap: 5, marginTop: 8 }} accessibilityLabel="This week's proof">
-      {dots.map((n, i) => (
-        <View
-          key={i}
-          style={{
-            flex: 1,
-            height: 30,
-            borderRadius: 8,
-            borderWidth: 2,
-            borderColor: t.border,
-            backgroundColor: n > 0 ? stripColor(n) : t.surface,
-          }}
-        />
-      ))}
-    </View>
-  );
-}
+import { PaceDial } from './PaceDial';
+import { useEffect } from 'react';
 
 function Stepper({ value, unit, busy, onStep }: { value: string; unit: string; busy: boolean; onStep: (delta: 1 | -1) => void }) {
   const t = useTheme();
@@ -86,22 +68,16 @@ function Stepper({ value, unit, busy, onStep }: { value: string; unit: string; b
 
 export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
   const t = useTheme();
-  const { dashboard, logProgress } = useGoals();
+  const { logProgress } = useGoals();
   const toast = useToast();
   const [speaking, setSpeaking] = useState(false);
   const [busy, setBusy] = useState(false);
   const prog = displayProgress(goal);
   const meta = templateMeta(goal);
-  const history: any[] = Array.isArray(dashboard?.history) ? dashboard.history : [];
-  const dots = weekStrip(history, String(goal.id));
   const remaining = daysLeft(goal.deadline);
-  const fill = useSharedValue(prog.pct);
-
-  useEffect(() => {
-    fill.value = withTiming(prog.pct, { duration: 600 });
-  }, [prog.pct, fill]);
-
-  const barStyle = useAnimatedStyle(() => ({ width: `${Math.round(fill.value)}%` }));
+  const pace = paceInfo(goal, prog.pct);
+  const behind = pace.delta != null && pace.delta <= -0.1;
+  const commits = goal?.template_context?.commits_this_week;
 
   useEffect(() => {
     return () => stopSpeaking();
@@ -116,7 +92,7 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
     }
     setSpeaking(true);
     try {
-      await speakText(`${goal.title}. Progress ${prog.current} of ${prog.target ?? 'unknown'} ${meta.unit}.`, () => setSpeaking(false));
+      await speakText(`${goal.title}. Progress ${prog.current} of ${prog.target ?? 'unknown'} ${meta.unit}. ${pace.label}.`, () => setSpeaking(false));
     } catch {
       setSpeaking(false);
     }
@@ -128,9 +104,10 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
     if (next < 0) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setBusy(true);
+    // Instant feedback: toast fires on press, network reconciles behind.
+    toast.show({ type: 'success', title: delta > 0 ? `+1 ${meta.unit} logged` : 'Entry corrected', message: `${goal.title} — now ${next}${prog.target ? ` of ${prog.target}` : ''}.` });
     try {
       await logProgress(String(goal.id), next);
-      toast.show({ type: 'success', title: delta > 0 ? `+1 ${meta.unit} logged` : 'Entry corrected', message: `${goal.title} — now ${next}${prog.target ? ` of ${prog.target}` : ''}.` });
     } catch (e: any) {
       toast.show({ type: 'error', title: 'Could not log', message: e?.error ?? e?.message ?? 'Try again in a moment.' });
     } finally {
@@ -142,9 +119,9 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
     if (busy) return;
     Haptics.selectionAsync().catch(() => {});
     setBusy(true);
+    toast.show({ type: 'success', title: 'Checked off', message: title });
     try {
       await logProgress(String(goal.id), prog.current + 1, title);
-      toast.show({ type: 'success', title: 'Checked off', message: title });
     } catch (e: any) {
       toast.show({ type: 'error', title: 'Could not log', message: e?.error ?? e?.message ?? 'Try again in a moment.' });
     } finally {
@@ -186,15 +163,36 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
         </Text>
         <StatusPill status={goal.status ?? 'active'} />
       </View>
-      <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '700', color: t.teal }}>
-        {isChecklist ? `${meta.label} · tap to check off`.toUpperCase() : isManual ? `${meta.label} · daily entries`.toUpperCase() : `${meta.label} · this week's proof`.toUpperCase()}
-      </Text>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 12 }}>
+        <PaceDial pct={prog.pct} expected={pace.expected} label={`${goal.title}: ${prog.pct} percent, ${pace.label}`}>
+          <Text style={{ fontFamily: 'OriginalSurfer_400Regular', fontSize: 26, color: t.ink }}>
+            {prog.current}
+          </Text>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: t.inkSoft }} numberOfLines={1}>
+            {prog.target != null ? `OF ${prog.target}` : meta.unit.toUpperCase()}
+          </Text>
+        </PaceDial>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: behind ? Brand.amberText : t.teal }}>
+            {pace.label}
+          </Text>
+          {!!remaining && (
+            <Text style={{ fontSize: 12, color: t.inkSoft }}>{remaining}</Text>
+          )}
+          <Text style={{ fontSize: 12, color: t.inkSoft }}>
+            {prog.current} of {prog.target ?? '—'} {meta.unit}
+          </Text>
+          {meta.github && typeof commits === 'number' && (
+            <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal }}>
+              {commits} {commits === 1 ? 'commit' : 'commits'} this week
+            </Text>
+          )}
+        </View>
+      </View>
 
       {!isChecklist && !isManual && (
-        <>
-          <DayDots dots={dots} />
-          <Stepper value={`${prog.current} of ${prog.target ?? '—'} ${meta.unit}`} unit={meta.unit} busy={busy} onStep={step} />
-        </>
+        <Stepper value={`${prog.current} of ${prog.target ?? '—'} ${meta.unit}`} unit={meta.unit} busy={busy} onStep={step} />
       )}
 
       {isChecklist && (
@@ -248,67 +246,32 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
       )}
 
       {isManual && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 }}>
-          <Text style={{ fontFamily: 'OriginalSurfer_400Regular', fontSize: 40, color: t.ink }}>
-            {prog.current}
-          </Text>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: t.ink }}>{meta.unit} so far</Text>
-            {!!remaining && <Text style={{ fontSize: 12, color: t.inkSoft }}>{remaining}</Text>}
-          </View>
-          <Pressable
-            onPress={(e) => { e.stopPropagation(); onOpen(); }}
-            accessibilityLabel={`Log an entry on ${goal.title}`}
-            accessibilityRole="button"
-            style={({ pressed }) => ({
-              minHeight: 48,
-              paddingHorizontal: 18,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 2,
-              borderColor: t.border,
-              borderRadius: Radii.pill,
-              backgroundColor: t.primary,
-              transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
-              shadowColor: t.shadow,
-              shadowOffset: { width: pressed ? 1 : 3, height: pressed ? 1 : 3 },
-              shadowOpacity: 1,
-              shadowRadius: 0,
-              elevation: 3,
-            })}
-          >
-            <Text style={{ color: t.primaryInk, fontWeight: '700' }}>Log entry</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {!isChecklist && !isManual && (
-        <View
-          accessibilityRole="progressbar"
-          accessibilityValue={{ now: prog.pct, min: 0, max: 100 }}
-          style={{
-            marginTop: 12,
-            height: 10,
-            borderRadius: Radii.pill,
-            backgroundColor: t.inputTrack,
+        <Pressable
+          onPress={(e) => { e.stopPropagation(); onOpen(); }}
+          accessibilityLabel={`Log an entry on ${goal.title}`}
+          accessibilityRole="button"
+          style={({ pressed }) => ({
+            marginTop: 10,
+            minHeight: 48,
+            alignItems: 'center',
+            justifyContent: 'center',
             borderWidth: 2,
             borderColor: t.border,
-            overflow: 'hidden',
-          }}
+            borderRadius: Radii.pill,
+            backgroundColor: t.primary,
+            transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
+            shadowColor: t.shadow,
+            shadowOffset: { width: pressed ? 1 : 3, height: pressed ? 1 : 3 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+            elevation: 3,
+          })}
         >
-          <Animated.View style={[{ height: '100%', backgroundColor: Brand.turquoise }, barStyle]} />
-        </View>
+          <Text style={{ color: t.primaryInk, fontWeight: '700' }}>Log entry</Text>
+        </Pressable>
       )}
 
-      <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 12, fontWeight: '600', color: t.teal }}>
-          {isChecklist
-            ? `${prog.current} of ${prog.target ?? '—'} ${meta.unit} · ${prog.pct} pct`
-            : isManual
-              ? `${prog.pct} pct of target`
-              : `${prog.pct} pct shipped`}
-          {!!remaining && !isManual ? ` · ${remaining}` : ''}
-        </Text>
+      <View style={{ marginTop: 8, alignItems: 'flex-end' }}>
         <Pressable
           onPress={(e) => {
             e.stopPropagation();
@@ -318,11 +281,8 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
           accessibilityLabel={speaking ? 'Stop summary' : 'Hear goal summary'}
           accessibilityRole="button"
           accessibilityState={{ busy: speaking }}
-          style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 4 }}
+          style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
         >
-          {!!remaining && isChecklist && (
-            <Text style={{ fontSize: 11, fontWeight: '700', color: t.inkSoft }}>{remaining}</Text>
-          )}
           <Ionicons name={speaking ? 'pause' : 'volume-high'} size={22} color={t.ink} />
         </Pressable>
       </View>

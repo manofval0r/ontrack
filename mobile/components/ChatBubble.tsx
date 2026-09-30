@@ -25,6 +25,9 @@ export interface ChatMsg {
   references?: string[];
   source?: 'ai' | 'offline' | 'fallback';
   timestamp: string;
+  /** Follow-up tracker offer: rendered as a floating Yes/No bar under the
+   * bubble. `prompt` is re-run through goal structuring on Yes. */
+  trackable?: { prompt: string; score: number };
 }
 
 export function ChatBubble({
@@ -33,12 +36,14 @@ export function ChatBubble({
   compact,
   onActivate,
   onChip,
+  onTrackAnswer,
 }: {
   msg: ChatMsg;
   index: number;
   compact?: boolean;
   onActivate: (proposal: any) => void;
   onChip?: (chip: string) => void;
+  onTrackAnswer?: (msgId: string, yes: boolean) => void;
 }) {
   const isUser = msg.sender === 'user';
   const t = useTheme();
@@ -189,6 +194,73 @@ export function ChatBubble({
           {msg.timestamp}
         </Text>
       </View>
+      {!isUser && msg.trackable && onTrackAnswer && (
+        <Animated.View
+          entering={FadeInUp.duration(280).delay(200)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            marginTop: 8,
+            backgroundColor: t.surface,
+            borderWidth: 2,
+            borderColor: t.border,
+            borderRadius: Radii.pill,
+            paddingVertical: 6,
+            paddingLeft: 14,
+            paddingRight: 6,
+            shadowColor: t.shadow,
+            shadowOffset: { width: 2, height: 2 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+            elevation: 2,
+          }}
+          accessibilityLabel="Make this a goal?"
+          accessibilityRole="toolbar"
+        >
+          <Text style={{ flex: 1, fontSize: 13, fontWeight: '700', color: t.ink }}>
+            Make this a goal?
+          </Text>
+          <Pressable
+            onPress={() => onTrackAnswer(msg.id, true)}
+            accessibilityLabel="Yes, track it"
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              minWidth: 52,
+              minHeight: 40,
+              paddingHorizontal: 14,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: Radii.pill,
+              backgroundColor: Brand.turquoise,
+              borderWidth: 2,
+              borderColor: t.border,
+              transform: [{ scale: pressed ? 0.95 : 1 }],
+            })}
+          >
+            <Text style={{ fontWeight: '800', color: Brand.navy, fontSize: 13 }}>Yes</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => onTrackAnswer(msg.id, false)}
+            accessibilityLabel="No, just chatting"
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              minWidth: 52,
+              minHeight: 40,
+              paddingHorizontal: 14,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: Radii.pill,
+              backgroundColor: t.surface,
+              borderWidth: 2,
+              borderColor: t.border,
+              transform: [{ scale: pressed ? 0.95 : 1 }],
+            })}
+          >
+            <Text style={{ fontWeight: '800', color: t.ink, fontSize: 13 }}>No</Text>
+          </Pressable>
+        </Animated.View>
+      )}
     </Animated.View>
   );
 }

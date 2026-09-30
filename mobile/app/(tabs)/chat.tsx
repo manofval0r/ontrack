@@ -31,6 +31,7 @@ import { api } from '../../lib/api';
 import { useDictation } from '../../lib/useDictation';
 import { useReduceMotion } from '../../lib/useReduceMotion';
 import { useGoals } from '../../lib/store';
+import { useToast } from '../../lib/toast';
 import { rescheduleReminders, requestReminderPermission } from '../../lib/reminders';
 import { useTheme } from '../../lib/theme';
 import { displayProgress } from '../../lib/templates';
@@ -108,6 +109,7 @@ function ThinkingIndicator() {
 
 export default function Chat() {
   const { goals, dashboard, createGoal, logProgress, updateGoal } = useGoals();
+  const toast = useToast();
   const t = useTheme();
   const { theme, setTheme } = t;
   const [userName, setUserName] = useState('');
@@ -412,7 +414,7 @@ export default function Chat() {
     );
   };
 
-  const goalFlow = async (raw: string) => {
+  const goalFlow = async (raw: string, opts?: { force?: boolean }) => {
     setThinking(true);
     try {
       const parsed: any = await api.parseGoal(raw);
@@ -421,31 +423,46 @@ export default function Chat() {
         (Array.isArray(goal_proposal?.references) && goal_proposal.references) ||
         (Array.isArray(parsed?.references) && parsed.references) ||
         undefined;
-      if (!goal_proposal) {
-        // Server-side conversational reply (greeting, small talk, real
-        // questions) — answered like a chatbot, references shown when given.
-        // Tracker-ish messages keep the escape hatch to structure them.
-        const score = trackerScore(raw);
+      const score = trackerScore(raw);
+      // Answer first, track second. A proposal only becomes a tracker card
+      // when the server explicitly flags it a goal OR the client agrees it's
+      // goal-shaped (score gate). Anything else is a conversational answer —
+      // never a tracker ambush. Tracker-ish answers carry a Y/N follow-up.
+      const serverSaysGoal = parsed.is_goal === true;
+      const serverSaysChat = parsed.is_goal === false;
+      // Forced (user tapped Yes) with no server proposal: build the manual
+      // tracker from their own words rather than dead-ending.
+      const effectiveProposal = goal_proposal ?? (opts?.force
+        ? {
+            title: raw.length > 80 ? `${raw.slice(0, 77)}…` : raw,
+            goal_type: 'manual',
+            goal_template: 'reflection_manual',
+            target: 1,
+            domain: 'general',
+          }
+        : null);
+      if (!effectiveProposal || (!opts?.force && (serverSaysChat || (!serverSaysGoal && score < 0.3)))) {
         ai(
           ai_response_text,
-          score >= SET_AS_GOAL_MIN
-            ? { references, chips: ['Set as a goal'] }
+          score >= SET_AS_GOAL_MIN && score < 0.9
+            ? { references, trackable: { prompt: raw, score } }
             : references?.length ? { references } : undefined
         );
         return;
       }
+      const proposal = effectiveProposal;
       const canned = ai_response_text.includes('I set this up as a manual goal');
       ai(ai_response_text, {
         source: canned ? 'fallback' : 'ai',
         chips: canned ? ['Try again'] : undefined,
         proposal: {
-          title: goal_proposal.title || raw,
-          goal_type: goal_proposal.goal_type || 'manual',
-          goal_template: goal_proposal.goal_template,
-          target: goal_proposal.target ?? 1,
-          items: goal_proposal.items,
-          domain: goal_proposal.domain || 'general',
-          deadline: goal_proposal.deadline,
+          title: proposal.title || raw,
+          goal_type: proposal.goal_type || 'manual',
+          goal_template: proposal.goal_template,
+          target: proposal.target ?? 1,
+          items: proposal.items,
+          domain: proposal.domain || 'general',
+          deadline: proposal.deadline,
         },
       });
     } catch (e: any) {
@@ -572,10 +589,21 @@ export default function Chat() {
     await goalFlow(raw);
   };
 
+  /** Y/N tracker follow-up: Yes re-runs the prompt through structuring
+   * with force (user already confirmed); No just dismisses the bar. */
+  const onTrackAnswer = async (msgId: string, yes: boolean) => {
+    const msg = messages.find((m) => m.id === msgId);
+    const prompt = msg?.trackable?.prompt;
+    setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, trackable: undefined } : m)));
+    if (!yes || !prompt || busy) return;
+    await goalFlow(prompt, { force: true });
+  };
+
   const activate = async (proposal: any) => {
     if (activating || thinking) return;
     try {
       setActivating(true);
+      toast.show({ type: 'info', title: 'Creating tracker…', message: proposal.title ?? proposal.summary ?? 'New goal' });
       const created = await createGoal(proposal.title ?? proposal.summary ?? 'Untitled goal');
       ai(`Tracker live: "${created.title}". It's on your Home tab now.`);
       router.push(`/goal/${created.id}`);
@@ -607,6 +635,7 @@ export default function Chat() {
               compact={index > 0 && messages[index - 1].sender === item.sender}
               onActivate={activate}
               onChip={(chip) => send(chip)}
+              onTrackAnswer={onTrackAnswer}
             />
           )}
         />

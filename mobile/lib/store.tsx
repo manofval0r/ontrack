@@ -129,6 +129,8 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
   const logProgress = useCallback(
     async (goalId: string, value: number, note?: string) => {
       // Optimistic: paint immediately, reconcile with the server after.
+      // Single roundtrip: the follow-up refresh() already refetches state,
+      // so no extra getGoal — and callers toast instantly, never on resolve.
       let previous: Goal[] = [];
       setGoals((prev) => {
         previous = prev;
@@ -140,9 +142,8 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
       });
       try {
         await api.logProgress(goalId, value, note);
-        const updated = await api.getGoal(goalId);
         await refresh();
-        return updated;
+        return { current_value: value };
       } catch (e) {
         setGoals(previous);
         throw e;

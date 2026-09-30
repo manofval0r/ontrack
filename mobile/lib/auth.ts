@@ -77,7 +77,17 @@ export async function signInWithProvider(
     `&redirect_to=${encodeURIComponent(redirect)}`;
   if (opts?.scopes) authUrl += `&scopes=${encodeURIComponent(opts.scopes)}`;
   const result = await WebBrowser.openAuthSessionAsync(authUrl, redirect);
-  if (result.type !== 'success' || !result.url) throw new Error(`${provider} sign-in cancelled.`);
+  if (result.type !== 'success' || !result.url) {
+    // The browser doesn't always hand control back to the warm session
+    // (custom-tab routing, cold start). The cold-start receiver may still
+    // complete this exact sign-in via deep link — check before crying
+    // "cancelled" while the user is actually getting logged in.
+    if (mode === 'login') {
+      const late = await awaitSession(5000);
+      if (late) return { accessToken: late, providerToken: null, owned: false };
+    }
+    throw new Error(`${provider} sign-in cancelled.`);
+  }
   // Single-owner claim: the cold-start receiver (app/auth.tsx) may process the
   // same redirect via deep link. Whoever claims it owns the side effects; the
   // loser parses tokens for its caller but writes NOTHING (no session swap,

@@ -33,3 +33,25 @@ export function stripColor(n: number): string {
   if (n <= 3) return Brand.turquoise;
   return Brand.teal;
 }
+
+/** Pace vs deadline: where you should be (0..1 elapsed) vs where you are.
+ * Returns nulls when no usable deadline — the dial then shows progress only. */
+export function paceInfo(
+  goal: any,
+  pct: number
+): { expected: number | null; delta: number | null; label: string } {
+  const end = new Date(goal?.deadline).getTime();
+  const startSrc = goal?.start_at ?? goal?.created_at;
+  const start = startSrc ? new Date(startSrc).getTime() : NaN;
+  if (Number.isNaN(end) || Number.isNaN(start) || end <= start) {
+    return { expected: null, delta: null, label: 'No deadline' };
+  }
+  const expected = Math.min(1, Math.max(0, (Date.now() - start) / (end - start)));
+  const delta = pct / 100 - expected;
+  if (end < Date.now()) {
+    return { expected, delta, label: pct >= 100 ? 'Shipped' : 'Past due' };
+  }
+  if (delta >= 0.1) return { expected, delta, label: `Ahead +${Math.round(delta * 100)}` };
+  if (delta <= -0.1) return { expected, delta, label: `Behind ${Math.round(delta * 100)}` };
+  return { expected, delta, label: 'On pace' };
+}

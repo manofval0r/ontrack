@@ -23,12 +23,14 @@ export default function Login() {
   const [syncWarning, setSyncWarning] = useState(false);
 
   const afterAuth = async () => {
+    // Enter tabs IMMEDIATELY — the backend (often cold) refreshes behind.
+    // Blocking entry on refresh() was the "loaded in later" delay.
+    router.replace('/(tabs)');
     try {
       await refresh();
     } catch {
       setSyncWarning(true);
     }
-    router.replace('/(tabs)');
   };
 
   const valid = email.trim().length > 3 && email.includes('@') && password.length > 0;

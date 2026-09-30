@@ -151,8 +151,6 @@ function FloatingDock({ state, navigation }: DockProps) {
   // relative to the bar. Sum = bar-relative stop. Never computed from math.
   const [slots, setSlots] = useState<Record<string, number>>({});
   const [sideX, setSideX] = useState<{ left: number; right: number }>({ left: 0, right: 0 });
-  // Drop target delivered from the gesture (UI thread) to React land.
-  const [dropTarget, setDropTarget] = useState<string | null>(null);
 
   const dragX = useSharedValue(0);
   const dragging = useSharedValue(false);
@@ -191,9 +189,36 @@ function FloatingDock({ state, navigation }: DockProps) {
 
   const hasStop = stopLeft(activeName) != null;
 
+  const nearestStop = useCallback(
+    (centerX: number): StopName => {
+      let best: StopName = STOP_ORDER[0];
+      let bestD = Infinity;
+      for (const n of STOP_ORDER) {
+        const c = stops[n];
+        if (c == null) continue;
+        const d = Math.abs(c - centerX);
+        if (d < bestD) {
+          bestD = d;
+          best = n;
+        }
+      }
+      return best;
+    },
+    [stops]
+  );
+
   // Drop commit — runs in React land with fresh closures, never in a worklet.
+  // (Worklets may only touch shared values + scheduleOnRN: calling the plain
+  // JS helpers nearestStop/stopLeft from onEnd crashed release builds.)
+  const [drop, setDrop] = useState<{ x: number; vx: number } | null>(null);
   useEffect(() => {
-    if (!dropTarget) return;
+    if (!drop) return;
+    let name = nearestStop(drop.x);
+    if (Math.abs(drop.vx) > 700) {
+      const i = STOP_ORDER.indexOf(name);
+      name = STOP_ORDER[Math.min(STOP_ORDER.length - 1, Math.max(0, i + (drop.vx > 0 ? 1 : -1)))];
+    }
+    const dropTarget = name;
     const target = stopLeft(dropTarget);
     if (target != null && !reduce) {
       dragX.value = withTiming(target, { duration: GLIDE_MS });
@@ -215,9 +240,9 @@ function FloatingDock({ state, navigation }: DockProps) {
       const fallback = stopLeft(state.routes[state.index]?.name ?? 'index');
       if (fallback != null) dragX.value = fallback;
     } finally {
-      setDropTarget(null);
+      setDrop(null);
     }
-  }, [dropTarget, stopLeft, byName, navigation, state.routes, state.index, dragX, reduce]);
+  }, [drop, nearestStop, stopLeft, byName, navigation, state.routes, state.index, dragX, reduce]);
 
   // Glide the pill to the active stop on every navigation (tap or drop).
   // Ring fade follows chat focus. Instant when reduced motion is on.
@@ -241,24 +266,6 @@ function FloatingDock({ state, navigation }: DockProps) {
     }
   }, [activeName, stopLeft, dragX, dragging, ringMix, reduce]);
 
-  const nearestStop = useCallback(
-    (centerX: number): StopName => {
-      let best: StopName = STOP_ORDER[0];
-      let bestD = Infinity;
-      for (const n of STOP_ORDER) {
-        const c = stops[n];
-        if (c == null) continue;
-        const d = Math.abs(c - centerX);
-        if (d < bestD) {
-          bestD = d;
-          best = n;
-        }
-      }
-      return best;
-    },
-    [stops]
-  );
-
   const pan = useMemo(
     () =>
       Gesture.Pan()
@@ -273,20 +280,11 @@ function FloatingDock({ state, navigation }: DockProps) {
         })
         .onEnd((e) => {
           dragging.value = false;
-          const centerX = dragX.value + PILL / 2;
-          let name = nearestStop(centerX);
-          if (Math.abs(e.velocityX) > 700) {
-            const i = STOP_ORDER.indexOf(name);
-            name = STOP_ORDER[Math.min(STOP_ORDER.length - 1, Math.max(0, i + (e.velocityX > 0 ? 1 : -1)))];
-          }
-          const target = stopLeft(name);
-          if (target != null) {
-            dragX.value = reduce ? target : withTiming(target, { duration: GLIDE_MS });
-          }
-          // Hand off to React: stable setState, no closures, no navigation here.
-          scheduleOnRN(setDropTarget, name);
+          // UI thread may only touch shared values + scheduleOnRN — the
+          // nearest-stop math runs in the effect below with fresh closures.
+          scheduleOnRN(setDrop, { x: dragX.value + PILL / 2, vx: e.velocityX });
         }),
-    [barWidth, dragX, dragging, startX, nearestStop, stopLeft, reduce]
+    [barWidth, dragX, dragging, startX, reduce]
   );
 
   const pillStyle = useAnimatedStyle(() => {

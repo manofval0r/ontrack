@@ -8,12 +8,16 @@ import { useTheme } from '../lib/theme';
 import { Radii, Spacing, Touch } from '../constants/spacing';
 import { Typography } from '../constants/typography';
 import { displayProgress, templateMeta } from '../lib/templates';
+import { paceInfo } from '../lib/goalStats';
 import { useGoals } from '../lib/store';
+import { useToast } from '../lib/toast';
 import { PillButton } from './ui';
+import { PaceDial } from './PaceDial';
 
 export function TrackerBody({ goal, onChanged }: { goal: any; onChanged: (g: any) => void }) {
   const t = useTheme();
   const { logProgress } = useGoals();
+  const toast = useToast();
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +28,7 @@ export function TrackerBody({ goal, onChanged }: { goal: any; onChanged: (g: any
     try {
       setBusy(true);
       const next = displayProgress(goal).current + delta;
+      toast.show({ type: 'success', title: `Logged`, message: `${goal.title} — now ${next}.` });
       const updated = await logProgress(String(goal.id), next, text ?? note);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       // Detail payload carries no progress value — keep the merged fields.
@@ -115,16 +120,22 @@ export function TrackerBody({ goal, onChanged }: { goal: any; onChanged: (g: any
     );
   }
 
-  // counter (default)
+  // counter (default) — same PaceDial language as the cards.
   const prog = displayProgress(goal);
   const meta = templateMeta(goal);
+  const pace = paceInfo(goal, prog.pct);
   return (
     <View style={{ alignItems: 'center', gap: Spacing.md }}>
-      <Text style={{ fontFamily: Typography.display.fontFamily, fontSize: Typography.display.fontSize, fontWeight: '700', color: t.ink }}>
-        {prog.current} / {prog.target ?? '—'}
-      </Text>
-      <Text style={{ fontSize: Typography.caption.fontSize, fontWeight: '600', color: t.teal }}>
-        {prog.pct}% · {meta.unit} · {meta.label}
+      <PaceDial pct={prog.pct} expected={pace.expected} size={132} label={`${goal.title}: ${prog.pct} percent, ${pace.label}`}>
+        <Text style={{ fontFamily: Typography.display.fontFamily, fontSize: 30, fontWeight: '700', color: t.ink }}>
+          {prog.current}
+        </Text>
+        <Text style={{ fontSize: 11, fontWeight: '700', color: t.inkSoft }}>
+          OF {prog.target ?? '—'} {meta.unit.toUpperCase()}
+        </Text>
+      </PaceDial>
+      <Text style={{ fontSize: Typography.caption.fontSize, fontWeight: '700', color: pace.delta != null && pace.delta <= -0.1 ? Brand.amberText : t.teal }}>
+        {pace.label} · {prog.pct}% · {meta.label}
       </Text>
       <Pressable
         onPress={() => log(1)}
