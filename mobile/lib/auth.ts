@@ -27,6 +27,36 @@ export async function clearSession() {
   await SecureStore.deleteItemAsync(REFRESH_KEY);
 }
 
+// Single-flight refresh: concurrent 401s share one rotation instead of
+// stampeding Supabase with the same refresh token.
+let refreshFlight: Promise<string | null> | null = null;
+
+/** Exchange the stored refresh token for a fresh pair. Returns the new
+ * access token, or null when rotation is impossible (user must log in). */
+export async function refreshSession(): Promise<string | null> {
+  if (refreshFlight) return refreshFlight;
+  refreshFlight = (async () => {
+    try {
+      const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY);
+      if (!refreshToken) return null;
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.access_token) return null;
+      await setSession(data.access_token, data.refresh_token ?? refreshToken);
+      return data.access_token as string;
+    } catch {
+      return null;
+    } finally {
+      refreshFlight = null;
+    }
+  })();
+  return refreshFlight;
+}
+
 /** Email/password login via Supabase Auth REST (same flow as web Login.tsx). */
 export async function signInWithEmail(email: string, password: string) {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {

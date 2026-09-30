@@ -1,5 +1,5 @@
 /** Django API client — same contracts + {error, code} envelope as web services/api.ts. */
-import { getToken } from './auth';
+import { clearSession, getToken, refreshSession } from './auth';
 import { API_URL } from './config';
 
 export interface StandardError {
@@ -21,8 +21,8 @@ export interface RequestOptions extends RequestInit {
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { timeoutMs, retryOnTimeout, ...fetchOptions } = options;
-  const doFetch = async (): Promise<T> => {
-    const token = await getToken();
+  const doFetch = async (tokenOverride?: string): Promise<T> => {
+    const token = tokenOverride ?? (await getToken());
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs ?? REQUEST_TIMEOUT_MS);
     let res: Response;
@@ -43,6 +43,15 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       } as StandardError;
     } finally {
       clearTimeout(timer);
+    }
+    // Expired access token (Supabase JWTs live ~1h; web auto-refreshes, we
+    // must rotate manually): refresh once and retry with the fresh token.
+    // Unrecoverable rotation clears the session so callers route to login.
+    if (res.status === 401 && tokenOverride === undefined) {
+      const fresh = await refreshSession().catch(() => null);
+      if (fresh) return doFetch(fresh);
+      await clearSession().catch(() => {});
+      throw { error: 'Session expired. Log in again.', code: 'AUTH_EXPIRED' } as StandardError;
     }
     const body: Partial<StandardError> & Record<string, unknown> = await res
       .json()

@@ -28,6 +28,7 @@ import { Brand } from '../../constants/colors';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { api } from '../../lib/api';
+import { clearSession } from '../../lib/auth';
 import { useDictation } from '../../lib/useDictation';
 import { useReduceMotion } from '../../lib/useReduceMotion';
 import { useGoals } from '../../lib/store';
@@ -499,12 +500,18 @@ export default function Chat() {
     } catch (e: any) {
       // Honest errors: a dead/timed-out network is not the same as the
       // server or AI being down. Never cry "offline" for a server hiccup.
+      // An unrecoverable session routes to login via chip — never a dead end.
       const offline = e?.code === 'NETWORK_ERROR';
+      const expired = e?.code === 'AUTH_EXPIRED';
       ai(
         offline
           ? `Couldn't reach OnTrack HQ — check your connection, or the server may be waking up. Your words are saved above; send again in a few seconds.`
-          : `OnTrack's brain hiccuped and couldn't answer that. Your words are saved above — send again to retry.`,
-        { source: offline ? 'offline' : 'fallback', chips: ['Try again'] }
+          : expired
+            ? `Your session expired, so I can't reach your goals. Log in again and we'll pick up right here.`
+            : `OnTrack's brain hiccuped and couldn't answer that. Your words are saved above — send again to retry.`,
+        expired
+          ? { source: 'fallback', chips: ['Log in again'] }
+          : { source: offline ? 'offline' : 'fallback', chips: ['Try again'] }
       );
     } finally {
       setThinking(false);
@@ -535,6 +542,12 @@ export default function Chat() {
       setInput('');
       const lastUser = [...messages].reverse().find((m) => m.sender === 'user');
       if (lastUser) send(lastUser.content);
+      return;
+    }
+    if (raw === 'Log in again') {
+      setInput('');
+      await clearSession().catch(() => {});
+      router.replace('/(auth)/login');
       return;
     }
     // "Set as a goal" escape hatch: ask the server to draft from the user's
