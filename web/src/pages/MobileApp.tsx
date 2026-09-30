@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { Logo } from '../components/Logo'
@@ -11,14 +11,14 @@ export const EXPO_BUILD_URL =
 const Phone: React.FC<{ children: React.ReactNode; label: string }> = ({ children, label }) => (
   <div className="flex flex-col items-center gap-3">
     <div
-      className="w-[240px] rounded-[2rem] border-[3px] border-[#071E2D] dark:border-white/20 bg-white dark:bg-[#0E202D] overflow-hidden shadow-[6px_6px_0px_#071E2D] dark:shadow-[6px_6px_0px_#000000]"
+      className="w-[280px] rounded-[2.5rem] border-[3px] border-[#071E2D] dark:border-white/20 bg-white dark:bg-[#0E202D] overflow-hidden shadow-[8px_8px_0px_#071E2D] dark:shadow-[8px_8px_0px_#000000]"
       aria-label={label}
       role="img"
     >
-      <div className="flex justify-center pt-2">
-        <div className="w-20 h-4 rounded-full bg-[#071E2D] dark:bg-white/20" />
+      <div className="flex justify-center pt-2.5">
+        <div className="w-24 h-5 rounded-full bg-[#071E2D] dark:bg-white/20" />
       </div>
-      <div className="p-3 flex flex-col gap-2 min-h-[300px]">{children}</div>
+      <div className="p-4 flex flex-col gap-2.5 min-h-[380px]">{children}</div>
     </div>
   </div>
 )
@@ -199,6 +199,102 @@ const ROADMAP: { title: string; body: string }[] = [
   { title: 'Study quizzes', body: 'Connect a study app and get quizzed on your material — recall scored straight into the tracker.' },
 ]
 
+// ─── Interactive tour stage ─────────────────────────────────────────────────
+// One bold moment: a big phone stage driven by a step list. Phone content
+// swaps with a 300ms ease-out rise (transform + opacity only); steps show
+// pressed feedback; everything respects reduced motion.
+
+const TourStage: React.FC = () => {
+  const [activeIdx, setActiveIdx] = useState(0)
+  const stop = TOUR[activeIdx]
+  const go = (dir: 1 | -1) => setActiveIdx((i) => (i + dir + TOUR.length) % TOUR.length)
+
+  return (
+    <>
+      <style>{`
+        @keyframes tour-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+        .tour-swap { animation: tour-in 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+        @media (prefers-reduced-motion: reduce) { .tour-swap { animation: none; } }
+      `}</style>
+      <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
+        <ol className="flex flex-col gap-3 list-none p-0 m-0 order-2 lg:order-1">
+          {TOUR.map((s, i) => {
+            const active = i === activeIdx
+            return (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  onClick={() => setActiveIdx(i)}
+                  aria-pressed={active}
+                  aria-label={`Show ${s.title}`}
+                  className={`w-full text-left rounded-2xl border-2 p-4 sm:p-5 transition-all duration-150 cursor-pointer ${
+                    active
+                      ? 'bg-white dark:bg-[#0E202D] border-[#071E2D] dark:border-[#00C4B3] border-l-8 shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000]'
+                      : 'bg-white/60 dark:bg-white/5 border-[#071E2D]/20 dark:border-white/10 hover:border-[#071E2D] dark:hover:border-white/30 active:scale-[0.99]'
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={`font-sans font-bold text-xs w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                        active
+                          ? 'bg-[#00C4B3] text-[#071E2D] border-[#071E2D]'
+                          : 'text-[#006D6A] dark:text-[#00C4B3] border-[#00C4B3]/40'
+                      }`}
+                    >
+                      {i + 1}
+                    </span>
+                    <span>
+                      <span className="block font-sans font-bold text-[11px] uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">
+                        {s.kicker}
+                      </span>
+                      <span
+                        className="block tracking-tight"
+                        style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700, fontSize: '1.2rem' }}
+                      >
+                        {s.title}
+                      </span>
+                      <span className="block font-sans text-sm leading-relaxed opacity-75 mt-1">{s.body}</span>
+                    </span>
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+        </ol>
+        <div className="order-1 lg:order-2 lg:sticky lg:top-24 flex flex-col items-center gap-4">
+          <div key={stop.id} className="tour-swap">
+            <Phone label={`${stop.title} preview`}>{stop.phone}</Phone>
+          </div>
+          <p aria-live="polite" className="font-sans text-xs opacity-60 text-center">
+            {stop.kicker} — {stop.title}
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              aria-label="Previous screen"
+              className="btn-pill btn-pill-white !py-2 !px-4 text-sm cursor-pointer"
+            >
+              <span aria-hidden="true">←</span>
+            </button>
+            <span className="font-sans text-sm font-bold tabular-nums" aria-label={`Screen ${activeIdx + 1} of ${TOUR.length}`}>
+              {activeIdx + 1} / {TOUR.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => go(1)}
+              aria-label="Next screen"
+              className="btn-pill btn-pill-primary !py-2 !px-4 text-sm cursor-pointer"
+            >
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export const MobileApp: React.FC = () => (
@@ -242,7 +338,7 @@ export const MobileApp: React.FC = () => (
         </div>
       </section>
 
-      {/* Tour */}
+      {/* Tour — interactive stage: one big phone, steps drive it */}
       <section id="tour" className="px-4 sm:px-6 py-10 sm:py-14 scroll-mt-24">
         <div className="max-w-6xl mx-auto">
           <p className="font-sans font-bold text-xs uppercase tracking-wider opacity-70 text-center">Sneak peek</p>
@@ -253,25 +349,9 @@ export const MobileApp: React.FC = () => (
             Seven screens, zero forms
           </h2>
           <p className="font-sans text-sm sm:text-base opacity-70 text-center max-w-xl mx-auto mb-8">
-            Every screen below mirrors the shipped app — same tokens, same tactile shapes, same flows.
+            Take the tour — every screen mirrors the shipped app: same tokens, same tactile shapes, same flows.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {TOUR.map((stop) => (
-              <article key={stop.id} className="card-tactile p-5 sm:p-6 flex flex-col items-center text-center">
-                <p className="font-sans font-bold text-[11px] uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">
-                  {stop.kicker}
-                </p>
-                <h3
-                  className="tracking-tight mt-1 mb-2"
-                  style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700, fontSize: '1.35rem' }}
-                >
-                  {stop.title}
-                </h3>
-                <Phone label={`${stop.title} preview`}>{stop.phone}</Phone>
-                <p className="font-sans text-sm leading-relaxed opacity-75 mt-4">{stop.body}</p>
-              </article>
-            ))}
-          </div>
+          <TourStage />
         </div>
       </section>
 
