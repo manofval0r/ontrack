@@ -414,45 +414,56 @@ export default function Chat() {
     );
   };
 
-  const goalFlow = async (raw: string, opts?: { force?: boolean }) => {
-    setThinking(true);
+  /** Last ~8 turns as {role, content} for the server's history-aware flow
+   * (lets the backend detect plan confirmations against its own suggestions). */
+  const chatHistory = () =>
+    messages
+      .filter((m) => m.sender === 'user' || m.sender === 'ai')
+      .slice(-8)
+      .map((m) => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.content }));
+
+  /** Ask the conversational endpoint, falling back to legacy parse-goal when
+   * the backend predates /api/chat (404). */
+  const chatAsk = async (message: string, opts?: { draftGoal?: boolean }) => {
     try {
-      const parsed: any = await api.parseGoal(raw);
-      const { ai_response_text, goal_proposal } = parsed;
-      const references: string[] | undefined =
-        (Array.isArray(goal_proposal?.references) && goal_proposal.references) ||
-        (Array.isArray(parsed?.references) && parsed.references) ||
-        undefined;
-      const score = trackerScore(raw);
-      // Answer first, track second. A proposal only becomes a tracker card
-      // when the server explicitly flags it a goal OR the client agrees it's
-      // goal-shaped (score gate). Anything else is a conversational answer —
-      // never a tracker ambush. Tracker-ish answers carry a Y/N follow-up.
-      const serverSaysGoal = parsed.is_goal === true;
-      const serverSaysChat = parsed.is_goal === false;
-      // Forced (user tapped Yes) with no server proposal: build the manual
-      // tracker from their own words rather than dead-ending.
-      const effectiveProposal = goal_proposal ?? (opts?.force
-        ? {
-            title: raw.length > 80 ? `${raw.slice(0, 77)}…` : raw,
-            goal_type: 'manual',
-            goal_template: 'reflection_manual',
-            target: 1,
-            domain: 'general',
-          }
-        : null);
-      if (!effectiveProposal || (!opts?.force && (serverSaysChat || (!serverSaysGoal && score < 0.3)))) {
-        ai(
-          ai_response_text,
-          score >= SET_AS_GOAL_MIN && score < 0.9
-            ? { references, trackable: { prompt: raw, score } }
-            : references?.length ? { references } : undefined
-        );
-        return;
+      return await api.chat(message, {
+        history: chatHistory(),
+        draftGoal: opts?.draftGoal,
+      });
+    } catch (e: any) {
+      if (/404/.test(String(e?.error ?? e?.message ?? ''))) {
+        const legacy: any = await api.parseGoal(message);
+        return {
+          reply: legacy.ai_response_text,
+          goal_proposal: legacy.goal_proposal ?? null,
+          is_goal: legacy.is_goal,
+          references: legacy.references,
+        };
       }
-      const proposal = effectiveProposal;
-      const canned = ai_response_text.includes('I set this up as a manual goal');
-      ai(ai_response_text, {
+      throw e;
+    }
+  };
+
+  /** Render one server reply: proposal card, conversational answer, or
+   * answer + Y/N tracker follow-up. Server suggestion wins; client score
+   * is the fallback so old backends still get the follow-up bar. */
+  const renderChatResult = (res: any, raw: string) => {
+    const text = res.reply ?? res.ai_response_text ?? "I didn't catch that — try again?";
+    const proposal = res.goal_proposal ?? null;
+    const references: string[] | undefined =
+      (Array.isArray(proposal?.references) && proposal.references) ||
+      (Array.isArray(res.references) && res.references) ||
+      undefined;
+    const score = trackerScore(raw);
+    // Answer first, track second. A proposal only becomes a tracker card
+    // when the server explicitly flags it a goal OR the client agrees it's
+    // goal-shaped (score gate). Anything else is a conversational answer —
+    // never a tracker ambush.
+    const serverSaysGoal = res.is_goal === true;
+    const serverSaysChat = res.is_goal === false;
+    if (proposal && (serverSaysGoal || (!serverSaysChat && score >= 0.3))) {
+      const canned = text.includes('I set this up as a manual goal');
+      ai(text, {
         source: canned ? 'fallback' : 'ai',
         chips: canned ? ['Try again'] : undefined,
         proposal: {
@@ -465,6 +476,26 @@ export default function Chat() {
           deadline: proposal.deadline,
         },
       });
+      return;
+    }
+    const suggestion =
+      typeof res.suggested_goal_prompt === 'string' && res.suggested_goal_prompt.trim()
+        ? res.suggested_goal_prompt.trim()
+        : null;
+    if (suggestion) {
+      ai(text, { references, trackable: { prompt: suggestion, score: 1, draft: true } });
+    } else if (score >= SET_AS_GOAL_MIN && score < 0.9) {
+      ai(text, { references, trackable: { prompt: raw, score, draft: true } });
+    } else {
+      ai(text, references?.length ? { references } : undefined);
+    }
+  };
+
+  const goalFlow = async (raw: string, opts?: { draft?: boolean }) => {
+    setThinking(true);
+    try {
+      const res = await chatAsk(raw, { draftGoal: opts?.draft });
+      renderChatResult(res, raw);
     } catch (e: any) {
       // Honest errors: a dead/timed-out network is not the same as the
       // server or AI being down. Never cry "offline" for a server hiccup.
@@ -506,14 +537,14 @@ export default function Chat() {
       if (lastUser) send(lastUser.content);
       return;
     }
-    // "Set as a goal" escape hatch: re-run the user's own last message
-    // straight through goal structuring, skipping the clarify gate.
+    // "Set as a goal" escape hatch: ask the server to draft from the user's
+    // own last message, skipping the clarify gate.
     if (raw === 'Set as a goal') {
       setInput('');
       const lastUser = [...messages].reverse().find((m) => m.sender === 'user');
       if (lastUser) {
         push({ id: `u-${Date.now()}`, sender: 'user', content: lastUser.content, timestamp: now() });
-        await goalFlow(lastUser.content);
+        await goalFlow(lastUser.content, { draft: true });
       } else {
         ai(`Tell me the goal first — then I'll track it.`);
       }
@@ -547,6 +578,16 @@ export default function Chat() {
     if (await commandFlow(raw)) {
       setInput('');
       return;
+    }
+    // 2c. Plan affirmation ("yes" after a draft suggestion): route straight
+    // to the server with history so it drafts — never let the vague gate
+    // below swallow short confirmations.
+    if (/^(yes|yeah|yep|sure|go ahead|sounds good|do it|please do|ok do it|let'?s do it|draft it)\b/i.test(lower)) {
+      const lastAi = [...messages].reverse().find((m) => m.sender === 'ai');
+      if (lastAi && /draft a plan|make it a goal|goal you can commit to|set a tracker|track it\b/i.test(lastAi.content)) {
+        await goalFlow(raw);
+        return;
+      }
     }
     // 2. Vague input → clarifying question, not a tracker.
     // Mid-band tracker scores get the escape hatch instead of a dead end.
@@ -589,14 +630,23 @@ export default function Chat() {
     await goalFlow(raw);
   };
 
-  /** Y/N tracker follow-up: Yes re-runs the prompt through structuring
-   * with force (user already confirmed); No just dismisses the bar. */
+  /** Y/N tracker follow-up: Yes asks the server to draft (the suggestion
+   * already carries the draft prompt); No just dismisses the bar. */
   const onTrackAnswer = async (msgId: string, yes: boolean) => {
     const msg = messages.find((m) => m.id === msgId);
     const prompt = msg?.trackable?.prompt;
     setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, trackable: undefined } : m)));
     if (!yes || !prompt || busy) return;
-    await goalFlow(prompt, { force: true });
+    push({ id: `u-${Date.now()}`, sender: 'user', content: 'Yes — draft it', timestamp: now() });
+    setThinking(true);
+    try {
+      const res = await chatAsk(prompt, { draftGoal: true });
+      renderChatResult(res, prompt);
+    } catch {
+      ai(`Couldn't draft that — connection hiccup. Try again in a moment.`, { chips: ['Try again'] });
+    } finally {
+      setThinking(false);
+    }
   };
 
   const activate = async (proposal: any) => {

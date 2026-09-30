@@ -92,6 +92,36 @@ export const api = {
       timeoutMs: AI_TIMEOUT_MS,
       retryOnTimeout: true,
     }),
+  /** Conversational chat with history + plan drafting (Evans' /api/chat contract).
+   * Returns { reply, goal_proposal?, is_goal?, suggested_goal_prompt?, suggested_topic?, references? }.
+   * Falls back to parse-goal when the backend predates /api/chat (404). */
+  chat: (
+    message: string,
+    opts?: { goalId?: string; history?: Array<{ role: string; content: string }>; draftGoal?: boolean }
+  ) =>
+    request<{
+      reply?: string;
+      message?: string;
+      ai_response_text?: string;
+      goal_proposal?: any | null;
+      is_goal?: boolean;
+      references?: string[];
+      retrieved_context?: string[];
+      rag_active?: boolean;
+      ai_fallback_used?: boolean;
+      suggested_goal_prompt?: string;
+      suggested_topic?: string;
+    }>('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        goal_id: opts?.goalId ?? undefined,
+        history: opts?.history ?? undefined,
+        draft_goal: opts?.draftGoal ?? undefined,
+      }),
+      timeoutMs: AI_TIMEOUT_MS,
+      retryOnTimeout: true,
+    }),
   checkin: (goalId: string) =>
     request<{ check_in_message: string; check_in_id: string; created_at: string }>(
       `/api/goals/${goalId}/checkin`,

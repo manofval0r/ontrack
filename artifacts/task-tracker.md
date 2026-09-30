@@ -60,7 +60,7 @@ Updated: 2026-09-28.
 - [x] Demo-ready audit: tsc green, `expo config` resolves (notifications plugin, OTA channels, runtime policy verified); fresh preview build still required (gesture-handler, notifications, gl)
 - [x] OAuth friction fixes: dismiss-recovery via awaitSession, navigate-first auth (no backend-blocked entry)
 - [x] Dock drop crash: JS helpers out of worklets (nearestStop/stopLeft now React-land only); runOnJS handoff
-- [x] Chat answer-first: is_goal + score gate, Y/N track bar, force path; trackerScore exported with SET_AS_GOAL_MIN
+- [x] Mobile speaks Evans' /api/chat contract: history + draft_goal, server suggested_goal_prompt drives the Y/N bar, plan affirmations route with history, legacy parse-goal fallback on 404
 - [x] Speed: instant toasts on log/create, logProgress single roundtrip (dropped getGoal refetch)
 - [x] Home: single-goal focus + Daily Fuel + goals shortcut (no list); PaceDial unified progress (GoalCard + TrackerBody counter); composer ink fix
 - [x] Absorbed teammate merges (legal pages, voice/integrations overhaul, audio plugin): no conflicts, tsc clean, backend consumes new serializer fields

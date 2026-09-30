@@ -26,8 +26,9 @@ export interface ChatMsg {
   source?: 'ai' | 'offline' | 'fallback';
   timestamp: string;
   /** Follow-up tracker offer: rendered as a floating Yes/No bar under the
-   * bubble. `prompt` is re-run through goal structuring on Yes. */
-  trackable?: { prompt: string; score: number };
+   * bubble. Yes re-asks the server with draft_goal (or re-runs the prompt);
+   * `draft` marks server-issued suggestions that already carry a draft. */
+  trackable?: { prompt: string; score: number; draft?: boolean };
 }
 
 export function ChatBubble({
