@@ -33,7 +33,7 @@ export const Brand = {
   lightText: '#F1F5F9',
 } as const;
 
-export type ThemeName = 'light' | 'dark';
+export type ThemeName = 'light' | 'dark' | 'teal';
 
 export interface ThemeColors {
   canvas: string;
@@ -76,13 +76,29 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     ink: '#FFFFFF',
     inkSoft: 'rgba(241, 245, 249, 0.65)',
     border: Brand.turquoise,
-    shadow: Brand.turquoise,
+    shadow: '#000000',
     primary: Brand.turquoise,
     primaryInk: Brand.navy,
     accent: Brand.turquoise,
-    teal: Brand.teal,
+    teal: Brand.aqua,
     aqua: Brand.aqua,
     inputTrack: Brand.darkSurface2,
     inputBorder: 'rgba(0, 196, 179, 0.35)',
+  },
+  teal: {
+    canvas: '#DFF5EF',
+    surface: '#FFFFFF',
+    surface2: '#C9EEE2',
+    ink: '#06302B',
+    inkSoft: 'rgba(6, 48, 43, 0.65)',
+    border: '#06302B',
+    shadow: '#06302B',
+    primary: '#006D6A',
+    primaryInk: '#FFFFFF',
+    accent: '#00C4B3',
+    teal: '#006D6A',
+    aqua: '#33D6C5',
+    inputTrack: '#C9EEE2',
+    inputBorder: 'rgba(6, 48, 43, 0.25)',
   },
 };

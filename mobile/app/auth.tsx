@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import { useURL } from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { Spacing } from '../constants/spacing';
 import { Card, PillButton } from '../components/ui';
 import { request } from '../lib/api';
@@ -21,6 +22,7 @@ function isAuthUrl(url: string): boolean {
 }
 
 export default function AuthCallback() {
+  const t = useTheme();
   const url = useURL();
   const [error, setError] = useState<string | null>(null);
   const [errMode, setErrMode] = useState<string>('login');
@@ -111,12 +113,12 @@ export default function AuthCallback() {
   const integrating = errMode !== 'login' && errMode !== 'unknown';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl, justifyContent: 'center' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas, padding: Spacing.xl, justifyContent: 'center' }}>
       <Card>
         {error ? (
           <>
-            <Text style={{ fontWeight: '700', color: Brand.navy, fontSize: 18 }}>Hmm, that link broke</Text>
-            <Text style={{ marginTop: 6, color: Brand.navy }}>{error}</Text>
+            <Text style={{ fontWeight: '700', color: t.ink, fontSize: 18 }}>Hmm, that link broke</Text>
+            <Text style={{ marginTop: 6, color: t.ink }}>{error}</Text>
             <View style={{ marginTop: 12, gap: 10 }}>
               {integrating ? (
                 <>
@@ -134,7 +136,7 @@ export default function AuthCallback() {
         ) : (
           <View style={{ alignItems: 'center', gap: 12 }}>
             <ActivityIndicator color={Brand.turquoise} />
-            <Text style={{ color: Brand.navy, fontWeight: '600' }}>Finishing sign-in…</Text>
+            <Text style={{ color: t.ink, fontWeight: '600' }}>Finishing sign-in…</Text>
           </View>
         )}
       </Card>

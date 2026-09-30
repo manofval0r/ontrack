@@ -8,11 +8,12 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { Brand } from '../constants/colors';
 import { Radii, Spacing } from '../constants/spacing';
+import { useTheme } from '../lib/theme';
 import { useReduceMotion } from '../lib/useReduceMotion';
 
 export function SkeletonCard() {
+  const t = useTheme();
   const reduce = useReduceMotion();
   const glow = useSharedValue(0.5);
 
@@ -30,9 +31,9 @@ export function SkeletonCard() {
       accessibilityState={{ busy: true }}
       style={[
         {
-          backgroundColor: Brand.white,
+          backgroundColor: t.surface,
           borderWidth: 2,
-          borderColor: Brand.navy,
+          borderColor: t.border,
           borderRadius: Radii.card,
           padding: Spacing.lg,
           gap: 10,
@@ -40,9 +41,9 @@ export function SkeletonCard() {
         style,
       ]}
     >
-      <View style={{ width: '70%', height: 18, borderRadius: 6, backgroundColor: Brand.gray }} />
-      <View style={{ height: 10, borderRadius: 999, backgroundColor: Brand.gray }} />
-      <View style={{ width: '40%', height: 12, borderRadius: 6, backgroundColor: Brand.gray }} />
+      <View style={{ width: '70%', height: 18, borderRadius: 6, backgroundColor: t.inputTrack }} />
+      <View style={{ height: 10, borderRadius: 999, backgroundColor: t.inputTrack }} />
+      <View style={{ width: '40%', height: 12, borderRadius: 6, backgroundColor: t.inputTrack }} />
     </Animated.View>
   );
 }

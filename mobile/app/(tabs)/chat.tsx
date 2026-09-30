@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   Text,
   View,
 } from 'react-native';
@@ -19,10 +18,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../../constants/colors';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
-import { Typography } from '../../constants/typography';
+import { FontFamily, Typography } from '../../constants/typography';
 import { api } from '../../lib/api';
 import { useDictation } from '../../lib/useDictation';
 import { useGoals } from '../../lib/store';
+import { rescheduleReminders, requestReminderPermission } from '../../lib/reminders';
+import { useTheme } from '../../lib/theme';
 import { displayProgress } from '../../lib/templates';
 import { speakText } from '../../lib/speech';
 import { ChatBubble, type ChatMsg } from '../../components/ChatBubble';
@@ -46,6 +47,9 @@ const CLARIFY_CHIPS = ['Fitness', 'Study', 'Work', 'Just chatting'];
 
 export default function Chat() {
   const { goals, dashboard, createGoal, logProgress, updateGoal } = useGoals();
+  const t = useTheme();
+  const { theme, setTheme } = t;
+  const [userName, setUserName] = useState('');
   const [messages, setMessages] = useState<ChatMsg[]>([
     { id: 'welcome', sender: 'ai', content: 'Tell me what you want to make progress on.', timestamp: now() },
   ]);
@@ -64,14 +68,15 @@ export default function Chat() {
 
   // Persist + restore TTS autoplay preference (backend settings audio bag).
   useEffect(() => {
-    api.getSettings().then((s) => setAutoplay(!!s?.audio?.tts_autoplay)).catch(() => {});
+    api.getSettings().then((s) => {
+      setAutoplay(!!s?.audio?.tts_autoplay);
+      const nm = s?.profile?.name ?? '';
+      setUserName(typeof nm === 'string' ? nm.split(' ')[0] : '');
+    }).catch(() => {});
   }, []);
 
-  const toggleAutoplay = async () => {
-    const next = !autoplay;
-    setAutoplay(next);
-    api.updateSettings({ audio: { tts_autoplay: next } }).catch(() => {});
-  };
+  // Autoplay is read from settings and controlled from chat commands
+  // ("turn auto-play on") — no local toggle needed.
 
   // Daily brief: greet returning users with today's focus (once per mount).
   useEffect(() => {
@@ -166,8 +171,161 @@ export default function Chat() {
     }
   };
 
-  const statusFlow = () => {
-    const active = goals.filter((g) => g.status === 'active');
+  /** Settings + navigation commands — the whole app obeys chat.
+   * "Turn off reminders" flips the real setting + reschedules alarms, no
+   * Settings screen visit required. Returns true when handled. */
+  const commandFlow = async (raw: string): Promise<boolean> => {
+    const lower = raw.toLowerCase().trim();
+    const say = (content: string, chips?: string[]) => ai(content, chips ? { chips } : undefined);
+
+    const applyNotifications = async (patch: any, confirm: string, revertHint: string) => {
+      setThinking(true);
+      try {
+        const s = await api.getSettings().catch(() => null);
+        const cadence = s?.notifications?.checkin_cadence ?? '30min';
+        const quiet = s?.notifications?.quiet_hours?.enabled ?? false;
+        const master = patch?.notifications?.master_enabled ?? s?.notifications?.master_enabled ?? true;
+        if (patch?.notifications?.master_enabled === true) {
+          const granted = await requestReminderPermission().catch(() => false);
+          if (!granted) {
+            say(`I can't enable reminders — the system permission is off. Enable notifications for OnTrack in system settings, then say "turn on reminders".`);
+            return true;
+          }
+        }
+        await api.updateSettings(patch);
+        await rescheduleReminders({ master, cadence, quiet, goals }).catch(() => {});
+        say(`${confirm} Say "${revertHint}" any time to flip it back.`, ['Open settings']);
+      } catch {
+        say(`That didn't stick — connection hiccup. Try again in a moment.`);
+      } finally {
+        setThinking(false);
+      }
+      return true;
+    };
+
+    if (/(turn off|disable|mute|stop).*(reminder|notification)/.test(lower) && !/quiet/.test(lower)) {
+      return applyNotifications({ notifications: { master_enabled: false } }, `Reminders are off. No nudges, no alarms.`, 'turn on reminders');
+    }
+    if (/(turn on|enable|unmute|start).*(reminder|notification)/.test(lower)) {
+      return applyNotifications({ notifications: { master_enabled: true } }, `Reminders are on. Check-ins and deadline alarms are scheduled.`, 'turn off reminders');
+    }
+    if (/(quiet hours|mute at night|do not disturb|dnd).*(on|enable|start)/.test(lower) || /^(enable|turn on) quiet/.test(lower)) {
+      return applyNotifications({ notifications: { quiet_hours: { enabled: true, start: '22:00', end: '07:00' } } }, `Quiet hours on — nothing pings you between 10pm and 7am.`, 'turn off quiet hours');
+    }
+    if (/(quiet hours|mute at night|do not disturb|dnd).*(off|disable|stop)/.test(lower) || /^(disable|turn off) quiet/.test(lower)) {
+      return applyNotifications({ notifications: { quiet_hours: { enabled: false, start: '22:00', end: '07:00' } } }, `Quiet hours off — reminders come through any time.`, 'turn on quiet hours');
+    }
+    if (/check.?ins? off|stop check.?ins|disable check.?ins/.test(lower)) {
+      return applyNotifications({ notifications: { checkin_cadence: 'off' } }, `Check-in nudges off. Deadlines still alarm.`, 'check in every 30 minutes');
+    }
+    if (/every 30 min|30 min|half.?hour|half hourly/.test(lower) && /check/.test(lower)) {
+      return applyNotifications({ notifications: { checkin_cadence: '30min' } }, `Check-ins every 30 minutes, daytime only.`, 'turn off check-ins');
+    }
+    if (/(every|each) (1 hour|hour)|hourly/.test(lower) && /check/.test(lower)) {
+      return applyNotifications({ notifications: { checkin_cadence: '1hour' } }, `Check-ins every hour, daytime only.`, 'turn off check-ins');
+    }
+    if (/(turn off|disable|mute).*(voice|tts|speech|sound)/.test(lower)) {
+      setThinking(true);
+      try {
+        await api.updateSettings({ audio: { tts_enabled: false, tts_autoplay: false } });
+        setAutoplay(false);
+        say(`Voice off — no speech, no auto-play. Text only from here.`, ['Turn voice back on']);
+      } catch {
+        say(`That didn't stick — connection hiccup. Try again in a moment.`);
+      } finally {
+        setThinking(false);
+      }
+      return true;
+    }
+    if (/(turn on|enable|unmute).*(voice|tts|speech|sound)/.test(lower) || lower === 'turn voice back on') {
+      setThinking(true);
+      try {
+        await api.updateSettings({ audio: { tts_enabled: true } });
+        say(`Voice on — tap the speaker on any reply to hear it.`, ['Turn voice off']);
+      } catch {
+        say(`That didn't stick — connection hiccup. Try again in a moment.`);
+      } finally {
+        setThinking(false);
+      }
+      return true;
+    }
+    if (/dictation|voice input|mic|microphone/.test(lower) && /(off|disable|stop)/.test(lower)) {
+      setThinking(true);
+      try {
+        await api.updateSettings({ audio: { asr_enabled: false } });
+        say(`Voice input off — the mic button stands down. Type everything for now.`, ['Turn voice input on']);
+      } catch {
+        say(`That didn't stick — connection hiccup. Try again in a moment.`);
+      } finally {
+        setThinking(false);
+      }
+      return true;
+    }
+    if (/dictation|voice input/.test(lower) && /(on|enable)/.test(lower)) {
+      setThinking(true);
+      try {
+        await api.updateSettings({ audio: { asr_enabled: true } });
+        say(`Voice input on — dictate goals and check-ins with the mic.`, ['Turn voice input off']);
+      } catch {
+        say(`That didn't stick — connection hiccup. Try again in a moment.`);
+      } finally {
+        setThinking(false);
+      }
+      return true;
+    }
+    if (/auto.?play|read .* aloud|read .* out loud/.test(lower)) {
+      const on = !/(off|disable|stop|mute)/.test(lower);
+      setThinking(true);
+      try {
+        await api.updateSettings({ audio: { tts_autoplay: on } });
+        setAutoplay(on);
+        say(on ? `Auto-play on — every reply reads itself aloud.` : `Auto-play off — replies stay silent until you tap the speaker.`, [on ? 'Turn auto-play off' : 'Turn auto-play on']);
+      } catch {
+        say(`That didn't stick — connection hiccup. Try again in a moment.`);
+      } finally {
+        setThinking(false);
+      }
+      return true;
+    }
+    if (/dark (mode|theme)/.test(lower)) {
+      setTheme('dark');
+      say(`Dark mode on — easy on the eyes. Say "light mode" or "teal theme" to switch.`, ['Light mode', 'Teal theme']);
+      return true;
+    }
+    if (/light (mode|theme)/.test(lower)) {
+      setTheme('light');
+      say(`Light mode on — classic OnTrack.`, ['Dark mode', 'Teal theme']);
+      return true;
+    }
+    if (/teal (theme|mode|harmony)/.test(lower)) {
+      setTheme('teal');
+      say(`Teal harmony on — the whole app, dipped in teal.`, ['Dark mode', 'Light mode']);
+      return true;
+    }
+    if (/open settings|go to settings|show settings|app settings/.test(lower)) {
+      say(`Opening Settings — everything's tappable in there too.`);
+      setTimeout(() => router.push('/(tabs)/settings'), 600);
+      return true;
+    }
+    if (/open (my )?goals|go to goals|show goals/.test(lower)) {
+      say(`Opening Goals.`);
+      setTimeout(() => router.push('/(tabs)/goals'), 600);
+      return true;
+    }
+    if (/open (my )?profile|show profile|my stats/.test(lower)) {
+      say(`Opening your profile.`);
+      setTimeout(() => router.push('/(tabs)/you'), 600);
+      return true;
+    }
+    if (/go home|open home|back home/.test(lower)) {
+      say(`Opening Home.`);
+      setTimeout(() => router.push('/(tabs)'), 600);
+      return true;
+    }
+    return false;
+  };
+
+  const statusFlow = () => {    const active = goals.filter((g) => g.status === 'active');
     const done = goals.filter((g) => g.status === 'completed').length;
     const streak = dashboard?.streak_days ?? 0;
     const lines = active.slice(0, 3).map((g) => {
@@ -185,10 +343,16 @@ export default function Chat() {
   const goalFlow = async (raw: string) => {
     setThinking(true);
     try {
-      const { ai_response_text, goal_proposal } = await api.parseGoal(raw);
+      const parsed: any = await api.parseGoal(raw);
+      const { ai_response_text, goal_proposal } = parsed;
+      const references: string[] | undefined =
+        (Array.isArray(goal_proposal?.references) && goal_proposal.references) ||
+        (Array.isArray(parsed?.references) && parsed.references) ||
+        undefined;
       if (!goal_proposal) {
-        // Server-side conversational reply (greeting, small talk) — no tracker.
-        ai(ai_response_text);
+        // Server-side conversational reply (greeting, small talk, real
+        // questions) — answered like a chatbot, references shown when given.
+        ai(ai_response_text, references?.length ? { references } : undefined);
         return;
       }
       const canned = ai_response_text.includes('I set this up as a manual goal');
@@ -231,7 +395,7 @@ export default function Chat() {
       return;
     }
     if (raw === 'See verdict') {
-      ai(`Open the goal and tap "Finalize & get verdict" — the coach will score it and read it aloud.`);
+      ai(`Open the goal and tap "Finalize & get verdict" — OnTrack will score it and read it aloud.`);
       setInput('');
       return;
     }
@@ -262,6 +426,12 @@ export default function Chat() {
     const starter = STARTERS.find((s) => s.title.toLowerCase() === lower);
     if (starter) {
       send(starter.prompt);
+      return;
+    }
+    // 2b. Settings / navigation / theme commands — whole app obeys chat.
+    // Runs before the vague-input gate (commands are short by nature).
+    if (await commandFlow(raw)) {
+      setInput('');
       return;
     }
     // 2. Vague input → clarifying question, not a tracker.
@@ -314,7 +484,7 @@ export default function Chat() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -324,7 +494,7 @@ export default function Chat() {
           ref={listRef}
           data={messages}
           keyExtractor={(m) => m.id}
-          accessibilityLabel="Conversation with OnTrack coach"
+          accessibilityLabel="Conversation with OnTrack"
           contentContainerStyle={{ padding: Spacing.lg, gap: 10, paddingTop: Spacing.xl }}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           renderItem={({ item, index }) => (
@@ -337,40 +507,40 @@ export default function Chat() {
             />
           )}
         />
-        {messages.length <= 2 && (
-          <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: 4 }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.navy, opacity: 0.6, marginBottom: 6 }}>
-              STARTERS
+        {!messages.some((m) => m.sender === 'user') && (
+          <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: 8, gap: 4 }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: t.inkSoft, letterSpacing: 2 }}>
+              {new Date().toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase().replace(/,/g, ' ·')}
             </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, alignItems: 'center' }}>
-              {STARTERS.map((s) => (
+            <Text style={{ fontFamily: FontFamily.expressive, fontSize: 44, color: t.ink, lineHeight: 50 }}>
+              hey{userName ? `, ${userName}` : ''}.
+            </Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: t.inkSoft }}>
+              What are we shipping today?
+            </Text>
+            <View style={{ marginTop: 10, borderTopWidth: 2, borderTopColor: t.border, opacity: 1 }}>
+              {STARTERS.map((s, i) => (
                 <Pressable
                   key={s.title}
                   onPress={() => send(s.prompt)}
                   accessibilityLabel={`Start: ${s.title}`}
                   accessibilityRole="button"
-                  style={{ borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.card, backgroundColor: Brand.white, paddingVertical: 10, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: 'rgba(7,30,45,0.12)', minHeight: 48 }}
                 >
-                  <Text style={{ fontWeight: '700', color: Brand.navy, fontSize: 13 }}>{s.title}</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal, minWidth: 28 }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </Text>
+                  <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: t.ink }}>{s.title}</Text>
+                  <Ionicons name="chevron-forward" size={18} color={Brand.teal} />
                 </Pressable>
               ))}
-              <Pressable
-                onPress={toggleAutoplay}
-                accessibilityLabel={autoplay ? 'Turn off voice auto-play' : 'Turn on voice auto-play'}
-                accessibilityRole="switch"
-                accessibilityState={{ checked: autoplay }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.pill, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: autoplay ? Brand.turquoise : Brand.white, minHeight: 44 }}
-              >
-                <Ionicons name={autoplay ? 'volume-high' : 'volume-mute'} size={16} color={Brand.navy} />
-                <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.navy }}>Auto-voice</Text>
-              </Pressable>
-            </ScrollView>
+            </View>
           </View>
         )}
         {thinking && (
           <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.lg }}>
             <ActivityIndicator color={Brand.turquoise} size="small" />
-            <Text style={{ color: Brand.teal, fontWeight: '600' }}>Thinking…</Text>
+            <Text style={{ color: t.teal, fontWeight: '600' }}>Thinking…</Text>
           </View>
         )}
         {(dictError ?? dictation.error) && (

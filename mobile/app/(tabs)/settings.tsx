@@ -1,4 +1,4 @@
-/** M10–M14 Settings — profile, audio, coach, notifications, focus,
+/** M10–M14 Settings — profile, audio, check-ins, notifications, focus,
  * integrations (GitHub + Calendar connect), data, about, sign out. */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Share, Switch, Text, View } from 'react-native';
@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { Brand } from '../../constants/colors';
+import { useTheme } from '../../lib/theme';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { Card } from '../../components/ui';
@@ -19,7 +20,14 @@ import { useGoals } from '../../lib/store';
 
 const CALENDAR_SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 
+const THEMES: Array<{ key: 'light' | 'dark' | 'teal'; label: string; swatch: string }> = [
+  { key: 'light', label: 'Light', swatch: '#F8FAFB' },
+  { key: 'dark', label: 'Dark', swatch: '#07141E' },
+  { key: 'teal', label: 'Teal', swatch: '#006D6A' },
+];
+
 export default function Settings() {
+  const t = useTheme();
   const { connected } = useLocalSearchParams<{ connected?: string }>();
   const { goals, dashboard } = useGoals();
   const [settings, setSettings] = useState<any | null>(null);
@@ -185,7 +193,7 @@ export default function Settings() {
 
   if (loading && !settings) {
     return (
-      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.grayCanvas }}>
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.canvas }}>
         <View accessibilityRole="progressbar" accessibilityLabel="Loading settings">
           <ActivityIndicator color={Brand.turquoise} />
         </View>
@@ -194,49 +202,48 @@ export default function Settings() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
-      <BackdropArt variant="dots" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 130 }}>
-        <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 36, color: Brand.navy }}>Settings</Text>
+        <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 36, color: t.ink }}>Settings</Text>
         {error && (
           <Card>
             <Text accessibilityLiveRegion="polite" style={{ color: Brand.error, fontSize: 13 }}>{error}</Text>
             <Pressable onPress={load} style={{ marginTop: 8, minHeight: Touch.min, justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Retry loading settings">
-              <Text style={{ color: Brand.teal, fontWeight: '700' }}>Retry</Text>
+              <Text style={{ color: t.teal, fontWeight: '700' }}>Retry</Text>
             </Pressable>
           </Card>
         )}
         {notice && (
           <Card>
-            <Text accessibilityLiveRegion="polite" style={{ color: Brand.teal, fontSize: 13, fontWeight: '600' }}>{notice}</Text>
+            <Text accessibilityLiveRegion="polite" style={{ color: t.teal, fontSize: 13, fontWeight: '600' }}>{notice}</Text>
           </Card>
         )}
 
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>Profile</Text>
+          <Text style={{ fontWeight: '700', color: t.ink }}>Profile</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
             <Stat value={String(goals.length)} label="goals" />
             <Stat value={String(done)} label="shipped" />
             <Stat value={String(streak)} label="streak" />
           </View>
-          <Text style={{ marginTop: 8, color: Brand.navy, fontWeight: '600' }}>
+          <Text style={{ marginTop: 8, color: t.ink, fontWeight: '600' }}>
             {settings?.profile?.name ?? 'Not signed in'}
           </Text>
           {!!settings?.profile?.email && (
-            <Text style={{ color: Brand.navy, opacity: 0.6 }}>{settings.profile.email}</Text>
+            <Text style={{ color: t.inkSoft }}>{settings.profile.email}</Text>
           )}
         </Card>
 
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>Audio</Text>
-          <Row label="Text-to-speech" hint="Hear coach messages and summaries aloud" value={tts} onChange={(v) => { const prev = tts; setTts(v); save({ audio: { tts_enabled: v } }, () => setTts(prev)); }} />
+          <Text style={{ fontWeight: '700', color: t.ink }}>Audio</Text>
+          <Row label="Text-to-speech" hint="Hear chat messages and summaries aloud" value={tts} onChange={(v) => { const prev = tts; setTts(v); save({ audio: { tts_enabled: v } }, () => setTts(prev)); }} />
           <Row label="Voice input" hint="Dictate goals and updates with the microphone" value={asr} onChange={(v) => { const prev = asr; setAsr(v); save({ audio: { asr_enabled: v } }, () => setAsr(prev)); }} />
-          <Row label="Auto-play coach voice" hint="Read every AI reply aloud in chat" value={autoplay} onChange={(v) => { const prev = autoplay; setAutoplay(v); save({ audio: { tts_autoplay: v } }, () => setAutoplay(prev)); }} />
+          <Row label="Auto-play voice replies" hint="Read every AI reply aloud in chat" value={autoplay} onChange={(v) => { const prev = autoplay; setAutoplay(v); save({ audio: { tts_autoplay: v } }, () => setAutoplay(prev)); }} />
         </Card>
 
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>Coach</Text>
-          <Text style={{ fontSize: 12, color: Brand.navy, opacity: 0.6, marginTop: 4 }}>Check-in cadence</Text>
+          <Text style={{ fontWeight: '700', color: t.ink }}>Check-ins</Text>
+          <Text style={{ fontSize: 12, color: t.inkSoft, marginTop: 4 }}>Check-in cadence</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
             {['off', '30min', '1hour'].map((c) => (
               <Pressable
@@ -247,19 +254,19 @@ export default function Settings() {
                 accessibilityState={{ selected: cadence === c }}
                 style={{
                   flex: 1, minHeight: Touch.min, alignItems: 'center', justifyContent: 'center',
-                  borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.pill,
-                  backgroundColor: cadence === c ? Brand.turquoise : Brand.white,
+                  borderWidth: 2, borderColor: t.border, borderRadius: Radii.pill,
+                  backgroundColor: cadence === c ? Brand.turquoise : t.surface,
                 }}
               >
-                <Text style={{ fontWeight: '700', color: Brand.navy, fontSize: 13 }}>{c === 'off' ? 'Off' : c === '30min' ? '30 min' : '1 hour'}</Text>
+                <Text style={{ fontWeight: '700', color: t.ink, fontSize: 13 }}>{c === 'off' ? 'Off' : c === '30min' ? '30 min' : '1 hour'}</Text>
               </Pressable>
             ))}
           </View>
         </Card>
 
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>Notifications</Text>
-          <Row label="Reminders and check-ins" hint="Goal reminders and coach check-in prompts" value={notifs} onChange={async (v) => {
+          <Text style={{ fontWeight: '700', color: t.ink }}>Notifications</Text>
+          <Row label="Reminders and check-ins" hint="Goal reminders and check-in prompts" value={notifs} onChange={async (v) => {
             const prev = notifs;
             if (v) {
               const granted = await requestReminderPermission().catch(() => false);
@@ -276,22 +283,22 @@ export default function Settings() {
         </Card>
 
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>Focus & blocking</Text>
-          <Text style={{ fontSize: 13, color: Brand.navy, opacity: 0.7, marginTop: 4 }}>
+          <Text style={{ fontWeight: '700', color: t.ink }}>Focus & blocking</Text>
+          <Text style={{ fontSize: 13, color: t.inkSoft, marginTop: 4 }}>
             Android app limits arrive with the next build — timers work today.
           </Text>
           <Pressable
             onPress={() => router.push('/work-block')}
             accessibilityLabel="Open work-block timer"
             accessibilityRole="button"
-            style={{ marginTop: 10, minHeight: Touch.min, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.pill, backgroundColor: Brand.navy }}
+            style={{ marginTop: 10, minHeight: Touch.min, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: t.border, borderRadius: Radii.pill, backgroundColor: t.primary }}
           >
-            <Text style={{ color: Brand.white, fontWeight: '700' }}>Open focus timer</Text>
+            <Text style={{ color: t.primaryInk, fontWeight: '700' }}>Open focus timer</Text>
           </Pressable>
         </Card>
 
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>Integrations</Text>
+          <Text style={{ fontWeight: '700', color: t.ink }}>Integrations</Text>
           <IntegrationRow
             name="GitHub"
             hint="Verify commits against checklist goals"
@@ -310,19 +317,19 @@ export default function Settings() {
             onDisconnect={() => disconnect(gcal)}
             onManage={() => openDetail(gcal, 'google-cal')}
           />
-          <Text style={{ fontSize: 12, color: Brand.navy, opacity: 0.6, marginTop: 8 }}>
+          <Text style={{ fontSize: 12, color: t.inkSoft, marginTop: 8 }}>
             Slack and Notion connect on web — mobile shows their status here.
           </Text>
           {integrations.filter((i) => i.id !== 'github' && i.id !== 'google-cal' && i.provider !== 'google-cal').map((i: any) => (
             <View key={i.id ?? i.name} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }} accessibilityLabel={`${i.name}, ${i.connected ? 'connected' : 'not connected'}`}>
               <Ionicons name={i.connected ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={i.connected ? Brand.teal : Brand.navy} accessibilityElementsHidden />
-              <Text style={{ color: Brand.navy }}>{i.name}</Text>
+              <Text style={{ color: t.ink }}>{i.name}</Text>
             </View>
           ))}
         </Card>
 
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>Data</Text>
+          <Text style={{ fontWeight: '700', color: t.ink }}>Data</Text>
           <Pressable
             onPress={exportData}
             accessibilityLabel="Export my data"
@@ -330,20 +337,66 @@ export default function Settings() {
             style={{ marginTop: 8, minHeight: Touch.min, flexDirection: 'row', alignItems: 'center', gap: 8 }}
           >
             <Ionicons name="share-outline" size={20} color={Brand.teal} />
-            <Text style={{ color: Brand.navy, fontWeight: '600' }}>Export goals as JSON</Text>
+            <Text style={{ color: t.ink, fontWeight: '600' }}>Export goals as JSON</Text>
           </Pressable>
         </Card>
 
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>About</Text>
-          <Text style={{ fontSize: 13, color: Brand.navy, opacity: 0.7, marginTop: 4 }}>
+          <Text style={{ fontWeight: '700', color: t.ink }}>About</Text>
+          <Text style={{ fontSize: 13, color: t.inkSoft, marginTop: 4 }}>
             OnTrack {Constants.expoConfig?.version ?? '1.0.0'} · SDK 57 · {active} active goals
           </Text>
         </Card>
 
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>App updates</Text>
-          <Text style={{ fontSize: 12, color: Brand.navy, opacity: 0.6, marginTop: 4 }}>
+          <Text style={{ fontWeight: '700', color: t.ink }}>Theme</Text>
+          <Text style={{ fontSize: 12, color: t.inkSoft, marginTop: 4 }}>
+            Light, dark, or full teal harmony — or just tell chat.
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+            {THEMES.map((th) => {
+              const selected = t.theme === th.key;
+              return (
+                <Pressable
+                  key={th.key}
+                  onPress={() => t.setTheme(th.key)}
+                  accessibilityLabel={`${th.label} theme`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  style={{
+                    flex: 1,
+                    borderWidth: 2,
+                    borderColor: t.border,
+                    borderRadius: Radii.input,
+                    backgroundColor: selected ? Brand.turquoise : t.surface,
+                    paddingVertical: 10,
+                    alignItems: 'center',
+                    gap: 6,
+                    minHeight: Touch.min,
+                    justifyContent: 'center',
+                    shadowColor: t.shadow,
+                    shadowOffset: { width: selected ? 3 : 2, height: selected ? 3 : 2 },
+                    shadowOpacity: 1,
+                    shadowRadius: 0,
+                    elevation: 2,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', gap: 0 }}>
+                    <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: th.swatch, borderWidth: 1.5, borderColor: t.border }} />
+                    <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: Brand.turquoise, borderWidth: 1.5, borderColor: t.border, marginLeft: -6 }} />
+                  </View>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: selected ? Brand.navy : t.ink }}>
+                    {th.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Card>
+
+        <Card>
+          <Text style={{ fontWeight: '700', color: t.ink }}>App updates</Text>
+          <Text style={{ fontSize: 12, color: t.inkSoft, marginTop: 4 }}>
             Channel {ota.channel} · Runtime {ota.runtime}
             {ota.updateId ? ` · Build ${ota.updateId.slice(0, 8)}` : ''}
           </Text>
@@ -360,15 +413,15 @@ export default function Settings() {
             accessibilityRole="button"
             style={{
               marginTop: 10, minHeight: Touch.min, flexDirection: 'row', alignItems: 'center',
-              justifyContent: 'center', gap: 8, borderWidth: 2, borderColor: Brand.navy,
-              borderRadius: Radii.pill, backgroundColor: Brand.navy,
+              justifyContent: 'center', gap: 8, borderWidth: 2, borderColor: t.border,
+              borderRadius: Radii.pill, backgroundColor: t.primary,
               opacity: update.checking || update.downloading ? 0.6 : 1,
             }}
           >
             {(update.checking || update.downloading) && (
               <ActivityIndicator size="small" color={Brand.white} />
             )}
-            <Text style={{ color: Brand.white, fontWeight: '700' }}>
+            <Text style={{ color: t.primaryInk, fontWeight: '700' }}>
               {update.downloading
                 ? `Downloading ${Math.round(Math.min(update.progress, 100))}%`
                 : update.pending
@@ -380,22 +433,22 @@ export default function Settings() {
           </Pressable>
           {update.downloading && !update.hidden && (
             <View style={{ marginTop: 10 }}>
-              <View style={{ height: 6, borderRadius: 3, backgroundColor: Brand.grayCanvas, borderWidth: 1, borderColor: Brand.navy, overflow: 'hidden' }}>
+              <View style={{ height: 6, borderRadius: 3, backgroundColor: t.inputTrack, borderWidth: 1, borderColor: t.border, overflow: 'hidden' }}>
                 <View style={{ height: '100%', borderRadius: 3, backgroundColor: Brand.turquoise, width: `${Math.min(update.progress, 100)}%` }} />
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                <Text style={{ fontSize: 11, color: Brand.navy, opacity: 0.6 }}>
+                <Text style={{ fontSize: 11, color: t.inkSoft }}>
                   The app restarts automatically when the download completes.
                 </Text>
                 <Pressable onPress={() => update.setHidden(true)} accessibilityLabel="Hide download progress" accessibilityRole="button" hitSlop={8}>
-                  <Text style={{ fontSize: 11, color: Brand.teal, textDecorationLine: 'underline' }}>Hide</Text>
+                  <Text style={{ fontSize: 11, color: t.teal, textDecorationLine: 'underline' }}>Hide</Text>
                 </Pressable>
               </View>
             </View>
           )}
           {update.downloading && update.hidden && (
             <Pressable onPress={() => update.setHidden(false)} accessibilityLabel="Show download progress" accessibilityRole="button" style={{ marginTop: 8, alignItems: 'center', minHeight: Touch.min, justifyContent: 'center' }}>
-              <Text style={{ fontSize: 12, color: Brand.teal, fontWeight: '600' }}>Show download progress</Text>
+              <Text style={{ fontSize: 12, color: t.teal, fontWeight: '600' }}>Show download progress</Text>
             </Pressable>
           )}
         </Card>
@@ -423,16 +476,17 @@ function IntegrationRow({ name, hint, row, busy, onConnect, onDisconnect, onMana
   onDisconnect: () => void;
   onManage: () => void;
 }) {
+  const t = useTheme();
   const connected = !!row?.connected;
   return (
-    <View style={{ marginTop: 10, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.input, padding: Spacing.md, backgroundColor: Brand.white }}>
+    <View style={{ marginTop: 10, borderWidth: 2, borderColor: t.border, borderRadius: Radii.input, padding: Spacing.md, backgroundColor: t.surface }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Ionicons name={connected ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={connected ? Brand.teal : Brand.navy} accessibilityElementsHidden />
         <View style={{ flex: 1 }} accessibilityLabel={`${name}, ${connected ? 'connected' : 'not connected'}`}>
-          <Text style={{ color: Brand.navy, fontWeight: '700' }}>{name}</Text>
-          <Text style={{ color: Brand.navy, opacity: 0.6, fontSize: 12 }}>{hint}</Text>
+          <Text style={{ color: t.ink, fontWeight: '700' }}>{name}</Text>
+          <Text style={{ color: t.inkSoft, fontSize: 12 }}>{hint}</Text>
           {!!row?.status_label && (
-            <Text style={{ color: Brand.teal, fontSize: 12, fontWeight: '600', marginTop: 2 }}>{row.status_label}</Text>
+            <Text style={{ color: t.teal, fontSize: 12, fontWeight: '600', marginTop: 2 }}>{row.status_label}</Text>
           )}
         </View>
         <Pressable
@@ -451,11 +505,11 @@ function IntegrationRow({ name, hint, row, busy, onConnect, onDisconnect, onMana
         accessibilityRole="button"
         style={{
           marginTop: 10, minHeight: Touch.min, alignItems: 'center', justifyContent: 'center',
-          borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.pill,
-          backgroundColor: connected ? Brand.white : Brand.navy, opacity: busy ? 0.5 : 1,
+          borderWidth: 2, borderColor: t.border, borderRadius: Radii.pill,
+          backgroundColor: connected ? t.surface : t.primary, opacity: busy ? 0.5 : 1,
         }}
       >
-        <Text style={{ fontWeight: '700', color: connected ? Brand.navy : Brand.white }}>
+        <Text style={{ fontWeight: '700', color: connected ? t.ink : t.primaryInk }}>
           {busy ? 'Working…' : connected ? 'Disconnect' : 'Connect'}
         </Text>
       </Pressable>
@@ -464,20 +518,22 @@ function IntegrationRow({ name, hint, row, busy, onConnect, onDisconnect, onMana
 }
 
 function Stat({ value, label }: { value: string; label: string }) {
+  const t = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: Brand.grayCanvas, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.input, paddingVertical: 10, alignItems: 'center' }} accessibilityLabel={`${value} ${label}`}>
-      <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 20, color: Brand.navy }}>{value}</Text>
-      <Text style={{ fontSize: 11, fontWeight: '600', color: Brand.teal, marginTop: 2 }}>{label}</Text>
+    <View style={{ flex: 1, backgroundColor: t.surface2, borderWidth: 2, borderColor: t.border, borderRadius: Radii.input, paddingVertical: 10, alignItems: 'center' }} accessibilityLabel={`${value} ${label}`}>
+      <Text style={{ fontFamily: 'Fraunces_700Bold', fontSize: 20, color: t.ink }}>{value}</Text>
+      <Text style={{ fontSize: 11, fontWeight: '600', color: t.teal, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
 
 function Row({ label, hint, value, onChange }: { label: string; hint: string; value: boolean; onChange: (v: boolean) => void }) {
+  const t = useTheme();
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, minHeight: Touch.min }}>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: Brand.navy, fontWeight: '600' }}>{label}</Text>
-        <Text style={{ color: Brand.navy, opacity: 0.6, fontSize: 12 }}>{hint}</Text>
+        <Text style={{ color: t.ink, fontWeight: '600' }}>{label}</Text>
+        <Text style={{ color: t.inkSoft, fontSize: 12 }}>{hint}</Text>
       </View>
       <Switch
         value={value}

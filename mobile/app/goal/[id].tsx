@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../../constants/colors';
+import { useTheme } from '../../lib/theme';
 import { Spacing } from '../../constants/spacing';
 import { FontFamily } from '../../constants/typography';
 import { Card, PillButton } from '../../components/ui';
@@ -22,6 +23,7 @@ import { displayProgress, templateMeta } from '../../lib/templates';
 import { daysLeft, stripColor, weekStrip } from '../../lib/goalStats';
 
 export default function GoalDetail() {
+  const t = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { finalizeGoal, dashboard } = useGoals();
   const [goal, setGoal] = useState<any | null>(null);
@@ -85,7 +87,7 @@ export default function GoalDetail() {
 
   if (!goal) {
     return (
-      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.grayCanvas, gap: 12 }}>
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.canvas, gap: 12 }}>
         {error ? (
           <>
             <Text style={{ color: Brand.error, textAlign: 'center', paddingHorizontal: 32 }}>{error}</Text>
@@ -113,8 +115,11 @@ export default function GoalDetail() {
   const goalLogs = ownLogs.slice(0, 5);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: Spacing.lg, gap: 12 }}>
+        <View accessibilityElementsHidden style={{ alignItems: 'center', marginBottom: -4 }}>
+          <View style={{ width: 44, height: 5, borderRadius: 3, backgroundColor: t.ink, opacity: 0.25 }} />
+        </View>
         <Pressable
           onPress={() => router.back()}
           hitSlop={12}
@@ -122,8 +127,8 @@ export default function GoalDetail() {
           accessibilityRole="button"
           style={{ flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 44 }}
         >
-          <Ionicons name="chevron-back" size={20} color={Brand.navy} />
-          <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.navy }}>Back</Text>
+          <Ionicons name="chevron-back" size={20} color={t.ink} />
+          <Text style={{ fontSize: 16, fontWeight: '700', color: t.ink }}>Back</Text>
         </Pressable>
 
         {meta.github ? (
@@ -138,7 +143,7 @@ export default function GoalDetail() {
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <PillButton title={busy ? '…' : 'Check in'} onPress={onCheckin} disabled={busy} accessibilityHint="Asks the coach for a status check-in" />
+            <PillButton title={busy ? '…' : 'Check in'} onPress={onCheckin} disabled={busy} accessibilityHint="Asks OnTrack for a status check-in" />
           </View>
           <View style={{ flex: 1 }}>
             <PillButton title="Work-block" primary onPress={() => router.push({ pathname: '/work-block', params: { id: String(goal.id), title: goal.title } })} disabled={busy} accessibilityHint="Opens a focused 25-minute work timer" />
@@ -151,8 +156,8 @@ export default function GoalDetail() {
 
         {checkin && (
           <Card>
-            <Text style={{ fontWeight: '700', color: Brand.teal }}>Coach check-in</Text>
-            <Text style={{ marginTop: 4, color: Brand.navy }}>{checkin}</Text>
+            <Text style={{ fontWeight: '700', color: t.teal }}>Check-in</Text>
+            <Text style={{ marginTop: 4, color: t.ink }}>{checkin}</Text>
           </Card>
         )}
 
@@ -162,21 +167,21 @@ export default function GoalDetail() {
           <View>
             {celebrating && <ConfettiBurst onDone={() => setCelebrating(false)} />}
             <Card>
-              <Text style={{ fontFamily: FontFamily.expressive, fontSize: 26, color: Brand.navy }}>Verdict</Text>
-              <Text style={{ marginTop: 4, color: Brand.navy }}>{String(goal.verdict)}</Text>
+              <Text style={{ fontFamily: FontFamily.expressive, fontSize: 26, color: t.ink }}>Verdict</Text>
+              <Text style={{ marginTop: 4, color: t.ink }}>{String(goal.verdict)}</Text>
               <Pressable
                 onPress={() => Share.share({ message: `OnTrack verdict — ${goal.title}: ${String(goal.verdict)}` })}
                 accessibilityLabel="Share verdict"
                 accessibilityRole="button"
                 style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44 }}
               >
-                <Ionicons name="share-outline" size={18} color={Brand.teal} />
-                <Text style={{ color: Brand.teal, fontWeight: '700' }}>Share</Text>
+                <Ionicons name="share-outline" size={18} color={t.teal} />
+                <Text style={{ color: t.teal, fontWeight: '700' }}>Share</Text>
               </Pressable>
             </Card>
           </View>
         ) : (
-          <PillButton title="Finalize & get verdict" onPress={onFinalize} disabled={busy} accessibilityHint="Marks the goal complete and asks the coach for a final verdict" />
+          <PillButton title="Finalize & get verdict" onPress={onFinalize} disabled={busy} accessibilityHint="Marks the goal complete and asks OnTrack for a final verdict" />
         )}
       </ScrollView>
     </SafeAreaView>

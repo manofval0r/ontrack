@@ -139,7 +139,7 @@ function TrackerScene({ reduce }: { reduce: boolean }) {
   );
 }
 
-/** Scene 3 — coach + user bubbles trade messages. */
+/** Scene 3 — assistant + user bubbles trade messages. */
 function ChatScene({ reduce }: { reduce: boolean }) {
   const ai = useSharedValue(0);
   const user = useSharedValue(0);

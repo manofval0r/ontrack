@@ -4,7 +4,8 @@ import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Brand, Colors } from '../../constants/colors';
+import { Brand } from '../../constants/colors';
+import { useTheme } from '../../lib/theme';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { BrandMark, Card, PillButton, SocialButton } from '../../components/ui';
@@ -13,6 +14,7 @@ import { signInWithEmail, signInWithProvider } from '../../lib/auth';
 import { useGoals } from '../../lib/store';
 
 export default function Login() {
+  const t = useTheme();
   const { refresh } = useGoals();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -59,16 +61,27 @@ export default function Login() {
     }
   };
 
+  const input = {
+    borderWidth: 2,
+    borderColor: t.inputBorder,
+    borderRadius: Radii.input,
+    padding: Spacing.md,
+    fontSize: Typography.body.fontSize,
+    backgroundColor: t.surface,
+    color: t.ink,
+    minHeight: Touch.min,
+  } as const;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
       <BackdropArt variant="full" />
       <View style={{ flex: 1, padding: Spacing.xl, justifyContent: 'center', gap: 14 }}>
         <Animated.View entering={FadeInDown.duration(350)} style={{ alignItems: 'center', gap: 8 }}>
           <BrandMark />
-          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 32, color: Brand.navy, textAlign: 'center' }}>
+          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 32, color: t.ink, textAlign: 'center' }}>
             Welcome back
           </Text>
-          <Text style={{ fontSize: 14, color: Brand.navy, opacity: 0.65, textAlign: 'center' }}>
+          <Text style={{ fontSize: 14, color: t.inkSoft, textAlign: 'center' }}>
             Pick up right where you left off.
           </Text>
         </Animated.View>
@@ -81,16 +94,16 @@ export default function Login() {
         <Animated.View entering={FadeInDown.duration(350).delay(200)}>
           <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <View style={{ flex: 1, height: 2, backgroundColor: Colors.light.inputBorder }} />
-              <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.navy, opacity: 0.6 }}>OR CONTINUE WITH EMAIL</Text>
-              <View style={{ flex: 1, height: 2, backgroundColor: Colors.light.inputBorder }} />
+              <View style={{ flex: 1, height: 2, backgroundColor: t.inputBorder }} />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: t.inkSoft }}>OR CONTINUE WITH EMAIL</Text>
+              <View style={{ flex: 1, height: 2, backgroundColor: t.inputBorder }} />
             </View>
             <View style={{ gap: 10 }}>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
                 placeholder="you@example.com"
-                placeholderTextColor={Brand.placeholder}
+                placeholderTextColor={t.inkSoft}
                 accessibilityLabel="Email address"
                 autoCapitalize="none"
                 autoComplete="email"
@@ -102,7 +115,7 @@ export default function Login() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Password"
-                placeholderTextColor={Brand.placeholder}
+                placeholderTextColor={t.inkSoft}
                 accessibilityLabel="Password"
                 autoComplete="password"
                 secureTextEntry
@@ -120,21 +133,10 @@ export default function Login() {
           </Card>
         </Animated.View>
 
-        <Link href="/(auth)/signup" accessibilityLabel="Go to sign up" style={{ textAlign: 'center', color: Brand.teal, fontWeight: '600', minHeight: Touch.min }}>
+        <Link href="/(auth)/signup" accessibilityLabel="Go to sign up" style={{ textAlign: 'center', color: t.teal, fontWeight: '600', minHeight: Touch.min }}>
           No account? Sign up
         </Link>
       </View>
     </SafeAreaView>
   );
 }
-
-const input = {
-  borderWidth: 2,
-  borderColor: Colors.light.inputBorder,
-  borderRadius: Radii.input,
-  padding: Spacing.md,
-  fontSize: Typography.body.fontSize,
-  backgroundColor: Brand.white,
-  color: Brand.navy,
-  minHeight: Touch.min,
-} as const;

@@ -12,6 +12,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Brand } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { Radii } from '../constants/spacing';
 import { speakText, stopSpeaking, prefetchSpeech } from '../lib/speech';
 
@@ -21,6 +22,7 @@ export interface ChatMsg {
   content: string;
   proposal?: any;
   chips?: string[];
+  references?: string[];
   source?: 'ai' | 'offline' | 'fallback';
   timestamp: string;
 }
@@ -39,6 +41,7 @@ export function ChatBubble({
   onChip?: (chip: string) => void;
 }) {
   const isUser = msg.sender === 'user';
+  const t = useTheme();
   const [speaking, setSpeaking] = useState(false);
 
   useEffect(() => {
@@ -70,19 +73,19 @@ export function ChatBubble({
     >
       <View
         style={{
-          backgroundColor: isUser ? Brand.navy : Brand.white,
+          backgroundColor: isUser ? Brand.navy : t.surface,
           borderWidth: 2,
-          borderColor: Brand.navy,
+          borderColor: t.border,
           borderRadius: Radii.bubble,
           padding: 14,
-          shadowColor: Brand.navy,
+          shadowColor: t.shadow,
           shadowOffset: { width: 3, height: 3 },
           shadowOpacity: 1,
           shadowRadius: 0,
           elevation: 3,
         }}
       >
-        <Text style={{ fontSize: 17, lineHeight: 25, color: isUser ? Brand.white : Brand.navy }}>{msg.content}</Text>
+        <Text style={{ fontSize: 17, lineHeight: 25, color: isUser ? Brand.white : t.ink }}>{msg.content}</Text>
         {!isUser && msg.source && msg.source !== 'ai' && (
           <Text style={{ fontSize: 10, fontWeight: '700', color: Brand.amberText, marginTop: 6 }}>
             {msg.source === 'offline' ? 'OFFLINE MODE · DEVICE-ONLY' : 'BASIC MODE · RETRY FOR FULL AI'}
@@ -96,11 +99,27 @@ export function ChatBubble({
                 onPress={() => onChip(chip)}
                 accessibilityLabel={`Reply: ${chip}`}
                 accessibilityRole="button"
-                style={{ borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.pill, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: Brand.white, minHeight: 44, justifyContent: 'center' }}
+                style={{ borderWidth: 2, borderColor: t.border, borderRadius: Radii.pill, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: t.surface, minHeight: 44, justifyContent: 'center' }}
               >
-                <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.navy }}>{chip}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: t.ink }}>{chip}</Text>
               </Pressable>
             ))}
+          </View>
+        )}
+        {!!msg.references?.length && (
+          <View style={{ marginTop: 10 }} accessibilityLabel={`Sources: ${msg.references.join(', ')}`}>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: t.teal, marginBottom: 4 }}>SOURCES</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {msg.references.map((ref, i) => (
+                <View
+                  key={`${i}-${ref}`}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1.5, borderColor: Brand.teal, borderRadius: Radii.pill, paddingVertical: 5, paddingHorizontal: 10, backgroundColor: Brand.cyanBg }}
+                >
+                  <Ionicons name="link" size={12} color={t.teal} />
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: t.teal }} numberOfLines={1}>{ref}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
         {!isUser && (
@@ -112,11 +131,11 @@ export function ChatBubble({
             accessibilityState={{ busy: speaking }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, minHeight: 44 }}
           >
-            <Ionicons name={speaking ? 'pause-circle' : 'volume-high'} size={20} color={Brand.teal} />
+            <Ionicons name={speaking ? 'pause-circle' : 'volume-high'} size={20} color={t.teal} />
             {speaking ? (
               <Equalizer />
             ) : (
-              <Text style={{ fontSize: 11, fontWeight: '600', color: Brand.teal }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: t.teal }}>
                 Voice replay
               </Text>
             )}
@@ -142,7 +161,7 @@ export function ChatBubble({
             </Pressable>
           </View>
         )}
-        <Text style={{ fontSize: 10, color: isUser ? 'rgba(255,255,255,0.65)' : Brand.navy, opacity: isUser ? 1 : 0.5, marginTop: 4 }}>
+        <Text style={{ fontSize: 10, color: isUser ? 'rgba(255,255,255,0.65)' : t.inkSoft, marginTop: 4 }}>
           {msg.timestamp}
         </Text>
       </View>

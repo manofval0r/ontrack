@@ -2,6 +2,7 @@
 import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { Radii, Spacing, Touch } from '../constants/spacing';
 import { Typography } from '../constants/typography';
 
@@ -24,6 +25,7 @@ export function ChatComposer({
   transcribing: boolean;
   onToggleDictation: () => void;
 }) {
+  const t = useTheme();
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: Spacing.md, paddingBottom: Spacing.lg }}>
@@ -40,7 +42,7 @@ export function ChatComposer({
           borderRadius: Radii.pill,
           backgroundColor: recording ? Brand.error : Brand.turquoise,
           borderWidth: 2,
-          borderColor: Brand.navy,
+          borderColor: t.border,
           alignItems: 'center',
           justifyContent: 'center',
           opacity: transcribing ? 0.5 : 1,
@@ -56,8 +58,8 @@ export function ChatComposer({
         value={value}
         onChangeText={onChange}
         placeholder={recording ? 'Listening… tap stop when done' : 'Message OnTrack…'}
-        placeholderTextColor={Brand.placeholder}
-        accessibilityLabel="Message OnTrack coach"
+        placeholderTextColor={t.inkSoft}
+        accessibilityLabel="Message OnTrack"
         multiline
         maxLength={500}
         editable={!recording}
@@ -66,11 +68,11 @@ export function ChatComposer({
           minHeight: Touch.min,
           maxHeight: 110,
           borderWidth: 2,
-          borderColor: recording ? Brand.error : Brand.navy,
+          borderColor: recording ? Brand.error : t.border,
           borderRadius: Radii.pill,
           paddingHorizontal: Spacing.lg,
           paddingVertical: 10,
-          backgroundColor: Brand.white,
+          backgroundColor: t.surface,
           fontSize: Typography.body.fontSize,
         }}
       />
@@ -84,15 +86,15 @@ export function ChatComposer({
           width: Touch.iconButton,
           height: Touch.iconButton,
           borderRadius: Radii.pill,
-          backgroundColor: Brand.navy,
+          backgroundColor: t.primary,
           borderWidth: 2,
-          borderColor: Brand.navy,
+          borderColor: t.border,
           alignItems: 'center',
           justifyContent: 'center',
           opacity: !canSend ? 0.4 : 1,
         }}
       >
-        <Ionicons name="arrow-up" size={20} color={Brand.white} />
+        <Ionicons name="arrow-up" size={20} color={t.primaryInk} />
       </Pressable>
     </View>
   );

@@ -82,7 +82,7 @@ export async function rescheduleReminders(input: ReminderInput, interactive = tr
   let count = 0;
   const done: string[] = [];
 
-  // Coach check-in nudges (daytime only — quiet hours honored by construction).
+  // Check-in nudge schedule (daytime only — quiet hours honored by construction).
   const slots =
     input.cadence === '30min'
       ? [[9, 0], [13, 0], [17, 30], [20, 0]]

@@ -4,7 +4,8 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
-import { Brand, Colors } from '../constants/colors';
+import { Brand } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { Radii, Spacing } from '../constants/spacing';
 import { FontFamily, Typography } from '../constants/typography';
 import { OnboardingArt } from '../components/OnboardingArt';
@@ -17,7 +18,7 @@ const STEPS = [  {
     title: 'Welcome to OnTrack',
     body: 'Chat-first accountability. Say a goal, get a tracker, prove progress.',
     artLabel: 'Illustration: the OnTrack arrow mark drawing itself',
-    caption: 'Step 1 · Meet your coach',
+    caption: 'Step 1 · Meet OnTrack',
   },
   {
     title: 'Trackers that build themselves',
@@ -28,12 +29,19 @@ const STEPS = [  {
   {
     title: 'Try your first goal',
     body: 'Type it below to preview — no account needed yet.',
-    artLabel: 'Illustration: coach and user trading chat messages',
+    artLabel: 'Illustration: assistant and user trading chat messages',
     caption: 'Step 3 · Your turn',
   },
 ];
 
+const GOAL_TEMPLATES = [
+  { label: 'Close 5 deals', text: 'I want to close 5 enterprise deals in 14 days' },
+  { label: 'Ship the MVP', text: 'I want to ship the mobile app MVP this week' },
+  { label: 'Reflect daily', text: 'I want to journal every evening for 2 weeks' },
+];
+
 export default function Onboarding() {
+  const t = useTheme();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState('');
   const [glOk, setGlOk] = useState(true);
@@ -44,7 +52,7 @@ export default function Onboarding() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas, padding: Spacing.xl }}>
       <BackdropArt variant="full" />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44 }}>
         <View
@@ -60,7 +68,7 @@ export default function Onboarding() {
                 width: i === step ? 30 : 10,
                 height: 10,
                 borderRadius: 5,
-                backgroundColor: i === step ? Brand.turquoise : Colors.light.inputBorder,
+                backgroundColor: i === step ? Brand.turquoise : t.inputBorder,
               }}
             />
           ))}
@@ -73,7 +81,7 @@ export default function Onboarding() {
           accessibilityHint="Goes straight to account creation"
           style={{ minHeight: 44, justifyContent: 'center' }}
         >
-          <Text style={{ fontWeight: '700', color: Brand.teal }}>Skip</Text>
+          <Text style={{ fontWeight: '700', color: t.teal }}>Skip</Text>
         </Pressable>
       </View>
 
@@ -89,23 +97,54 @@ export default function Onboarding() {
             </View>
           )}
         </Animated.View>
-        <Text style={{ textAlign: 'center', fontSize: 12, fontWeight: '700', color: Brand.teal }}>
+        <Text style={{ textAlign: 'center', fontSize: 12, fontWeight: '700', color: t.teal }}>
           {STEPS[step].caption}
         </Text>
         <Card>
-          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 34, color: Brand.navy }}>
+          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 34, color: t.ink }}>
             {STEPS[step].title}
           </Text>
-          <Text style={{ marginTop: 8, fontSize: 16, color: Brand.navy, lineHeight: 23 }}>
+          <Text style={{ marginTop: 8, fontSize: 16, color: t.ink, lineHeight: 23 }}>
             {STEPS[step].body}
           </Text>
           {step === 2 && (
             <>
+              <Text style={{ marginTop: 12, fontSize: 11, fontWeight: '700', color: t.teal }}>
+                OR START FROM A TEMPLATE
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                {GOAL_TEMPLATES.map((tpl) => {
+                  const selected = draft === tpl.text;
+                  return (
+                    <Pressable
+                      key={tpl.label}
+                      onPress={() => setDraft(tpl.text)}
+                      accessibilityLabel={`Use template: ${tpl.label}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      style={{
+                        borderWidth: 2,
+                        borderColor: t.border,
+                        borderRadius: Radii.pill,
+                        paddingVertical: 9,
+                        paddingHorizontal: 14,
+                        backgroundColor: selected ? Brand.turquoise : t.surface,
+                        minHeight: 44,
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: selected ? Brand.navy : t.ink }}>
+                        {tpl.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
               <TextInput
                 value={draft}
-                onChangeText={(t) => setDraft(t.slice(0, 500))}
+                onChangeText={(text) => setDraft(text.slice(0, 500))}
                 placeholder="e.g. Run 3 mornings a week"
-                placeholderTextColor={Brand.placeholder}
+                placeholderTextColor={t.inkSoft}
                 accessibilityLabel="Your first goal"
                 accessibilityHint="Typed goal is queued and created after signup"
                 returnKeyType="done"
@@ -113,11 +152,12 @@ export default function Onboarding() {
                 style={{
                   marginTop: Spacing.md,
                   borderWidth: 2,
-                  borderColor: Colors.light.inputBorder,
+                  borderColor: t.inputBorder,
                   borderRadius: Radii.input,
                   padding: Spacing.md,
                   fontSize: Typography.body.fontSize,
-                  backgroundColor: Brand.white,
+                  backgroundColor: t.surface,
+                  color: t.ink,
                 }}
               />
               {draft.trim().length > 0 && <DraftPreview text={draft} />}
@@ -138,7 +178,7 @@ export default function Onboarding() {
           </View>
         )}
       </View>
-      <Text style={{ textAlign: 'center', color: Brand.navy, opacity: 0.5 }}>
+      <Text style={{ textAlign: 'center', color: t.inkSoft }}>
         Step {step + 1} of 3
       </Text>
     </SafeAreaView>
@@ -148,6 +188,7 @@ export default function Onboarding() {
 /** Local tracker preview — keyword shape detection, no network needed.
  * Shows the user what kind of tracker their words will become. */
 function DraftPreview({ text }: { text: string }) {
+  const t = useTheme();
   const lower = text.toLowerCase();
   const num = text.match(/\b(\d+)\b/);
   const type = /book|read|ship|task|checklist|steps/.test(lower)
@@ -171,7 +212,7 @@ function DraftPreview({ text }: { text: string }) {
         gap: 10,
       }}
     >
-      <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.teal }}>
+      <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal }}>
         {type === 'counter' ? `Counter${num ? ` · target ${num[1]}` : ''}` : type === 'checklist' ? 'Checklist' : 'Daily log'} · {meta.unit}
       </Text>
     </View>

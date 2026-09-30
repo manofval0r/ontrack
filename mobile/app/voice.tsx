@@ -14,7 +14,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { RecordingPresets, setAudioModeAsync, requestRecordingPermissionsAsync, useAudioRecorder } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
-import { Brand, Colors } from '../constants/colors';
+import { Brand } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { Radii, Spacing, Touch } from '../constants/spacing';
 import { Typography } from '../constants/typography';
 import { Card, PillButton } from '../components/ui';
@@ -23,6 +24,7 @@ import { uriToBase64 } from '../lib/audioFile';
 import { useGoals } from '../lib/store';
 
 export default function VoiceModal() {
+  const t = useTheme();
   const { createGoal } = useGoals();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [isRecording, setIsRecording] = useState(false);
@@ -98,7 +100,7 @@ export default function VoiceModal() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas, padding: Spacing.xl }} edges={['top']}>
       <Pressable
         onPress={() => router.back()}
         hitSlop={12}
@@ -106,8 +108,8 @@ export default function VoiceModal() {
         accessibilityRole="button"
         style={{ flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44 }}
       >
-        <Ionicons name="close" size={20} color={Brand.navy} />
-        <Text style={{ fontWeight: '700', color: Brand.navy }}>Close</Text>
+        <Ionicons name="close" size={20} color={t.ink} />
+        <Text style={{ fontWeight: '700', color: t.ink }}>Close</Text>
       </Pressable>
       <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
         <View style={{ alignItems: 'center', gap: 8 }}>
@@ -125,7 +127,7 @@ export default function VoiceModal() {
               borderRadius: Radii.pill,
               backgroundColor: isRecording ? Brand.error : Brand.turquoise,
               borderWidth: 2,
-              borderColor: Brand.navy,
+              borderColor: t.border,
               alignItems: 'center',
               justifyContent: 'center',
               opacity: busy ? 0.6 : 1,
@@ -134,18 +136,18 @@ export default function VoiceModal() {
             <Ionicons name="mic" size={36} color={isRecording ? Brand.white : Brand.navy} />
           </Pressable>
           </Animated.View>
-          <Text accessibilityLiveRegion="polite" style={{ fontWeight: '700', color: Brand.navy }}>
+          <Text accessibilityLiveRegion="polite" style={{ fontWeight: '700', color: t.ink }}>
             {isRecording ? 'Listening…' : busy ? 'Working…' : 'Tap to speak your goal'}
           </Text>
           {busy && <ActivityIndicator color={Brand.turquoise} />}
         </View>
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.teal }}>Transcript (editable)</Text>
+          <Text style={{ fontWeight: '700', color: t.teal }}>Transcript (editable)</Text>
           <TextInput
             value={transcript}
             onChangeText={(t) => setTranscript(t.slice(0, 500))}
             placeholder="Your words appear here…"
-            placeholderTextColor={Brand.placeholder}
+            placeholderTextColor={t.inkSoft}
             accessibilityLabel="Voice transcript, editable"
             multiline
             maxLength={500}
@@ -153,11 +155,11 @@ export default function VoiceModal() {
               marginTop: 8,
               minHeight: 88,
               borderWidth: 2,
-              borderColor: Colors.light.inputBorder,
+              borderColor: t.inputBorder,
               borderRadius: Radii.input,
               padding: Spacing.md,
               fontSize: Typography.body.fontSize,
-              backgroundColor: Brand.white,
+              backgroundColor: t.surface,
               textAlignVertical: 'top',
             }}
           />

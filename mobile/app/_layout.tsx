@@ -15,6 +15,7 @@ import {
 import { Fraunces_700Bold } from '@expo-google-fonts/fraunces';
 import { OriginalSurfer_400Regular } from '@expo-google-fonts/original-surfer';
 import { GoalsProvider } from '../lib/store';
+import { ThemeProvider } from '../lib/theme';
 import { ToastProvider, useToast } from '../lib/toast';
 
 /** Foreground notifications surface as in-app toasts instead of banners. */
@@ -81,6 +82,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GoalsProvider>
+        <ThemeProvider>
         <ToastProvider>
           <ForegroundToastBridge />
           <StatusBar style="light" />
@@ -92,7 +94,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="goal/[id]"
-          options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
         />
         <Stack.Screen
           name="voice"
@@ -108,6 +110,7 @@ export default function RootLayout() {
         />
       </Stack>
         </ToastProvider>
+        </ThemeProvider>
       </GoalsProvider>
     </GestureHandlerRootView>
   );

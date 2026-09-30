@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { Brand } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { useReduceMotion } from '../lib/useReduceMotion';
 
 function Blobs({ reduce }: { reduce: boolean }) {
@@ -46,6 +47,7 @@ function Blobs({ reduce }: { reduce: boolean }) {
 /** Web dot-grid canvas parity: 24px grid, 1.25-unit navy dots at 0.14 alpha
  * on the app canvas. Always on — blobs/rings are the accent on top. */
 function DotField() {
+  const t = useTheme();
   const step = 24;
   const cols = 6;
   const rows = 10;
@@ -63,7 +65,7 @@ function DotField() {
           cx={step / 2 + d.x * step}
           cy={step / 2 + d.y * step}
           r={d.accent ? 2.4 : 1.25}
-          fill={d.accent ? Brand.turquoise : Brand.navy}
+          fill={d.accent ? Brand.turquoise : t.ink}
           opacity={d.accent ? 0.5 : 0.14}
         />
       ))}

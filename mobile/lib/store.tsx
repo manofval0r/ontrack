@@ -1,5 +1,8 @@
-/** Goals store — mirrors web GoalContext (goals, dashboard, CRUD, progress). */
-import { createContext, useCallback, useContext, useState } from 'react';
+/** Goals store — mirrors web GoalContext (goals, dashboard, CRUD, progress).
+ * Stale-while-revalidate: last good snapshot paints instantly from SecureStore,
+ * network refreshes behind it. Cold starts never stare at skeletons. */
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
 import { api } from './api';
 
 export interface Goal {
@@ -31,12 +34,46 @@ interface Store {
 }
 
 const Ctx = createContext<Store | null>(null);
+const CACHE_KEY = 'ontrack_cache_v1';
+
+async function readCache(): Promise<{ goals: Goal[]; dashboard: any } | null> {
+  try {
+    const raw = await SecureStore.getItemAsync(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed?.goals)) return null;
+    return { goals: parsed.goals, dashboard: parsed.dashboard ?? null };
+  } catch {
+    return null;
+  }
+}
+
+async function writeCache(goals: Goal[], dashboard: any) {
+  try {
+    await SecureStore.setItemAsync(CACHE_KEY, JSON.stringify({ goals, dashboard, saved_at: Date.now() }));
+  } catch {}
+}
 
 export function GoalsProvider({ children }: { children: React.ReactNode }) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [dashboard, setDashboard] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Instant paint: hydrate from cache, then revalidate behind it.
+  useEffect(() => {
+    let alive = true;
+    readCache().then((cached) => {
+      if (alive && cached && goals.length === 0) {
+        setGoals(cached.goals);
+        setDashboard(cached.dashboard);
+      }
+    }).catch(() => {});
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -72,6 +109,7 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
         }))
       );
       setDashboard(d);
+      writeCache(g, d);
     } catch (e: any) {
       setError(e?.error ?? 'Failed to load goals.');
     } finally {

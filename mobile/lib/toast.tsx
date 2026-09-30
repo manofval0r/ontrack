@@ -7,6 +7,7 @@ import Animated, { FadeInUp, FadeOutDown, LinearTransition } from 'react-native-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
+import { useTheme } from './theme';
 import { Radii } from '../constants/spacing';
 import { useReduceMotion } from './useReduceMotion';
 
@@ -47,6 +48,7 @@ const ACCENT: Record<ToastType, string> = {
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const t = useTheme();
   const [items, setItems] = useState<ToastItem[]>([]);
   const idRef = useRef(1);
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
@@ -109,15 +111,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               accessibilityLabel={`${item.type}: ${item.title}${item.message ? `. ${item.message}` : ''}. Tap to dismiss.`}
               accessibilityRole="alert"
               style={{
-                backgroundColor: Brand.white,
+                backgroundColor: t.surface,
                 borderWidth: 2,
-                borderColor: Brand.navy,
+                borderColor: t.border,
                 borderLeftWidth: 8,
                 borderLeftColor: ACCENT[item.type],
                 borderRadius: Radii.input,
                 paddingVertical: 10,
                 paddingHorizontal: 12,
-                shadowColor: Brand.navy,
+                shadowColor: t.shadow,
                 shadowOffset: { width: 3, height: 3 },
                 shadowOpacity: 1,
                 shadowRadius: 0,
@@ -126,9 +128,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontWeight: '700', color: Brand.navy, fontSize: 14 }}>{item.title}</Text>
+                  <Text style={{ fontWeight: '700', color: t.ink, fontSize: 14 }}>{item.title}</Text>
                   {!!item.message && (
-                    <Text style={{ color: Brand.navy, opacity: 0.7, fontSize: 12, marginTop: 2 }} numberOfLines={2}>
+                    <Text style={{ color: t.inkSoft, fontSize: 12, marginTop: 2 }} numberOfLines={2}>
                       {item.message}
                     </Text>
                   )}

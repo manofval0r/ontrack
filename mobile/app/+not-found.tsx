@@ -13,7 +13,7 @@ import { useReduceMotion } from '../lib/useReduceMotion';
 
 const SITEMAP = [
   { label: 'Home', route: '/(tabs)', icon: 'home' },
-  { label: 'Coach chat', route: '/(tabs)/chat', icon: 'chatbubble' },
+  { label: 'Chat', route: '/(tabs)/chat', icon: 'chatbubble' },
   { label: 'Goals', route: '/(tabs)/goals', icon: 'checkmark-circle' },
   { label: 'Settings', route: '/(tabs)/settings', icon: 'settings' },
   { label: 'Onboarding', route: '/onboarding', icon: 'compass' },

@@ -21,23 +21,25 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { Brand, Colors } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { Radii, Spacing, Touch } from '../constants/spacing';
 import { Typography } from '../constants/typography';
 import { useReduceMotion } from '../lib/useReduceMotion';
 import { GitHubMark, GoogleG } from './ProviderIcons';
 
 export function Card({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
+  const t = useTheme();
   return (
     <View
       accessible
       style={[
         {
-          backgroundColor: Colors.light.surface,
+          backgroundColor: t.surface,
           borderWidth: 2,
-          borderColor: Brand.navy,
+          borderColor: t.border,
           borderRadius: Radii.card,
           padding: Spacing.lg,
-          shadowColor: Brand.navy,
+          shadowColor: t.shadow,
           shadowOffset: { width: 4, height: 4 },
           shadowOpacity: 1,
           shadowRadius: 0,
@@ -69,6 +71,7 @@ export function PillButton({
   accessibilityLabel?: string;
   accessibilityHint?: string;
 }) {
+  const t = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -84,8 +87,8 @@ export function PillButton({
           paddingHorizontal: 20,
           borderRadius: Radii.pill,
           borderWidth: 2,
-          borderColor: Brand.navy,
-          backgroundColor: primary ? Brand.navy : Brand.white,
+          borderColor: t.border,
+          backgroundColor: primary ? t.primary : t.surface,
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'row',
@@ -93,7 +96,7 @@ export function PillButton({
           opacity: disabled ? 0.4 : 1,
           // Web press physics: sink 2px into a 1px shadow.
           transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
-          shadowColor: Brand.navy,
+          shadowColor: t.shadow,
           shadowOffset: { width: pressed ? 1 : 3, height: pressed ? 1 : 3 },
           shadowOpacity: 1,
           shadowRadius: 0,
@@ -105,7 +108,7 @@ export function PillButton({
         style={{
           fontSize: Typography.button.fontSize,
           fontWeight: '600',
-          color: primary ? Brand.white : Brand.navy,
+          color: primary ? t.primaryInk : t.ink,
         }}
       >
         {title}

@@ -7,7 +7,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
-import { Brand, Colors } from '../../constants/colors';
+import { Brand } from '../../constants/colors';
+import { useTheme } from '../../lib/theme';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { Typography } from '../../constants/typography';
 import { Card, PillButton } from '../../components/ui';
@@ -33,6 +34,7 @@ const CAP_DEFS: Record<string, Array<{ id: string; label: string; hint: string }
 };
 
 export default function IntegrationDetail() {
+  const t = useTheme();
   const { provider } = useLocalSearchParams<{ provider: string }>();
   const key = provider === 'google-cal' ? 'google-cal' : 'github';
   const { goals, logProgress } = useGoals();
@@ -154,33 +156,33 @@ export default function IntegrationDetail() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.grayCanvas }}>
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.canvas }}>
         <ActivityIndicator color={Brand.turquoise} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 40 }}>
         <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Go back" accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 44 }}>
-          <Ionicons name="chevron-back" size={20} color={Brand.navy} />
-          <Text style={{ fontSize: 16, fontWeight: '700', color: Brand.navy }}>Back</Text>
+          <Ionicons name="chevron-back" size={20} color={t.ink} />
+          <Text style={{ fontSize: 16, fontWeight: '700', color: t.ink }}>Back</Text>
         </Pressable>
 
         <Card>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Ionicons name={isGithub ? 'logo-github' : 'calendar'} size={28} color={Brand.navy} />
+            <Ionicons name={isGithub ? 'logo-github' : 'calendar'} size={28} color={t.ink} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: Typography.title.fontFamily, fontSize: 20, color: Brand.navy }}>
+              <Text style={{ fontFamily: Typography.title.fontFamily, fontSize: 20, color: t.ink }}>
                 {isGithub ? 'GitHub' : 'Google Calendar'}
               </Text>
-              <Text style={{ fontSize: 12, color: row?.connected ? Brand.teal : Brand.navy, opacity: row?.connected ? 1 : 0.6, fontWeight: '600' }}>
+              <Text style={{ fontSize: 12, color: row?.connected ? t.teal : t.inkSoft, fontWeight: '600' }}>
                 {row?.connected ? row.status_label ?? 'Connected' : 'Not connected'}
               </Text>
             </View>
           </View>
-          <Text style={{ marginTop: 8, fontSize: 13, color: Brand.navy, opacity: 0.75 }}>
+          <Text style={{ marginTop: 8, fontSize: 13, color: t.inkSoft }}>
             {isGithub
               ? 'OnTrack reads your repos, commits, PRs and issues to verify shipping — and can log commits as goal progress. Tokens stay on your device and in the server vault; never anywhere else.'
               : 'OnTrack creates deadline events with 24-hour reminders, and can post check-in nudges inside your quiet hours. Only the access you granted is used.'}
@@ -194,12 +196,12 @@ export default function IntegrationDetail() {
         )}
 
         <Card>
-          <Text style={{ fontWeight: '700', color: Brand.navy }}>What OnTrack may use</Text>
+          <Text style={{ fontWeight: '700', color: t.ink }}>What OnTrack may use</Text>
           {(CAP_DEFS[key] ?? []).map((c) => (
             <View key={c.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, minHeight: Touch.min }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: Brand.navy, fontWeight: '600' }}>{c.label}</Text>
-                <Text style={{ color: Brand.navy, opacity: 0.6, fontSize: 12 }}>{c.hint}</Text>
+                <Text style={{ color: t.ink, fontWeight: '600' }}>{c.label}</Text>
+                <Text style={{ color: t.inkSoft, fontSize: 12 }}>{c.hint}</Text>
               </View>
               <Switch
                 value={!!caps[c.id]}
@@ -215,9 +217,9 @@ export default function IntegrationDetail() {
 
         {isGithub && row?.connected && (
           <Card>
-            <Text style={{ fontWeight: '700', color: Brand.navy }}>Repositories</Text>
+            <Text style={{ fontWeight: '700', color: t.ink }}>Repositories</Text>
             {caps.showRepos !== false && repos.length === 0 && (
-              <Text style={{ marginTop: 6, fontSize: 13, color: Brand.navy, opacity: 0.6 }}>No repos found on this account.</Text>
+              <Text style={{ marginTop: 6, fontSize: 13, color: t.inkSoft }}>No repos found on this account.</Text>
             )}
             {caps.showRepos !== false && repos.slice(0, 5).map((r) => (
               <Pressable
@@ -226,26 +228,26 @@ export default function IntegrationDetail() {
                 accessibilityLabel={`Select repo ${r.full_name}`}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: repo === r.full_name }}
-                style={{ marginTop: 8, borderWidth: 2, borderColor: repo === r.full_name ? Brand.turquoise : Brand.navy, borderRadius: Radii.input, padding: 10 }}
+                style={{ marginTop: 8, borderWidth: 2, borderColor: repo === r.full_name ? Brand.turquoise : t.border, borderRadius: Radii.input, padding: 10 }}
               >
-                <Text style={{ fontWeight: '700', color: Brand.navy, fontSize: 13 }}>{r.full_name}</Text>
-                <Text style={{ fontSize: 11, color: Brand.navy, opacity: 0.55 }}>updated {String(r.updated_at).slice(0, 10)}</Text>
+                <Text style={{ fontWeight: '700', color: t.ink, fontSize: 13 }}>{r.full_name}</Text>
+                <Text style={{ fontSize: 11, color: t.inkSoft }}>updated {String(r.updated_at).slice(0, 10)}</Text>
               </Pressable>
             ))}
             {caps.showCommits !== false && (
               <>
-                <Text style={{ fontWeight: '700', color: Brand.navy, marginTop: 12 }}>
+                <Text style={{ fontWeight: '700', color: t.ink, marginTop: 12 }}>
                   Recent commits{repo ? ` · ${repo}` : ''} {counts ? `· ${counts.prs} open PRs · ${counts.issues} open issues` : ''}
                 </Text>
                 {commits.length === 0 && (
-                  <Text style={{ marginTop: 6, fontSize: 13, color: Brand.navy, opacity: 0.6 }}>No commits in the last 7 days.</Text>
+                  <Text style={{ marginTop: 6, fontSize: 13, color: t.inkSoft }}>No commits in the last 7 days.</Text>
                 )}
                 {commits.slice(0, 8).map((c) => (
                   <View key={c.sha} style={{ marginTop: 6, borderTopWidth: 1, borderTopColor: Brand.hairline, paddingTop: 6 }}>
-                    <Text style={{ fontSize: 13, color: Brand.navy, fontWeight: '600' }} numberOfLines={1}>
+                    <Text style={{ fontSize: 13, color: t.ink, fontWeight: '600' }} numberOfLines={1}>
                       {c.commit.message.split('\n')[0]}
                     </Text>
-                    <Text style={{ fontSize: 11, color: Brand.navy, opacity: 0.5 }}>
+                    <Text style={{ fontSize: 11, color: t.inkSoft }}>
                       {c.sha.slice(0, 7)} · {String(c.commit.author?.date ?? '').slice(0, 10)}
                     </Text>
                   </View>
@@ -254,7 +256,7 @@ export default function IntegrationDetail() {
             )}
             {caps.autoLog !== false && commits.length > 0 && (
               <>
-                <Text style={{ fontWeight: '700', color: Brand.navy, marginTop: 12 }}>Log commits to a goal</Text>
+                <Text style={{ fontWeight: '700', color: t.ink, marginTop: 12 }}>Log commits to a goal</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 8 }}>
                   {ghGoals.slice(0, 5).map((g) => (
                     <Pressable
@@ -263,9 +265,9 @@ export default function IntegrationDetail() {
                       accessibilityLabel={`Sync to ${g.title}`}
                       accessibilityRole="radio"
                       accessibilityState={{ selected: syncGoalId === String(g.id) }}
-                      style={{ borderWidth: 2, borderColor: syncGoalId === String(g.id) ? Brand.turquoise : Brand.navy, borderRadius: Radii.pill, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: Brand.white }}
+                      style={{ borderWidth: 2, borderColor: syncGoalId === String(g.id) ? Brand.turquoise : t.border, borderRadius: Radii.pill, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: t.surface }}
                     >
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.navy }} numberOfLines={1}>{g.title}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: t.ink }} numberOfLines={1}>{g.title}</Text>
                     </Pressable>
                   ))}
                 </ScrollView>
@@ -275,7 +277,7 @@ export default function IntegrationDetail() {
                   onPress={syncCommitsToGoal}
                   disabled={syncing || !syncGoalId}
                 />
-                {!!syncMsg && <Text style={{ marginTop: 6, fontSize: 13, color: Brand.teal, fontWeight: '600' }}>{syncMsg}</Text>}
+                {!!syncMsg && <Text style={{ marginTop: 6, fontSize: 13, color: t.teal, fontWeight: '600' }}>{syncMsg}</Text>}
               </>
             )}
           </Card>
@@ -283,8 +285,8 @@ export default function IntegrationDetail() {
 
         {!isGithub && row?.connected && (
           <Card>
-            <Text style={{ fontWeight: '700', color: Brand.navy }}>Deadline sync</Text>
-            <Text style={{ fontSize: 13, color: Brand.navy, opacity: 0.7, marginTop: 4 }}>
+            <Text style={{ fontWeight: '700', color: t.ink }}>Deadline sync</Text>
+            <Text style={{ fontSize: 13, color: t.inkSoft, marginTop: 4 }}>
               Creates one event per active goal with a deadline, with a 24-hour reminder.
             </Text>
             <View style={{ marginTop: 10 }}>
@@ -296,13 +298,13 @@ export default function IntegrationDetail() {
                 accessibilityHint={caps.syncDeadlines === false ? 'Enable sync-deadlines above first' : 'Creates calendar events for every active dated goal'}
               />
             </View>
-            {!!calResults && <Text style={{ marginTop: 6, fontSize: 13, color: Brand.teal, fontWeight: '600' }}>{calResults}</Text>}
+            {!!calResults && <Text style={{ marginTop: 6, fontSize: 13, color: t.teal, fontWeight: '600' }}>{calResults}</Text>}
           </Card>
         )}
 
         {!row?.connected && (
           <Card>
-            <Text style={{ fontSize: 13, color: Brand.navy, opacity: 0.7 }}>
+            <Text style={{ fontSize: 13, color: t.inkSoft }}>
               Connect from Settings to unlock live data and sync actions here.
             </Text>
             <View style={{ marginTop: 10 }}>

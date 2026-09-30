@@ -2,12 +2,14 @@
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Brand } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { Radii, Spacing } from '../constants/spacing';
 import { FontFamily, Typography } from '../constants/typography';
 import { Card, StatusPill } from './ui';
 import type { TemplateMeta } from '../lib/templates';
 
 export function StatTile({ value, label, dark }: { value: string; label: string; dark?: boolean }) {
+  const t = useTheme();
   const count = Number.parseInt(value, 10);
   const visible = Number.isNaN(count) || !/day streak/.test(label)
     ? label
@@ -17,16 +19,16 @@ export function StatTile({ value, label, dark }: { value: string; label: string;
       accessibilityLabel={`${value} ${label}`}
       style={{
         flex: 1,
-        backgroundColor: dark ? Brand.cardOnNavy : Brand.grayCanvas,
+        backgroundColor: dark ? Brand.cardOnNavy : t.canvas,
         borderWidth: dark ? 0 : 2,
-        borderColor: Brand.navy,
+        borderColor: t.border,
         borderRadius: Radii.input,
         paddingVertical: 10,
         alignItems: 'center',
       }}
     >
-      <Text style={{ fontFamily: FontFamily.expressive, fontSize: 24, color: dark ? Brand.white : Brand.navy }}>{value}</Text>
-      <Text style={{ fontSize: 11, fontWeight: '600', color: dark ? Brand.turquoise : Brand.teal, marginTop: 2 }}>{visible}</Text>
+      <Text style={{ fontFamily: FontFamily.expressive, fontSize: 24, color: dark ? Brand.white : t.ink }}>{value}</Text>
+      <Text style={{ fontSize: 11, fontWeight: '600', color: dark ? Brand.turquoise : t.teal, marginTop: 2 }}>{visible}</Text>
     </View>
   );
 }
@@ -102,19 +104,20 @@ export function GoalHeaderCard({
   ctx: any;
   left: string | null;
 }) {
+  const t = useTheme();
   return (
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-        <Ionicons name={meta.icon} size={24} color={Brand.teal} accessibilityElementsHidden />
-        <Text style={{ fontFamily: Typography.title.fontFamily, fontSize: 20, color: Brand.navy, flex: 1 }} numberOfLines={2}>
+        <Ionicons name={meta.icon} size={24} color={t.teal} accessibilityElementsHidden />
+        <Text style={{ fontFamily: Typography.title.fontFamily, fontSize: 20, color: t.ink, flex: 1 }} numberOfLines={2}>
           {goal.title}
         </Text>
         <StatusPill status={goal.status} />
       </View>
-      <Text style={{ marginTop: 6, fontSize: 13, fontWeight: '600', color: Brand.teal }}>
+      <Text style={{ marginTop: 6, fontSize: 13, fontWeight: '600', color: t.teal }}>
         {meta.label} · {meta.tagline}
       </Text>
-      <Text style={{ marginTop: 4, color: Brand.navy, opacity: 0.7, fontSize: 13 }}>
+      <Text style={{ marginTop: 4, color: t.inkSoft, fontSize: 13 }}>
         {prog.current} of {prog.target ?? 'unknown'} {meta.unit}
         {left ? ` · ${left}` : ''}
       </Text>
@@ -128,10 +131,11 @@ export function GoalHeaderCard({
 }
 
 export function ActivitySection({ logs, unit }: { logs: any[]; unit: string }) {
+  const t = useTheme();
   if (logs.length === 0) return null;
   return (
     <Card>
-      <Text style={{ fontWeight: '700', color: Brand.navy, marginBottom: 8 }}>Recent activity</Text>
+      <Text style={{ fontWeight: '700', color: t.ink, marginBottom: 8 }}>Recent activity</Text>
       {logs.map((log: any, i: number) => (
         <View
           key={String(log.id)}
@@ -146,15 +150,15 @@ export function ActivitySection({ logs, unit }: { logs: any[]; unit: string }) {
         >
           <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: Brand.turquoise, marginTop: 5 }} accessibilityElementsHidden />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, color: Brand.navy, fontWeight: '600' }}>
+            <Text style={{ fontSize: 13, color: t.ink, fontWeight: '600' }}>
               +{log.value} {unit}
             </Text>
             {!!log.note && (
-              <Text style={{ fontSize: 12, color: Brand.navy, opacity: 0.65 }} numberOfLines={2}>
+              <Text style={{ fontSize: 12, color: t.inkSoft }} numberOfLines={2}>
                 {log.note}
               </Text>
             )}
-            <Text style={{ fontSize: 11, color: Brand.navy, opacity: 0.45 }}>
+            <Text style={{ fontSize: 11, color: t.inkSoft }}>
               {String(log.logged_at).slice(0, 16).replace('T', ' ')}
             </Text>
           </View>

@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { Spacing } from '../constants/spacing';
 import { FontFamily } from '../constants/typography';
 import { Card, PillButton } from '../components/ui';
@@ -24,6 +25,7 @@ function spoken(s: number) {
 }
 
 export default function WorkBlock() {
+  const t = useTheme();
   const { title } = useLocalSearchParams<{ title?: string }>();
   const [left, setLeft] = useState(FOCUS_SECONDS);
   const [paused, setPaused] = useState(false);
@@ -50,14 +52,14 @@ export default function WorkBlock() {
       style={{ flex: 1, backgroundColor: Brand.scrim, padding: Spacing.xl, justifyContent: 'center' }}
     >
       <Card>
-        <Text accessibilityRole="header" style={{ textAlign: 'center', fontWeight: '700', color: Brand.teal }}>FOCUS SESSION</Text>
+        <Text accessibilityRole="header" style={{ textAlign: 'center', fontWeight: '700', color: t.teal }}>FOCUS SESSION</Text>
         <Text
           accessibilityLabel={done ? 'Focus session complete' : spoken(left)}
-          style={{ fontFamily: FontFamily.expressive, fontSize: 64, textAlign: 'center', color: Brand.navy, marginTop: 8 }}
+          style={{ fontFamily: FontFamily.expressive, fontSize: 64, textAlign: 'center', color: t.ink, marginTop: 8 }}
         >
           {done ? 'Done' : fmt(left)}
         </Text>
-        <Text style={{ textAlign: 'center', marginTop: 8, fontSize: 15, color: Brand.navy }}>
+        <Text style={{ textAlign: 'center', marginTop: 8, fontSize: 15, color: t.ink }}>
           Focusing on {goalTitle}
         </Text>
         <View style={{ marginTop: 16, gap: 10 }}>

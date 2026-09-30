@@ -17,19 +17,47 @@ import Animated, {
   withSequence,
   withSpring,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { Brand } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { useReduceMotion } from '../lib/useReduceMotion';
 
 const AnimatedPath = createAnimatedComponent(Path);
+const AnimatedRing = createAnimatedComponent(Circle);
 const SIZE = 44;
 const R = 15;
 const C = 2 * Math.PI * R;
 
-export type RefreshState = 'idle' | 'loading' | 'done';
+export type RefreshState = 'idle' | 'pull' | 'loading' | 'done';
 
-export function RefreshArc({ state, label }: { state: RefreshState; label?: string }) {
+function PullArc({ progress }: { progress: SharedValue<number> }) {
+  const t = useTheme();
+  const props = useAnimatedProps(() => ({
+    strokeDashoffset: C * (1 - Math.min(1, Math.max(0, progress.value))),
+  }));
+  return (
+    <Svg width={30} height={30} viewBox="0 0 36 36">
+      <Circle cx={18} cy={18} r={R} fill="none" stroke={t.ink} strokeOpacity={0.15} strokeWidth={4.5} />
+      <AnimatedRing
+        cx={18}
+        cy={18}
+        r={R}
+        fill="none"
+        stroke={Brand.turquoise}
+        strokeWidth={4.5}
+        strokeLinecap="round"
+        strokeDasharray={`${C} ${C}`}
+        animatedProps={props}
+        transform="rotate(-90 18 18)"
+      />
+    </Svg>
+  );
+}
+
+export function RefreshArc({ state, progress = 0, arcProgress, label }: { state: RefreshState; progress?: number; arcProgress?: SharedValue<number>; label?: string }) {
+  const t = useTheme();
   const reduce = useReduceMotion();
   const spin = useSharedValue(0);
   const draw = useSharedValue(0);
@@ -67,12 +95,12 @@ export function RefreshArc({ state, label }: { state: RefreshState; label?: stri
         width: SIZE,
         height: SIZE,
         borderRadius: SIZE / 2,
-        backgroundColor: state === 'done' ? Brand.turquoise : Brand.white,
+        backgroundColor: state === 'done' ? Brand.turquoise : t.surface,
         borderWidth: 2,
-        borderColor: Brand.navy,
+        borderColor: t.border,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: Brand.navy,
+        shadowColor: t.shadow,
         shadowOffset: { width: 2, height: 2 },
         shadowOpacity: 1,
         shadowRadius: 0,
@@ -93,10 +121,29 @@ export function RefreshArc({ state, label }: { state: RefreshState; label?: stri
               animatedProps={tickProps}
             />
           </Svg>
+        ) : state === 'pull' ? (
+          arcProgress ? (
+            <PullArc progress={arcProgress} />
+          ) : (
+          <Svg width={30} height={30} viewBox="0 0 36 36">
+            <Circle cx={18} cy={18} r={R} fill="none" stroke={t.ink} strokeOpacity={0.15} strokeWidth={4.5} />
+            <Circle
+              cx={18}
+              cy={18}
+              r={R}
+              fill="none"
+              stroke={Brand.turquoise}
+              strokeWidth={4.5}
+              strokeLinecap="round"
+              strokeDasharray={`${Math.max(0.02, Math.min(1, progress)) * C} ${C}`}
+              transform="rotate(-90 18 18)"
+            />
+          </Svg>
+          )
         ) : state === 'loading' ? (
           <Animated.View style={spinStyle}>
             <Svg width={30} height={30} viewBox="0 0 36 36">
-              <Circle cx={18} cy={18} r={R} fill="none" stroke={Brand.navy} strokeOpacity={0.15} strokeWidth={4.5} />
+              <Circle cx={18} cy={18} r={R} fill="none" stroke={t.ink} strokeOpacity={0.15} strokeWidth={4.5} />
               <Circle
                 cx={18}
                 cy={18}
@@ -112,8 +159,8 @@ export function RefreshArc({ state, label }: { state: RefreshState; label?: stri
           </Animated.View>
         ) : (
           <Svg width={30} height={30} viewBox="0 0 36 36">
-            <Circle cx={18} cy={18} r={R} fill="none" stroke={Brand.navy} strokeOpacity={0.25} strokeWidth={4.5} />
-            <Path d="M18 10 v8 l5 3" fill="none" stroke={Brand.teal} strokeWidth={3} strokeLinecap="round" />
+            <Circle cx={18} cy={18} r={R} fill="none" stroke={t.ink} strokeOpacity={0.25} strokeWidth={4.5} />
+            <Path d="M18 10 v8 l5 3" fill="none" stroke={t.teal} strokeWidth={3} strokeLinecap="round" />
           </Svg>
         )}
       </Animated.View>

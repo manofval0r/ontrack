@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '../constants/colors';
+import { useTheme } from '../lib/theme';
 import { Radii, Spacing } from '../constants/spacing';
 import { Typography } from '../constants/typography';
 import { speakText, stopSpeaking } from '../lib/speech';
@@ -16,23 +17,8 @@ import { useGoals } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { StatusPill } from './ui';
 
-const card = {
-  backgroundColor: Brand.white,
-  borderWidth: 2,
-  borderColor: Brand.navy,
-  borderRadius: Radii.card,
-  padding: Spacing.lg,
-} as const;
-
-const shadow = {
-  shadowColor: Brand.navy,
-  shadowOffset: { width: 4, height: 4 },
-  shadowOpacity: 1,
-  shadowRadius: 0,
-  elevation: 4,
-} as const;
-
 function DayDots({ dots }: { dots: number[] }) {
+  const t = useTheme();
   return (
     <View style={{ flexDirection: 'row', gap: 5, marginTop: 8 }} accessibilityLabel="This week's proof">
       {dots.map((n, i) => (
@@ -43,8 +29,8 @@ function DayDots({ dots }: { dots: number[] }) {
             height: 30,
             borderRadius: 8,
             borderWidth: 2,
-            borderColor: Brand.navy,
-            backgroundColor: n > 0 ? stripColor(n) : Brand.white,
+            borderColor: t.border,
+            backgroundColor: n > 0 ? stripColor(n) : t.surface,
           }}
         />
       ))}
@@ -53,6 +39,7 @@ function DayDots({ dots }: { dots: number[] }) {
 }
 
 function Stepper({ value, unit, busy, onStep }: { value: string; unit: string; busy: boolean; onStep: (delta: 1 | -1) => void }) {
+  const t = useTheme();
   const btn = (pressed: boolean) => ({
     width: 48,
     height: 48,
@@ -82,7 +69,7 @@ function Stepper({ value, unit, busy, onStep }: { value: string; unit: string; b
       >
         <Ionicons name="remove" size={22} color={Brand.navy} />
       </Pressable>
-      <Text style={{ flex: 1, textAlign: 'center', fontSize: 15, fontWeight: '700', color: Brand.navy }}>{value}</Text>
+      <Text style={{ flex: 1, textAlign: 'center', fontSize: 15, fontWeight: '700', color: t.ink }}>{value}</Text>
       <Pressable
         onPress={(e) => { e.stopPropagation(); onStep(1); }}
         disabled={busy}
@@ -98,6 +85,7 @@ function Stepper({ value, unit, busy, onStep }: { value: string; unit: string; b
 }
 
 export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
+  const t = useTheme();
   const { dashboard, logProgress } = useGoals();
   const toast = useToast();
   const [speaking, setSpeaking] = useState(false);
@@ -177,16 +165,28 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
       accessibilityLabel={`Open goal ${goal.title}, ${prog.pct} percent complete, ${goal.status ?? 'active'}`}
       accessibilityRole="button"
       accessibilityHint="Opens the goal detail screen"
-      style={({ pressed }) => [card, shadow, { transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [] }]}
+      style={({ pressed }) => [{
+        backgroundColor: t.surface,
+        borderWidth: 2,
+        borderColor: t.border,
+        borderRadius: Radii.card,
+        padding: Spacing.lg,
+        shadowColor: t.shadow,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+        transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
+      }]}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-        <Ionicons name={meta.icon} size={20} color={Brand.teal} style={{ marginTop: 2 }} accessibilityElementsHidden />
-        <Text style={{ fontSize: Typography.cardHeading.fontSize, fontWeight: '700', color: Brand.navy, flex: 1 }} numberOfLines={2}>
+        <Ionicons name={meta.icon} size={20} color={t.teal} style={{ marginTop: 2 }} accessibilityElementsHidden />
+        <Text style={{ fontSize: Typography.cardHeading.fontSize, fontWeight: '700', color: t.ink, flex: 1 }} numberOfLines={2}>
           {goal.title}
         </Text>
         <StatusPill status={goal.status ?? 'active'} />
       </View>
-      <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '700', color: Brand.teal }}>
+      <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '700', color: t.teal }}>
         {isChecklist ? `${meta.label} · tap to check off`.toUpperCase() : isManual ? `${meta.label} · daily entries`.toUpperCase() : `${meta.label} · this week's proof`.toUpperCase()}
       </Text>
 
@@ -215,9 +215,9 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
                 paddingHorizontal: 12,
                 paddingVertical: 8,
                 borderWidth: 2,
-                borderColor: Brand.navy,
+                borderColor: t.border,
                 borderRadius: 12,
-                backgroundColor: item.completed ? Brand.cyanBg : Brand.white,
+                backgroundColor: item.completed ? Brand.cyanBg : t.surface,
                 opacity: busy ? 0.6 : 1,
               }}
             >
@@ -227,34 +227,34 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
                   height: 24,
                   borderRadius: 8,
                   borderWidth: 2,
-                  borderColor: Brand.navy,
-                  backgroundColor: item.completed ? Brand.turquoise : Brand.white,
+                  borderColor: t.border,
+                  backgroundColor: item.completed ? Brand.turquoise : t.surface,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
                 {item.completed && <Ionicons name="checkmark" size={15} color={Brand.navy} />}
               </View>
-              <Text style={{ flex: 1, fontSize: 14, color: Brand.navy }} numberOfLines={1}>{item.title}</Text>
+              <Text style={{ flex: 1, fontSize: 14, color: t.ink }} numberOfLines={1}>{item.title}</Text>
             </Pressable>
           ))}
           {items.length === 0 && (
-            <Text style={{ color: Brand.navy, opacity: 0.6, fontSize: 13 }}>No checklist items yet — open to add some.</Text>
+            <Text style={{ color: t.inkSoft, fontSize: 13 }}>No checklist items yet — open to add some.</Text>
           )}
           {items.length > 3 && (
-            <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.teal }}>+{items.length - 3} more inside</Text>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal }}>+{items.length - 3} more inside</Text>
           )}
         </View>
       )}
 
       {isManual && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 }}>
-          <Text style={{ fontFamily: 'OriginalSurfer_400Regular', fontSize: 40, color: Brand.navy }}>
+          <Text style={{ fontFamily: 'OriginalSurfer_400Regular', fontSize: 40, color: t.ink }}>
             {prog.current}
           </Text>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: Brand.navy }}>{meta.unit} so far</Text>
-            {!!remaining && <Text style={{ fontSize: 12, color: Brand.navy, opacity: 0.6 }}>{remaining}</Text>}
+            <Text style={{ fontSize: 13, fontWeight: '700', color: t.ink }}>{meta.unit} so far</Text>
+            {!!remaining && <Text style={{ fontSize: 12, color: t.inkSoft }}>{remaining}</Text>}
           </View>
           <Pressable
             onPress={(e) => { e.stopPropagation(); onOpen(); }}
@@ -266,18 +266,18 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
               alignItems: 'center',
               justifyContent: 'center',
               borderWidth: 2,
-              borderColor: Brand.navy,
+              borderColor: t.border,
               borderRadius: Radii.pill,
-              backgroundColor: Brand.navy,
+              backgroundColor: t.primary,
               transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
-              shadowColor: Brand.navy,
+              shadowColor: t.shadow,
               shadowOffset: { width: pressed ? 1 : 3, height: pressed ? 1 : 3 },
               shadowOpacity: 1,
               shadowRadius: 0,
               elevation: 3,
             })}
           >
-            <Text style={{ color: Brand.white, fontWeight: '700' }}>Log entry</Text>
+            <Text style={{ color: t.primaryInk, fontWeight: '700' }}>Log entry</Text>
           </Pressable>
         </View>
       )}
@@ -290,9 +290,9 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
             marginTop: 12,
             height: 10,
             borderRadius: Radii.pill,
-            backgroundColor: Brand.gray,
+            backgroundColor: t.inputTrack,
             borderWidth: 2,
-            borderColor: Brand.navy,
+            borderColor: t.border,
             overflow: 'hidden',
           }}
         >
@@ -301,7 +301,7 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
       )}
 
       <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 12, fontWeight: '600', color: Brand.teal }}>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: t.teal }}>
           {isChecklist
             ? `${prog.current} of ${prog.target ?? '—'} ${meta.unit} · ${prog.pct} pct`
             : isManual
@@ -321,9 +321,9 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
           style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 4 }}
         >
           {!!remaining && isChecklist && (
-            <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.navy, opacity: 0.6 }}>{remaining}</Text>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: t.inkSoft }}>{remaining}</Text>
           )}
-          <Ionicons name={speaking ? 'pause' : 'volume-high'} size={22} color={Brand.navy} />
+          <Ionicons name={speaking ? 'pause' : 'volume-high'} size={22} color={t.ink} />
         </Pressable>
       </View>
     </Pressable>

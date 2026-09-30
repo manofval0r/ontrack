@@ -5,7 +5,8 @@ import { Link, router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Brand, Colors } from '../../constants/colors';
+import { Brand } from '../../constants/colors';
+import { useTheme } from '../../lib/theme';
 import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily, Typography } from '../../constants/typography';
 import { BrandMark, Card, PillButton, SocialButton } from '../../components/ui';
@@ -15,6 +16,7 @@ import { api } from '../../lib/api';
 import { useGoals } from '../../lib/store';
 
 export default function Signup() {
+  const t = useTheme();
   const { pendingGoal } = useLocalSearchParams<{ pendingGoal?: string }>();
   const { refresh } = useGoals();
   const [name, setName] = useState('');
@@ -79,14 +81,25 @@ export default function Signup() {
 
   const hasPending = typeof pendingGoal === 'string' && !!pendingGoal.trim();
 
+  const input = {
+    borderWidth: 2,
+    borderColor: t.inputBorder,
+    borderRadius: Radii.input,
+    padding: Spacing.md,
+    fontSize: Typography.body.fontSize,
+    backgroundColor: t.surface,
+    color: t.ink,
+    minHeight: Touch.min,
+  } as const;
+
   if (needsConfirmation) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas, padding: Spacing.xl, justifyContent: 'center' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas, padding: Spacing.xl, justifyContent: 'center' }}>
         <Card>
-          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 28, color: Brand.navy, textAlign: 'center' }}>
+          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 28, color: t.ink, textAlign: 'center' }}>
             Check your inbox
           </Text>
-          <Text style={{ marginTop: 8, fontSize: 14, color: Brand.navy, opacity: 0.7, textAlign: 'center' }}>
+          <Text style={{ marginTop: 8, fontSize: 14, color: t.inkSoft, textAlign: 'center' }}>
             We sent a confirmation link to {email.trim()}. Tap it, then log in — your first goal will be waiting.
           </Text>
           <View style={{ marginTop: 14 }}>
@@ -98,26 +111,26 @@ export default function Signup() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Brand.grayCanvas }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
       <BackdropArt variant="full" />
       <View style={{ flex: 1, padding: Spacing.xl, justifyContent: 'center', gap: 14 }}>
         <Animated.View entering={FadeInDown.duration(350)} style={{ alignItems: 'center', gap: 8 }}>
           <BrandMark />
-          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 32, color: Brand.navy, textAlign: 'center' }}>
+          <Text style={{ fontFamily: FontFamily.expressive, fontSize: 32, color: t.ink, textAlign: 'center' }}>
             Join the shipped-it club
           </Text>
-          <Text style={{ fontSize: 14, color: Brand.navy, opacity: 0.65, textAlign: 'center' }}>
+          <Text style={{ fontSize: 14, color: t.inkSoft, textAlign: 'center' }}>
             Say a goal. Get a tracker. Prove it daily.
           </Text>
         </Animated.View>
 
         {hasPending && (
           <Animated.View entering={FadeInDown.duration(350).delay(120)}>
-            <View style={{ backgroundColor: Brand.cyanBg, borderWidth: 2, borderColor: Brand.navy, borderRadius: Radii.card, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ backgroundColor: Brand.cyanBg, borderWidth: 2, borderColor: t.border, borderRadius: Radii.card, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Ionicons name="flag" size={20} color={Brand.teal} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: Brand.teal }}>FIRST UP</Text>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: Brand.navy }} numberOfLines={2}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: t.teal }}>FIRST UP</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: t.ink }} numberOfLines={2}>
                   {pendingGoal}
                 </Text>
               </View>
@@ -133,14 +146,14 @@ export default function Signup() {
         <Animated.View entering={FadeInDown.duration(350).delay(280)}>
           <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <View style={{ flex: 1, height: 2, backgroundColor: Colors.light.inputBorder }} />
-              <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.navy, opacity: 0.6 }}>OR CONTINUE WITH EMAIL</Text>
-              <View style={{ flex: 1, height: 2, backgroundColor: Colors.light.inputBorder }} />
+              <View style={{ flex: 1, height: 2, backgroundColor: t.inputBorder }} />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: t.inkSoft }}>OR CONTINUE WITH EMAIL</Text>
+              <View style={{ flex: 1, height: 2, backgroundColor: t.inputBorder }} />
             </View>
             <View style={{ gap: 10 }}>
-              <TextInput value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor={Brand.placeholder} accessibilityLabel="Full name" autoComplete="name" returnKeyType="next" style={input} />
-              <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={Brand.placeholder} accessibilityLabel="Email address" autoCapitalize="none" autoComplete="email" keyboardType="email-address" returnKeyType="next" style={input} />
-              <TextInput value={password} onChangeText={setPassword} placeholder="Password (8+ characters)" placeholderTextColor={Brand.placeholder} accessibilityLabel="Password, 8 or more characters" autoComplete="new-password" secureTextEntry returnKeyType="done" onSubmitEditing={onSignup} style={input} />
+              <TextInput value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor={t.inkSoft} accessibilityLabel="Full name" autoComplete="name" returnKeyType="next" style={input} />
+              <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={t.inkSoft} accessibilityLabel="Email address" autoCapitalize="none" autoComplete="email" keyboardType="email-address" returnKeyType="next" style={input} />
+              <TextInput value={password} onChangeText={setPassword} placeholder="Password (8+ characters)" placeholderTextColor={t.inkSoft} accessibilityLabel="Password, 8 or more characters" autoComplete="new-password" secureTextEntry returnKeyType="done" onSubmitEditing={onSignup} style={input} />
               {password.length > 0 && password.length < 8 && (
                 <Text style={{ color: Brand.amberText, fontSize: 12 }}>Password needs 8 or more characters.</Text>
               )}
@@ -154,21 +167,10 @@ export default function Signup() {
           </Card>
         </Animated.View>
 
-        <Link href="/(auth)/login" accessibilityLabel="Go to log in" style={{ textAlign: 'center', color: Brand.teal, fontWeight: '600', minHeight: Touch.min }}>
+        <Link href="/(auth)/login" accessibilityLabel="Go to log in" style={{ textAlign: 'center', color: t.teal, fontWeight: '600', minHeight: Touch.min }}>
           Already have an account? Log in
         </Link>
       </View>
     </SafeAreaView>
   );
 }
-
-const input = {
-  borderWidth: 2,
-  borderColor: Colors.light.inputBorder,
-  borderRadius: Radii.input,
-  padding: Spacing.md,
-  fontSize: Typography.body.fontSize,
-  backgroundColor: Brand.white,
-  color: Brand.navy,
-  minHeight: Touch.min,
-} as const;
