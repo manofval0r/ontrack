@@ -54,6 +54,7 @@ Updated: 2026-09-28.
 - [x] Dock rebuilt (measured stops, commit-on-release, no haptics/bounce, chatbubble island + 3D ring, pill↔ring morph); dots removed from Home/Goals/Settings tabs
 - [x] Custom pull-to-refresh on Home (arc fills with pull, spins, ticks); stale-while-revalidate store cache + instant paint for slow starts
 - [x] Coach→OnTrack copy sweep (app + mockup); chat command center (settings/alarms/theme/navigation intents with revert phrases), Koji-style chat header, SOURCES chips
+- [x] Mockup: Koji empty-state chat phone (greeting, numbered starters, chat-glyph island) mirrors shipped chat header
 - [x] Themes light/dark/teal migrated across screens + primitives (turquoise/navy brand moments kept); Settings theme section; onboarding template chips; goal sheet presentation + grabber
 - [x] Three.js showpiece: `ThreeHero` (twin extruded chevrons, orbiting proof-blocks, studio lighting, transparent tile) on onboarding step 1 with flat-art fallback, reduced-motion single frame, unmount disposal; `expo-gl` + `three` installed
 - [x] Demo-ready audit: tsc green, `expo config` resolves (notifications plugin, OTA channels, runtime policy verified); fresh preview build still required (gesture-handler, notifications, gl)
