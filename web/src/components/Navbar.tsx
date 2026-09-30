@@ -258,10 +258,43 @@ export const Navbar: React.FC = () => {
                 </li>
               )
             })}
+            <li>
+              <Link
+                to="/app"
+                className="font-sans text-sm text-[#071E2D]/75 dark:text-slate-300 hover:text-[#00C4B3] dark:hover:text-[#00C4B3] font-medium rounded px-1 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2"
+              >
+                Get the app
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/docs"
+                className="font-sans text-sm text-[#071E2D]/75 dark:text-slate-300 hover:text-[#00C4B3] dark:hover:text-[#00C4B3] font-medium rounded px-1 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2"
+              >
+                Docs
+              </Link>
+            </li>
           </ul>
         ) : (
-          /* Empty center spacer on /login and /signup */
-          <div className="hidden md:block flex-1" />
+          /* Route links on every other page (docs, app, auth) */
+          <ul className="hidden md:flex items-center gap-8 list-none m-0 p-0">
+            <li>
+              <Link
+                to="/app"
+                className="font-sans text-sm text-[#071E2D]/75 dark:text-slate-300 hover:text-[#00C4B3] dark:hover:text-[#00C4B3] font-medium rounded px-1 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2"
+              >
+                Get the app
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/docs"
+                className="font-sans text-sm text-[#071E2D]/75 dark:text-slate-300 hover:text-[#00C4B3] dark:hover:text-[#00C4B3] font-medium rounded px-1 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3] focus-visible:ring-offset-2"
+              >
+                Docs
+              </Link>
+            </li>
+          </ul>
         )}
 
         {/* ── Right Zone: Desktop Actions ─────────────────────────────────── */}
@@ -414,6 +447,22 @@ export const Navbar: React.FC = () => {
             className="font-sans font-semibold text-sm text-center text-[#071E2D] dark:text-white hover:text-[#00C4B3] py-2 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3]"
           >
             Log in
+          </Link>
+
+          <Link
+            to="/app"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="font-sans font-semibold text-sm text-center text-[#071E2D] dark:text-white hover:text-[#00C4B3] py-2 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3]"
+          >
+            Get the app
+          </Link>
+
+          <Link
+            to="/docs"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="font-sans font-semibold text-sm text-center text-[#071E2D] dark:text-white hover:text-[#00C4B3] py-2 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00C4B3]"
+          >
+            Docs
           </Link>
 
           <Link

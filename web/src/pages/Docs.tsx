@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { Logo } from '../components/Logo'
+import { EXPO_BUILD_URL } from './MobileApp'
 
 // ─── Docs content model ─────────────────────────────────────────────
 
@@ -395,9 +396,11 @@ export const Docs: React.FC = () => {
           <Logo />
           <nav aria-label="Docs footer" className="flex flex-wrap justify-center gap-x-5 gap-y-2 font-sans text-sm opacity-70">
             <Link to="/" className="hover:opacity-100">Home</Link>
+            <Link to="/app" className="hover:opacity-100">Get the app</Link>
             <a href="#design-system" className="hover:opacity-100">Design</a>
             <a href="#api" className="hover:opacity-100">API</a>
             <a href="#github" className="hover:opacity-100">GitHub</a>
+            <a href={EXPO_BUILD_URL} target="_blank" rel="noreferrer" className="hover:opacity-100">Download APK</a>
           </nav>
           <p className="font-sans text-xs opacity-50">© 2026 OnTrack Docs</p>
         </div>

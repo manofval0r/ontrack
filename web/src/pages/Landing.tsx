@@ -104,6 +104,10 @@ const Hero: React.FC = () => {
 
         <p className="font-sans text-xs text-[#071E2D]/55 dark:text-slate-400 mb-10 sm:mb-12">
           No setup required · Your progress data stays strictly in your browser
+          <br />
+          <Link to="/app" className="font-semibold text-[#006D6A] dark:text-[#00C4B3] hover:underline">
+            Also on Android — get the mobile app →
+          </Link>
         </p>
       </div>
 
@@ -649,6 +653,8 @@ const Footer: React.FC = () => (
           <li><a href="#tracker-types" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Tracker types</a></li>
           <li><Link to="/login" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Log in</Link></li>
           <li><Link to="/signup" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Sign up</Link></li>
+          <li><Link to="/app" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Get the app</Link></li>
+          <li><Link to="/docs" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Docs</Link></li>
         </ul>
       </div>
 
