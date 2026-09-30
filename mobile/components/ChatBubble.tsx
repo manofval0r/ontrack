@@ -14,6 +14,7 @@ import Animated, {
 import { Brand } from '../constants/colors';
 import { useTheme } from '../lib/theme';
 import { Radii } from '../constants/spacing';
+import { MarkdownText } from './MarkdownText';
 import { speakText, stopSpeaking, prefetchSpeech } from '../lib/speech';
 
 export interface ChatMsg {
@@ -91,7 +92,11 @@ export function ChatBubble({
           elevation: 3,
         }}
       >
-        <Text style={{ fontSize: 17, lineHeight: 25, color: isUser ? Brand.white : t.ink }}>{msg.content}</Text>
+        {isUser ? (
+          <Text style={{ fontSize: 17, lineHeight: 25, color: Brand.white }}>{msg.content}</Text>
+        ) : (
+          <MarkdownText content={msg.content} color={t.ink} fontSize={17} lineHeight={25} />
+        )}
         {!isUser && msg.source && msg.source !== 'ai' && (
           <Text style={{ fontSize: 10, fontWeight: '700', color: Brand.amberText, marginTop: 6 }}>
             {msg.source === 'offline' ? 'OFFLINE MODE · DEVICE-ONLY' : 'BASIC MODE · RETRY FOR FULL AI'}

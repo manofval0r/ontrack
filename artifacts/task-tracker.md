@@ -62,6 +62,10 @@ Updated: 2026-09-28.
 - [x] Dock drop crash: JS helpers out of worklets (nearestStop/stopLeft now React-land only); runOnJS handoff
 - [x] Mobile speaks Evans' /api/chat contract: history + draft_goal, server suggested_goal_prompt drives the Y/N bar, plan affirmations route with history, legacy parse-goal fallback on 404
 - [x] Session auto-refresh: 401s rotate via Supabase refresh_token (single-flight) and retry once; unrecoverable sessions clear with AUTH_EXPIRED + "Log in again" chip in chat
+- [x] Dock follows taps again (onFinalize clears stuck dragging), pill nudged +2y/-2x, chat ring only when active with lifted idle shadow
+- [x] Settings slim status banner (red auth / amber offline / teal notice) replaces full-size cards
+- [x] Custom pull-refresh on Goals (mirrors Home); MarkdownText renderer for AI outputs (bold/italic/code/headers/lists, no deps)
+- [x] Thinking indicator v2 (6 honest stages, sequenced dots, elapsed timer); empty-state stagger + pressed rows; ASR 60s timeout + wake-retry
 - [x] Speed: instant toasts on log/create, logProgress single roundtrip (dropped getGoal refetch)
 - [x] Home: single-goal focus + Daily Fuel + goals shortcut (no list); PaceDial unified progress (GoalCard + TrackerBody counter); composer ink fix
 - [x] Absorbed teammate merges (legal pages, voice/integrations overhaul, audio plugin): no conflicts, tsc clean, backend consumes new serializer fields

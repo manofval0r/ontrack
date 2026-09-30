@@ -34,9 +34,10 @@ const TABS: Record<string, { icon: keyof typeof Ionicons.glyphMap; outline: keyo
 const STOP_ORDER = ['index', 'goals', 'settings', 'you'] as const;
 type StopName = (typeof STOP_ORDER)[number];
 // Pill hugs the icon row: tab content is 70 tall starting under 6px bar
-// padding, icon center ≈ y32 — a 52px pill at top:6 centers exactly there.
+// padding, icon center ≈ y32 — a 52px pill at top:8 centers exactly there
+// (measured 2px low/2px right in device testing).
 const PILL = 52;
-const PILL_TOP = 6;
+const PILL_TOP = 8;
 const CENTER_W = 72;
 const BAR_PAD = 6;
 const GLIDE_MS = 260;
@@ -81,30 +82,34 @@ function DockTab({
   );
 }
 
-/** The conversation button: twin-bubble glyph in a 3D double-ring island. */
+/** The conversation button: twin-bubble glyph on a lifted island.
+ * The ring shows ONLY when chat is active; idle state lifts via a deeper
+ * shadow + elevation instead of decoration. */
 function CenterAction({ focused, onPress }: { focused: boolean; onPress: () => void }) {
   return (
     <View style={{ width: CENTER_W, alignItems: 'center', justifyContent: 'flex-start', zIndex: 2 }}>
       <View style={{ marginTop: -26, alignItems: 'center', justifyContent: 'center' }}>
-        <View
-          accessibilityElementsHidden
-          style={{
-            position: 'absolute',
-            width: 70,
-            height: 70,
-            borderRadius: 35,
-            borderWidth: 2,
-            borderColor: focused ? Brand.navy : Brand.turquoise,
-            opacity: focused ? 1 : 0.55,
-          }}
-        />
+        {focused && (
+          <View
+            accessibilityElementsHidden
+            style={{
+              position: 'absolute',
+              width: 70,
+              height: 70,
+              borderRadius: 35,
+              borderWidth: 2,
+              borderColor: Brand.navy,
+              opacity: 1,
+            }}
+          />
+        )}
         <Pressable
           onPress={onPress}
           accessibilityLabel="Open chat"
           accessibilityRole="button"
           accessibilityHint="Talk to OnTrack: create goals, log progress, ask questions"
           accessibilityState={{ selected: focused }}
-          style={{
+          style={({ pressed }) => ({
             width: 60,
             height: 60,
             borderRadius: 30,
@@ -114,11 +119,12 @@ function CenterAction({ focused, onPress }: { focused: boolean; onPress: () => v
             alignItems: 'center',
             justifyContent: 'center',
             shadowColor: Brand.navy,
-            shadowOffset: { width: 0, height: 4 },
+            shadowOffset: { width: 0, height: focused ? 4 : 7 },
             shadowOpacity: 1,
             shadowRadius: 0,
-            elevation: 6,
-          }}
+            elevation: focused ? 6 : 9,
+            transform: [{ scale: pressed ? 0.94 : 1 }],
+          })}
         >
           <Ionicons name="chatbubbles" size={28} color={Brand.navy} />
         </Pressable>
@@ -182,7 +188,7 @@ function FloatingDock({ state, navigation }: DockProps) {
   const stopLeft = useCallback(
     (name: string): number | null => {
       const c = name === 'chat' ? stops.center : (stops as Record<string, number | undefined>)[name];
-      return c == null ? null : c - PILL / 2;
+      return c == null ? null : c - PILL / 2 - 2;
     },
     [stops]
   );
@@ -283,6 +289,11 @@ function FloatingDock({ state, navigation }: DockProps) {
           // UI thread may only touch shared values + scheduleOnRN — the
           // nearest-stop math runs in the effect below with fresh closures.
           scheduleOnRN(setDrop, { x: dragX.value + PILL / 2, vx: e.velocityX });
+        })
+        // Cancelled gestures (tap, interruption) skip onEnd — without this
+        // `dragging` sticks true forever and the pill stops following taps.
+        .onFinalize(() => {
+          dragging.value = false;
         }),
     [barWidth, dragX, dragging, startX, reduce]
   );

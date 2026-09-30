@@ -143,11 +143,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ text }),
     }),
-  /** ASR: base64 audio → { transcript }. Backend decodes at the boundary. */
+  /** ASR: base64 audio → { transcript }. Backend decodes at the boundary.
+   * Audio uploads are slow on bad networks and Render sleeps: generous
+   * timeout plus one wake-retry (transcription is side-effect-free). */
   asr: (audioBase64: string) =>
     request<{ transcript: string }>('/api/asr', {
       method: 'POST',
       body: JSON.stringify({ audio: audioBase64 }),
+      timeoutMs: 60000,
+      retryOnTimeout: true,
     }),
   getSettings: () => request<any>('/api/settings'),
   updateSettings: (data: Record<string, unknown>) =>

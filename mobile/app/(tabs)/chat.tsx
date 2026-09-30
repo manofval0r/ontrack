@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import Animated, {
   Easing,
+  FadeInUp,
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
@@ -72,39 +73,66 @@ export function trackerScore(text: string): number {
 const SET_AS_GOAL_MIN = 0.35;
 
 /** Staged thinking indicator — procedural status phases (threejs-animation
- * timing principles: one Clock, eased loop) with a UI-thread dot pulse.
- * Purpose: state indication. 900ms ease-in-out, instant under reduced motion. */
-const THINK_STAGES = ['Reading that…', 'Shaping the answer…', 'Polishing…'];
+ * timing principles: one Clock, eased loop) with sequenced dot pulses.
+ * Stages stay honest (generic pipeline phases, never fake backend insight);
+ * elapsed seconds appear past 5s so long waits read as progress, not hangs.
+ * Purpose: state indication. Reduced motion: static dots + text. */
+const THINK_STAGES = [
+  'Hearing you out…',
+  'Reading the board…',
+  'Weighing options…',
+  'Checking memory…',
+  'Shaping the reply…',
+  'Polishing…',
+];
+
+function PulseDot({ progress, phase }: { progress: import('react-native-reanimated').SharedValue<number>; phase: number }) {
+  const style = useAnimatedStyle(() => {
+    const p = (progress.value + phase) % 1;
+    const wave = Math.abs(Math.sin(p * Math.PI));
+    return { opacity: 0.25 + 0.75 * wave, transform: [{ scale: 0.8 + 0.3 * wave }] };
+  });
+  return <Animated.View style={[{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: Brand.turquoise }, style]} />;
+}
 
 function ThinkingIndicator() {
   const t = useTheme();
   const reduce = useReduceMotion();
   const [stage, setStage] = useState(0);
-  const pulse = useSharedValue(0.35);
+  const [secs, setSecs] = useState(0);
+  const progress = useSharedValue(0);
   useEffect(() => {
-    const id = setInterval(() => setStage((s) => (s + 1) % THINK_STAGES.length), 1600);
-    pulse.value = reduce
+    const id = setInterval(() => setStage((s) => (s + 1) % THINK_STAGES.length), 2400);
+    const clock = setInterval(() => setSecs((s) => s + 1), 1000);
+    progress.value = reduce
       ? 1
       : withRepeat(
-          withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 1200, easing: Easing.linear }),
           -1,
-          true
+          false
         );
     return () => {
       clearInterval(id);
-      cancelAnimation(pulse);
+      clearInterval(clock);
+      cancelAnimation(progress);
     };
-  }, [pulse, reduce]);
-  const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+  }, [progress, reduce]);
   return (
-    <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.lg }}>
-      <Animated.View style={[{ flexDirection: 'row', gap: 3 }, dotStyle]} accessibilityElementsHidden>
-        {[0, 1, 2].map((i) => (
-          <View key={i} style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: Brand.turquoise }} />
+    <Animated.View
+      entering={FadeInUp.duration(220)}
+      accessibilityLiveRegion="polite"
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.lg }}
+    >
+      <View style={{ flexDirection: 'row', gap: 3 }} accessibilityElementsHidden>
+        {[0, 0.33, 0.66].map((phase) => (
+          <PulseDot key={phase} progress={progress} phase={phase} />
         ))}
-      </Animated.View>
-      <Text style={{ color: t.teal, fontWeight: '600' }}>{THINK_STAGES[stage]}</Text>
-    </View>
+      </View>
+      <Text style={{ color: t.teal, fontWeight: '600' }}>
+        {THINK_STAGES[stage]}
+        {secs >= 5 ? <Text style={{ color: t.inkSoft, fontWeight: '400' }}> · {secs}s</Text> : null}
+      </Text>
+    </Animated.View>
   );
 }
 
@@ -113,6 +141,7 @@ export default function Chat() {
   const toast = useToast();
   const t = useTheme();
   const { theme, setTheme } = t;
+  const reduceMotion = useReduceMotion();
   const [userName, setUserName] = useState('');
   const [messages, setMessages] = useState<ChatMsg[]>([
     { id: 'welcome', sender: 'ai', content: 'Tell me what you want to make progress on.', timestamp: now() },
@@ -704,23 +733,39 @@ export default function Chat() {
         />
         {!messages.some((m) => m.sender === 'user') && (
           <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: 8, gap: 4 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: t.inkSoft, letterSpacing: 2 }}>
-              {new Date().toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase().replace(/,/g, ' ·')}
-            </Text>
-            <Text style={{ fontFamily: FontFamily.expressive, fontSize: 44, color: t.ink, lineHeight: 50 }}>
-              hey{userName ? `, ${userName}` : ''}.
-            </Text>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: t.inkSoft }}>
-              What are we shipping today?
-            </Text>
-            <View style={{ marginTop: 10, borderTopWidth: 2, borderTopColor: t.border, opacity: 1 }}>
+            <Animated.View entering={reduceMotion ? undefined : FadeInUp.duration(300)}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: t.inkSoft, letterSpacing: 2 }}>
+                {new Date().toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase().replace(/,/g, ' ·')}
+              </Text>
+            </Animated.View>
+            <Animated.View entering={reduceMotion ? undefined : FadeInUp.duration(300).delay(80)}>
+              <Text style={{ fontFamily: FontFamily.expressive, fontSize: 44, color: t.ink, lineHeight: 50 }}>
+                hey{userName ? `, ${userName}` : ''}.
+              </Text>
+            </Animated.View>
+            <Animated.View entering={reduceMotion ? undefined : FadeInUp.duration(300).delay(160)}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: t.inkSoft }}>
+                What are we shipping today?
+              </Text>
+            </Animated.View>
+            <Animated.View entering={reduceMotion ? undefined : FadeInUp.duration(300).delay(240)}>
+            <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: t.border }}>
               {STARTERS.map((s, i) => (
                 <Pressable
                   key={s.title}
                   onPress={() => send(s.prompt)}
                   accessibilityLabel={`Start: ${s.title}`}
                   accessibilityRole="button"
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: 'rgba(7,30,45,0.12)', minHeight: 48 }}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    paddingVertical: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: t.border,
+                    minHeight: 48,
+                    backgroundColor: pressed ? t.inputTrack : 'transparent',
+                  })}
                 >
                   <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal, minWidth: 28 }}>
                     {String(i + 1).padStart(2, '0')}
@@ -730,6 +775,7 @@ export default function Chat() {
                 </Pressable>
               ))}
             </View>
+            </Animated.View>
           </View>
         )}
         {thinking && <ThinkingIndicator />}

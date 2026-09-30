@@ -1,8 +1,10 @@
-/** M7 Goals — active + completed sections with error and empty states. */
-import { useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
-import { Swipeable } from 'react-native-gesture-handler';
+/** M7 Goals — active + completed sections with error and empty states.
+ * Pull-to-refresh is the same custom arc header as Home: drag down at the
+ * top, arc fills with pull, spins while syncing, draws the tick. */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, Text, View } from 'react-native';
+import Animated, { FadeInUp, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Gesture, GestureDetector, FlatList as GHFlatList, Swipeable } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
@@ -25,6 +27,12 @@ export default function Goals() {
   const [syncState, setSyncState] = useState<RefreshState>('idle');
   const wasLoading = useRef(false);
 
+  const PULL_THRESHOLD = 84;
+  const HEADER_MAX = 72;
+  const pullY = useSharedValue(0);
+  const pullProg = useSharedValue(0);
+  const atTop = useSharedValue(true);
+
   useEffect(() => {
     if (loading) {
       wasLoading.current = true;
@@ -35,12 +43,71 @@ export default function Goals() {
     wasLoading.current = false;
     if (error) {
       setSyncState('idle');
+      pullY.value = withTiming(0, { duration: 200 });
       return;
     }
     setSyncState('done');
-    const t = setTimeout(() => setSyncState('idle'), 1500);
+    const t = setTimeout(() => {
+      setSyncState('idle');
+      pullY.value = withTiming(0, { duration: 220 });
+    }, 1500);
     return () => clearTimeout(t);
   }, [loading, error]);
+
+  const doRefresh = useCallback(() => {
+    clearError();
+    refresh();
+  }, [clearError, refresh]);
+  const doRefreshRef = useRef(doRefresh);
+  doRefreshRef.current = doRefresh;
+
+  const native = useMemo(() => Gesture.Native(), []);
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .simultaneousWithExternalGesture(native)
+        .activeOffsetY([14, 1000])
+        .onUpdate((e) => {
+          if (!atTop.value) {
+            pullY.value = 0;
+            pullProg.value = 0;
+            return;
+          }
+          const y = Math.min(120, Math.max(0, e.translationY * 0.55));
+          pullY.value = y;
+          pullProg.value = Math.min(1, y / PULL_THRESHOLD);
+        })
+        .onEnd(() => {
+          if (!atTop.value) {
+            pullY.value = 0;
+            pullProg.value = 0;
+            return;
+          }
+          if (pullY.value >= PULL_THRESHOLD) {
+            pullY.value = withTiming(HEADER_MAX, { duration: 200 });
+            pullProg.value = 1;
+            try {
+              doRefreshRef.current();
+            } catch {
+              pullY.value = withTiming(0, { duration: 200 });
+            }
+          } else {
+            pullY.value = withTiming(0, { duration: 220 });
+            pullProg.value = 0;
+          }
+        }),
+    [native, atTop, pullY, pullProg]
+  );
+
+  const headerStyle = useAnimatedStyle(() => ({
+    height: Math.min(pullY.value, HEADER_MAX),
+    opacity: pullY.value > 4 ? 1 : 0,
+  }));
+  const listStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: Math.min(pullY.value, HEADER_MAX) }],
+  }));
+
+  const arcState: RefreshState = syncState === 'idle' ? 'pull' : syncState;
 
   useEffect(() => {
     refresh();
@@ -105,12 +172,20 @@ export default function Goals() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
-      <FlatList
+      <Animated.View style={[{ alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 8, overflow: 'hidden' }, headerStyle]}>
+        <RefreshArc state={arcState} arcProgress={pullProg} label="Pull to refresh" />
+      </Animated.View>
+      <GestureDetector gesture={Gesture.Simultaneous(native, pan)}>
+        <Animated.View style={[{ flex: 1 }, listStyle]}>
+      <GHFlatList
         data={[...active, ...done]}
         keyExtractor={(g) => String(g.id)}
         accessibilityLabel="Goals list"
         contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 170 }}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { clearError(); refresh(); }} />}
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          atTop.value = e.nativeEvent.contentOffset.y <= 4;
+        }}
         ListHeaderComponent={
           <View style={{ gap: 8, marginBottom: 4 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -157,7 +232,9 @@ export default function Goals() {
           </View>
           </Animated.View>
         )}
-      />
+          />
+        </Animated.View>
+      </GestureDetector>
     </SafeAreaView>
   );
 }

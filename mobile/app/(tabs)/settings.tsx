@@ -207,18 +207,13 @@ export default function Settings() {
     <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 130 }}>
         <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 36, color: t.ink }}>Settings</Text>
-        {error && (
-          <Card>
-            <Text accessibilityLiveRegion="polite" style={{ color: Brand.error, fontSize: 13 }}>{error}</Text>
-            <Pressable onPress={load} style={{ marginTop: 8, minHeight: Touch.min, justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Retry loading settings">
-              <Text style={{ color: t.teal, fontWeight: '700' }}>Retry</Text>
-            </Pressable>
-          </Card>
-        )}
-        {notice && (
-          <Card>
-            <Text accessibilityLiveRegion="polite" style={{ color: t.teal, fontSize: 13, fontWeight: '600' }}>{notice}</Text>
-          </Card>
+        {(!!error || !!notice) && (
+          <StatusBanner
+            kind={error ? (isAuthError(error) ? 'auth' : 'offline') : 'notice'}
+            message={error ?? notice ?? ''}
+            onRetry={error ? load : undefined}
+            onDismissNotice={!error && notice ? () => setNotice(null) : undefined}
+          />
         )}
 
         <Card>
@@ -536,6 +531,64 @@ function IntegrationRow({ name, hint, row, busy, onConnect, onDisconnect, onMana
           {busy ? 'Working…' : connected ? 'Disconnect' : 'Connect'}
         </Text>
       </Pressable>
+    </View>
+  );
+}
+
+/** Slim persistent status banner — replaces the old full-size error/notice
+ * cards. Red = session/auth failure, amber = offline/network, teal = notice.
+ * Errors stay until fixed (retry included); notices dismiss with X. */
+function isAuthError(msg: string): boolean {
+  return /session expired|log ?in again|unauthorized|401|auth/i.test(msg);
+}
+
+function StatusBanner({
+  kind,
+  message,
+  onRetry,
+  onDismissNotice,
+}: {
+  kind: 'auth' | 'offline' | 'notice';
+  message: string;
+  onRetry?: () => void;
+  onDismissNotice?: () => void;
+}) {
+  const t = useTheme();
+  const conf = {
+    auth: { bg: '#FDECEC', border: '#DC2626', ink: '#7F1D1D', icon: 'lock-closed' as const, label: 'Sign-in needed' },
+    offline: { bg: '#FFF7E0', border: '#B45309', ink: '#78350F', icon: 'cloud-offline' as const, label: 'Connection issue' },
+    notice: { bg: '#E6FFFB', border: '#006D6A', ink: '#06302B', icon: 'checkmark-circle' as const, label: 'Notice' },
+  }[kind];
+  return (
+    <View
+      accessibilityRole="alert"
+      accessibilityLabel={`${conf.label}: ${message}`}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: conf.bg,
+        borderWidth: 2,
+        borderColor: conf.border,
+        borderRadius: Radii.input,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+      }}
+    >
+      <Ionicons name={conf.icon} size={18} color={conf.ink} />
+      <Text accessibilityLiveRegion="polite" style={{ flex: 1, fontSize: 12, fontWeight: '600', color: conf.ink }} numberOfLines={2}>
+        {message}
+      </Text>
+      {onRetry && (
+        <Pressable onPress={onRetry} accessibilityLabel="Retry" accessibilityRole="button" hitSlop={8} style={{ paddingHorizontal: 6, minHeight: 32, justifyContent: 'center' }}>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: conf.ink }}>Retry</Text>
+        </Pressable>
+      )}
+      {onDismissNotice && (
+        <Pressable onPress={onDismissNotice} accessibilityLabel="Dismiss notice" accessibilityRole="button" hitSlop={10} style={{ minWidth: 32, minHeight: 32, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="close" size={16} color={conf.ink} />
+        </Pressable>
+      )}
     </View>
   );
 }
