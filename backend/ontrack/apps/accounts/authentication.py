@@ -87,9 +87,6 @@ def _ec_key_for_kid(kid):
         return cached
     jwks_url = getattr(settings, "SUPABASE_JWKS_URL", "")
     if not jwks_url:
-        supabase_url = getattr(settings, "SUPABASE_URL", "https://destcakvqdzhkzemdugo.supabase.co")
-        jwks_url = f"{supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json" if supabase_url else ""
-    if not jwks_url:
         logger.error("SUPABASE_JWKS_URL is not configured; rejecting ES256 token")
         raise AuthInvalid("authentication is not configured")
     try:

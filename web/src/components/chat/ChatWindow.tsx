@@ -75,7 +75,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
     setIsThinking(true)
 
     const activeGoals = goals.filter((g) => g.status === 'active')
-    const intent = classifyUserMessage(content, activeGoals)
+    const lastAiMsg = [...messages].reverse().find((m) => m.sender === 'ai')
+    const intent = classifyUserMessage(content, activeGoals, lastAiMsg?.content)
 
     // Handle progress logging on existing goals
     if (intent.type === 'progress_log') {
@@ -197,13 +198,127 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
       return
     }
 
+    // Extract recent conversation history turns to provide full conversational awareness
+    const historyPayload = messages.slice(-6).map((m) => ({
+      role: m.sender === 'ai' ? 'assistant' : 'user',
+      content: m.content,
+    }))
+
+    // If this is a plan draft request, call backend with draftGoal=true or parseGoal
+    if (intent.type === 'plan_draft_request') {
+      api.sendChatMessage(content, undefined, historyPayload, true)
+        .then((res) => {
+          if (res.goal_proposal) {
+            const prop = res.goal_proposal
+            const goalProposal: Partial<Goal> = {
+              title: prop.title || intent.cleanTitle || 'Personal Goal Plan',
+              description: prop.summary || '',
+              goal_type: (prop.goal_type as Goal['goal_type']) || intent.suggestedType || 'counter',
+              target: prop.target ?? 3,
+              unit: prop.unit || (prop.goal_type === 'checklist' ? 'milestones' : 'sessions'),
+              domain: (prop.domain as Goal['domain']) || 'fitness',
+              deadline: prop.deadline || undefined,
+              items: prop.items?.map((title: string, idx: number) => ({
+                id: `item-${idx}`,
+                title,
+                completed: false,
+                order: idx + 1,
+              })),
+            }
+
+            const aiMsg: ChatMessage = {
+              id: `msg-ai-${Date.now()}`,
+              sender: 'ai',
+              content: res.reply || res.message || `I've prepared your tracker for "${goalProposal.title}". Click "Activate Tracker" below to start.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              goal_proposal: goalProposal,
+            }
+            setMessages((prev) => [...prev, aiMsg])
+            return
+          }
+          throw new Error('No proposal in response')
+        })
+        .catch(() => {
+          // Fallback to parseGoal with clean title
+          api.parseGoal(`${intent.cleanTitle}: 3 weekly sessions`)
+            .then(({ ai_response_text, goal_proposal }) => {
+              const goalProposal: Partial<Goal> = {
+                title: goal_proposal?.title || intent.cleanTitle,
+                description: goal_proposal?.summary || '',
+                goal_type: (goal_proposal?.goal_type as Goal['goal_type']) || intent.suggestedType || 'counter',
+                target: goal_proposal?.target ?? 3,
+                unit: 'sessions',
+                domain: (goal_proposal?.domain as Goal['domain']) || 'fitness',
+                deadline: goal_proposal?.deadline || undefined,
+                items: goal_proposal?.items?.map((title, idx) => ({
+                  id: `item-${idx}`,
+                  title,
+                  completed: false,
+                  order: idx + 1,
+                })),
+              }
+              const aiMsg: ChatMessage = {
+                id: `msg-ai-${Date.now()}`,
+                sender: 'ai',
+                content: ai_response_text || `I've drafted a tracker for "${goalProposal.title}". Click "Activate Tracker" below to begin!`,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                goal_proposal: goalProposal,
+              }
+              setMessages((prev) => [...prev, aiMsg])
+            })
+            .catch(() => {
+              const localProposal = extractGoalProposal(content)
+              const aiMsg: ChatMessage = {
+                id: `msg-ai-${Date.now()}`,
+                sender: 'ai',
+                content: `I've configured your tracker for "${localProposal.title}". Click "Activate Tracker" below to launch your workspace.`,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                goal_proposal: localProposal,
+              }
+              setMessages((prev) => [...prev, aiMsg])
+            })
+        })
+        .finally(() => {
+          setIsThinking(false)
+        })
+      return
+    }
+
     // If it's NOT an explicit goal creation request, engage the AI Assistant for chat/questions!
     if (intent.type !== 'goal_creation') {
       const targetGoal = 'matchedGoal' in intent && (intent as any).matchedGoal ? (intent as any).matchedGoal : activeGoals[0]
       const goalId = targetGoal?.id
 
-      api.sendChatMessage(content, goalId)
+      api.sendChatMessage(content, goalId, historyPayload)
         .then((res) => {
+          if (res.goal_proposal) {
+            const prop = res.goal_proposal
+            const goalProposal: Partial<Goal> = {
+              title: prop.title || content,
+              description: prop.summary || '',
+              goal_type: (prop.goal_type as Goal['goal_type']) || 'counter',
+              target: prop.target ?? 3,
+              unit: prop.unit || 'sessions',
+              domain: (prop.domain as Goal['domain']) || 'fitness',
+              deadline: prop.deadline || undefined,
+              items: prop.items?.map((title: string, idx: number) => ({
+                id: `item-${idx}`,
+                title,
+                completed: false,
+                order: idx + 1,
+              })),
+            }
+            const aiMsg: ChatMessage = {
+              id: `msg-ai-${Date.now()}`,
+              sender: 'ai',
+              content: res.reply || res.message || res.ai_response_text || 'Here is your drafted plan.',
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              goal_proposal: goalProposal,
+            }
+            setMessages((prev) => [...prev, aiMsg])
+            return
+          }
+
           const reply = res.reply || res.message || res.ai_response_text || 'I am tracking your progress.'
           const aiMsg: ChatMessage = {
             id: `msg-ai-${Date.now()}`,
@@ -212,6 +327,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             retrieved_context: res.retrieved_context || [],
             rag_active: Boolean(res.rag_active || (res.retrieved_context && res.retrieved_context.length > 0)),
+            suggestedGoalPrompt: res.suggested_goal_prompt,
+            suggestedTopic: res.suggested_topic,
           }
           setMessages((prev) => [...prev, aiMsg])
         })
@@ -348,6 +465,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ initialPrompt }) => {
             message={msg}
             onActivateGoal={handleActivateGoal}
             onSelectAction={handleSelectAction}
+            onDraftGoal={handleSendMessage}
           />
         ))}
 

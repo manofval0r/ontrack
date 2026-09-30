@@ -8,9 +8,10 @@ interface MessageBubbleProps {
   message: ChatMessage
   onActivateGoal?: (proposedGoal: Partial<Goal>) => void
   onSelectAction?: (goalId: string, delta: number) => void
+  onDraftGoal?: (prompt: string) => void
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onActivateGoal, onSelectAction }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onActivateGoal, onSelectAction, onDraftGoal }) => {
   const isUser = message.sender === 'user'
   const { playTTS, stopTTS, isAudioPlaying, currentSpeakingText } = useGoals()
   const isSpeakingThis = isAudioPlaying && currentSpeakingText === message.content
@@ -87,6 +88,26 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onActivat
                 <span>{btn.label}</span>
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Proactive Goal Drafting Suggestion */}
+        {!isUser && !message.goal_proposal && (message.suggestedGoalPrompt || /should i draft a plan|make it a goal you can commit to|draft a plan and make it a goal/i.test(message.content)) && (
+          <div className="mt-3 pt-3 border-t border-[#071E2D]/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-[#F0FDFA] dark:bg-[#07242C] p-3 rounded-xl border border-[#00C4B3]/30">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🎯</span>
+              <span className="text-xs font-semibold text-[#071E2D] dark:text-slate-200">
+                Ready to commit? Turn this into a trackable goal
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => onDraftGoal?.(message.suggestedGoalPrompt || 'Draft a plan and make it a goal you can commit to')}
+              className="btn-pill btn-pill-primary text-xs !py-1.5 !px-3.5 cursor-pointer self-start sm:self-auto shrink-0 shadow-sm"
+            >
+              <span>Draft plan & set goal</span>
+              <span className="btn-bubble !w-4 !h-4">→</span>
+            </button>
           </div>
         )}
 

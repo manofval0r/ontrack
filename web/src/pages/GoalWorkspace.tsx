@@ -153,10 +153,18 @@ export const GoalWorkspace: React.FC = () => {
 
       {/* Dynamic Tracker based on AI format */}
       {activeGoal.goal_type === 'counter' && (
-        <CounterTracker goal={activeGoal} onUpdate={handleCounterUpdate} />
+        <CounterTracker
+          goal={activeGoal}
+          onUpdate={handleCounterUpdate}
+          onOpenEdit={() => setIsEditOpen(true)}
+        />
       )}
       {activeGoal.goal_type === 'checklist' && (
-        <ChecklistTracker goal={activeGoal} onUpdateItems={handleChecklistUpdate} />
+        <ChecklistTracker
+          goal={activeGoal}
+          onUpdateItems={handleChecklistUpdate}
+          onOpenEdit={() => setIsEditOpen(true)}
+        />
       )}
       {activeGoal.goal_type === 'manual' && (
         <ManualTracker goal={activeGoal} onLogReflection={handleReflectionLog} />

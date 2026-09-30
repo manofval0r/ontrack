@@ -9,6 +9,7 @@ export type ClassifiedIntent =
   | { type: 'coaching_advice'; topic: 'motivation' | 'habits' | 'burnout' | 'general'; responseText: string }
   | { type: 'progress_log'; delta: number; rawText: string; matchedGoal?: Goal }
   | { type: 'goal_creation'; cleanTitle: string; suggestedType: Goal['goal_type'] }
+  | { type: 'plan_draft_request'; rawText: string; cleanTitle: string; suggestedType: Goal['goal_type'] }
   | { type: 'integration_query'; service: 'github' | 'calendar' | 'all'; rawText: string }
   | { type: 'general_chat'; responseText: string; rawText?: string }
 
@@ -133,8 +134,8 @@ export function isGoalCreationPrompt(text: string): { isGoal: boolean; cleanTitl
     return { isGoal: false, cleanTitle: trimmed, suggestedType: 'counter' }
   }
 
-  // 6. Explicit goal keyword prefixes (e.g. "track 50 pushups", "create a goal to read 5 books", "set tracker for...")
-  const explicitPrefixRegex = /^(new goal|set a goal|create a goal|goal|i want to track|track my|track|build a tracker for|set tracker for|tracker for):?\s*/i
+  // 6. Explicit goal keyword prefixes (e.g. "track 50 pushups", "create a goal to read 5 books", "set tracker for...", "draft a plan and make it a goal")
+  const explicitPrefixRegex = /^(new goal|set a goal|create a goal|goal|i want to track|track my|track|build a tracker for|set tracker for|tracker for|draft a plan and make it a goal( you can commit to)?|draft a plan for|draft a plan|make it a goal you can commit to|make it a goal|draft plan for|draft plan):?\s*/i
   if (explicitPrefixRegex.test(trimmed)) {
     const cleanTitle = trimmed.replace(explicitPrefixRegex, '').trim() || trimmed
     if (cleanTitle.length >= 3 && !/\b(hungry|tired|sleep|bored|test|eat food|chill)\b/i.test(cleanTitle)) {
@@ -388,7 +389,7 @@ export function extractGoalProposal(text: string, referenceDate: Date = new Date
 /**
  * Classify any incoming user message in the context of active goals.
  */
-export function classifyUserMessage(text: string, activeGoals: Goal[]): ClassifiedIntent {
+export function classifyUserMessage(text: string, activeGoals: Goal[], lastAiMessage?: string): ClassifiedIntent {
   const trimmed = text.trim()
   const lower = trimmed.toLowerCase()
 
@@ -402,12 +403,53 @@ export function classifyUserMessage(text: string, activeGoals: Goal[]): Classifi
     }
   }
 
-  // 2. Status / Summary Queries
+  // 2. Plan Drafting Confirmation from AI Suggestion
+  const isAffirmation = /^(yes|sure|yep|yeah|draft a plan|make it a goal|let'?s do it|yes please|please do|create (the|a) goal|go ahead|sounds good|i'?d love that|draft it|yes draft|set it up|make it a goal you can commit to|draft plan)\b/i.test(trimmed)
+  const lastAiLower = (lastAiMessage || '').toLowerCase()
+  const hasPlanSuggestion =
+    lastAiLower.includes('draft a plan') ||
+    lastAiLower.includes('make it a goal') ||
+    lastAiLower.includes('goal you can commit to') ||
+    lastAiLower.includes('set a tracker') ||
+    lastAiLower.includes('tracker for your targets')
+
+  if ((isAffirmation && hasPlanSuggestion) || lower.includes('draft a plan') || lower.includes('make it a goal')) {
+    const combinedContext = `${lastAiMessage || ''} ${trimmed}`
+    let cleanTitle = 'Personal Goal Plan'
+    let suggestedType: Goal['goal_type'] = 'counter'
+
+    const lowerCombined = combinedContext.toLowerCase()
+    if (lowerCombined.includes('fit') || lowerCombined.includes('workout') || lowerCombined.includes('gym') || lowerCombined.includes('exercise')) {
+      cleanTitle = 'Fitness Commitment Plan'
+      suggestedType = 'counter'
+    } else if (lowerCombined.includes('read') || lowerCombined.includes('book') || lowerCombined.includes('study') || lowerCombined.includes('learn')) {
+      cleanTitle = 'Reading & Study Goal'
+      suggestedType = 'checklist'
+    } else if (lowerCombined.includes('code') || lowerCombined.includes('coding') || lowerCombined.includes('python') || lowerCombined.includes('github')) {
+      cleanTitle = 'Coding Sprint Milestones'
+      suggestedType = 'checklist'
+    } else if (lowerCombined.includes('sale') || lowerCombined.includes('deal') || lowerCombined.includes('client')) {
+      cleanTitle = 'Sales Target Plan'
+      suggestedType = 'counter'
+    } else if (lowerCombined.includes('meditat') || lowerCombined.includes('journal') || lowerCombined.includes('morning') || lowerCombined.includes('habit')) {
+      cleanTitle = 'Daily Habit Reflection'
+      suggestedType = 'manual'
+    }
+
+    return {
+      type: 'plan_draft_request',
+      rawText: trimmed,
+      cleanTitle,
+      suggestedType,
+    }
+  }
+
+  // 3. Status / Summary Queries
   if (STATUS_REGEX.test(lower)) {
     return { type: 'status_query' }
   }
 
-  // 3. Help queries
+  // 4. Help queries
   if (HELP_REGEX.test(trimmed)) {
     return {
       type: 'help_query',
@@ -421,7 +463,7 @@ export function classifyUserMessage(text: string, activeGoals: Goal[]): Classifi
     }
   }
 
-  // 4. Conversational Acknowledgments (ok, thanks, got it)
+  // 5. Conversational Acknowledgments (ok, thanks, got it)
   if (ACK_REGEX.test(trimmed)) {
     const ackReplies = [
       "You got this! Keep the momentum high. Tell me whenever you have progress to log or want to set another tracker.",

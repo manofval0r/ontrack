@@ -166,7 +166,8 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
   // Core NLP intent router
   const processUserIntent = async (text: string, timeStr: string) => {
     const activeGoals = goals.filter((g) => g.status === 'active')
-    const intent = classifyUserMessage(text, activeGoals)
+    const lastAiMsg = [...messages].reverse().find((m) => m.sender === 'ai')
+    const intent = classifyUserMessage(text, activeGoals, lastAiMsg?.content)
 
     // 1. Integrations Query Check (GitHub repos, commits, Calendar)
     if (intent.type === 'integration_query') {
@@ -295,8 +296,8 @@ export const DashboardChatPanel: React.FC<DashboardChatPanelProps> = ({
       }
     }
 
-    // 4. Goal Creation (Only when explicitly identified as a goal creation prompt!)
-    if (intent.type === 'goal_creation') {
+    // 4. Goal Creation Intent or Plan Draft Request
+    if (intent.type === 'goal_creation' || intent.type === 'plan_draft_request') {
       const { cleanTitle, suggestedType } = intent
 
       try {

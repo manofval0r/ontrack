@@ -5,16 +5,17 @@ import { Button } from '../Button'
 interface ChecklistTrackerProps {
   goal: Goal
   onUpdateItems: (items: GoalItem[]) => Promise<void>
+  onOpenEdit?: () => void
 }
 
-export const ChecklistTracker: React.FC<ChecklistTrackerProps> = ({ goal, onUpdateItems }) => {
+export const ChecklistTracker: React.FC<ChecklistTrackerProps> = ({ goal, onUpdateItems, onOpenEdit }) => {
   const [items, setItems] = useState<GoalItem[]>(goal.items || [])
   const [newItemText, setNewItemText] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const completedCount = items.filter((i) => i.completed).length
   const totalCount = items.length || 1
-  const percent = Math.round((completedCount / totalCount) * 100)
+  const percent = items.length > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   const toggleItem = async (itemId: string) => {
     const updated = items.map((item) =>
@@ -60,9 +61,20 @@ export const ChecklistTracker: React.FC<ChecklistTrackerProps> = ({ goal, onUpda
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-[#F0FDF4] dark:bg-emerald-950/40 border-2 border-[#071E2D] dark:border-emerald-800 text-xs font-bold text-[#166534] dark:text-emerald-400">
-            {completedCount} of {items.length} Completed ({percent}%)
-          </span>
+          {items.length === 0 && onOpenEdit ? (
+            <button
+              type="button"
+              onClick={onOpenEdit}
+              className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/40 border-2 border-amber-500 text-xs font-bold text-amber-800 dark:text-amber-300 hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+            >
+              <span>0 milestones · Add steps</span>
+              <span className="text-[10px]">✎</span>
+            </button>
+          ) : (
+            <span className="px-3 py-1 rounded-full bg-[#F0FDF4] dark:bg-emerald-950/40 border-2 border-[#071E2D] dark:border-emerald-800 text-xs font-bold text-[#166534] dark:text-emerald-400">
+              {completedCount} of {items.length} Completed ({percent}%)
+            </span>
+          )}
         </div>
       </div>
 
@@ -76,7 +88,13 @@ export const ChecklistTracker: React.FC<ChecklistTrackerProps> = ({ goal, onUpda
 
       {/* Checklist Items */}
       <div className="flex flex-col gap-3">
-        {items.map((item) => (
+        {items.length === 0 ? (
+          <div className="p-5 rounded-xl border-2 border-dashed border-[#071E2D]/20 dark:border-[#1E3A52] text-center flex flex-col items-center gap-1 text-xs text-[#071E2D]/60 dark:text-slate-400">
+            <span className="font-semibold text-sm text-[#071E2D] dark:text-white">No milestones added yet</span>
+            <p>Add your first step below, or click "Edit Goal" at the bottom to configure your checklist.</p>
+          </div>
+        ) : (
+          items.map((item) => (
           <div
             key={item.id}
             onClick={() => !submitting && toggleItem(item.id)}
@@ -110,7 +128,7 @@ export const ChecklistTracker: React.FC<ChecklistTrackerProps> = ({ goal, onUpda
               {item.title}
             </span>
           </div>
-        ))}
+        )))}
       </div>
 
       {/* Add New Milestone */}
