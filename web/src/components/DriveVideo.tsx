@@ -31,6 +31,15 @@ export const DriveVideo: React.FC<DriveVideoProps> = ({
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+  // React sets `muted` as an attribute, but browsers gate autoplay on the
+  // DOM *property* — without this ref the video sits paused waiting for a
+  // tap. Set the property directly and kick playback on mount and on data.
+  const startMuted = (el: HTMLVideoElement | null) => {
+    if (!el || reduceMotion) return
+    el.muted = true
+    el.play().catch(() => {})
+  }
+
   const shell =
     frame === 'portrait'
       ? 'w-full max-w-[340px]'
@@ -50,6 +59,7 @@ export const DriveVideo: React.FC<DriveVideoProps> = ({
         {!directFailed ? (
           <video
             key={directSrc}
+            ref={startMuted}
             src={directSrc}
             className={`w-full h-auto block bg-[#071E2D] ${
               frame === 'portrait' ? 'max-h-[600px] object-contain' : ''
@@ -62,6 +72,7 @@ export const DriveVideo: React.FC<DriveVideoProps> = ({
             preload="metadata"
             aria-label={title}
             onError={() => setDirectFailed(true)}
+            onLoadedData={(e) => startMuted(e.currentTarget)}
           />
         ) : (
           <iframe
