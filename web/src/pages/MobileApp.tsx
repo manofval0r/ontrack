@@ -2,9 +2,14 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { Logo } from '../components/Logo'
+import { DriveVideo } from '../components/DriveVideo'
 
 export const EXPO_BUILD_URL =
   'https://expo.dev/accounts/manofval0r/projects/onTrack/builds/68b6db32-387c-4641-bacc-c2313d78f855'
+
+export const APP_DEMO_FILE_ID = '1UJjMlb0KQyIQy1t0F9ZI7b4e1gB_Y8m7'
+export const APP_DEMO_SHARE_URL =
+  'https://drive.google.com/file/d/1UJjMlb0KQyIQy1t0F9ZI7b4e1gB_Y8m7/view?usp=drive_open&t=27.179'
 
 // ─── Mini phone frame (CSS mock, brand system — no screenshots needed) ──────
 
@@ -335,6 +340,30 @@ export const MobileApp: React.FC = () => (
           <p className="font-sans text-xs text-[#071E2D]/55 dark:text-slate-400">
             Free preview build · Android APK · Scan-to-install on the Expo page
           </p>
+        </div>
+      </section>
+
+      {/* App demo video */}
+      <section className="px-4 sm:px-6 py-10 sm:py-14 bg-white dark:bg-[#06121B] border-b-2 border-[#071E2D]/10 dark:border-white/10">
+        <div className="max-w-6xl mx-auto flex flex-col items-center text-center">
+          <p className="font-sans font-bold text-xs uppercase tracking-wider opacity-70">Watch it move</p>
+          <h2
+            className="tracking-tight mt-2 mb-3"
+            style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700, fontSize: 'clamp(1.6rem, 4vw, 2.5rem)' }}
+          >
+            The app, on video
+          </h2>
+          <p className="font-sans text-sm sm:text-base opacity-70 max-w-xl mb-8">
+            Real build, real thumbs: chat creates the goal, the stepper logs
+            the win, the streak catches fire. Streamed from Drive — no
+            megabytes added to this page.
+          </p>
+          <DriveVideo
+            fileId={APP_DEMO_FILE_ID}
+            title="OnTrack Android app demo"
+            frame="portrait"
+            shareUrl={APP_DEMO_SHARE_URL}
+          />
         </div>
       </section>
 

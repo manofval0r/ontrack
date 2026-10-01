@@ -4,6 +4,39 @@ import { Star, Check, Sparkles, PenLine } from 'lucide-react'
 import { Logo } from '../components/Logo'
 import { FeaturePill } from '../components/FeaturePill'
 import { Navbar } from '../components/Navbar'
+import { DriveVideo } from '../components/DriveVideo'
+
+export const WEB_DEMO_FILE_ID = '15MkHESv26kmjwN7My9Xhe0KodQH1AFMZ'
+export const WEB_DEMO_SHARE_URL =
+  'https://drive.google.com/file/d/15MkHESv26kmjwN7My9Xhe0KodQH1AFMZ/view?t=3.709'
+
+// ─── Demo video section ───────────────────────────────────────────────────────
+
+const DemoVideo: React.FC = () => (
+  <section className="bg-white dark:bg-[#07141E] py-16 sm:py-24 px-4 sm:px-6 border-b-2 border-[#071E2D]/8 dark:border-white/10">
+    <div className="max-w-6xl mx-auto flex flex-col items-center text-center">
+      <h2
+        style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700, fontSize: 'clamp(1.75rem, 4vw, 2.75rem)' }}
+        className="text-[#071E2D] dark:text-white tracking-tight leading-tight mb-3"
+      >
+        See it in action
+      </h2>
+      <p className="font-sans text-[#071E2D]/60 dark:text-slate-400 text-sm sm:text-base max-w-xl mb-8 sm:mb-10">
+        A two-minute tour of the web app: say a goal, watch the tracker build
+        itself, log progress by talking. Streamed, so this page stays fast.
+      </p>
+      <DriveVideo
+        fileId={WEB_DEMO_FILE_ID}
+        title="OnTrack web demo"
+        frame="landscape"
+        shareUrl={WEB_DEMO_SHARE_URL}
+      />
+      <Link to="/app" className="font-sans font-semibold text-sm text-[#006D6A] dark:text-[#00C4B3] hover:underline mt-6">
+        Prefer pockets? Watch the Android app demo →
+      </Link>
+    </div>
+  </section>
+)
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -692,6 +725,7 @@ export const Landing: React.FC = () => (
     <Navbar />
     <main>
       <Hero />
+      <DemoVideo />
       <HowItWorks />
       <TrackerTypes />
       <WhoItsFor />
