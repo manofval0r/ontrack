@@ -28,31 +28,36 @@ const HEADER_MAX = 72;
 
 /** Domain fuel — honest, local, rotating daily. Real stats (streak, counts)
  * come from the dashboard; these lines are coaching, not fabricated data.
- * Structured for the roadmap: quizzes plug into this same slot later. */
-const FUEL: Record<string, string[]> = {
+ * Structured for the roadmap: quizzes plug into this same slot later.
+ * Each entry pairs a short expressive headline with one actionable line. */
+interface FuelEntry {
+  head: string;
+  body: string;
+}
+const FUEL: Record<string, FuelEntry[]> = {
   sales: [
-    'Follow up within a day and close rates climb — speed beats polish.',
-    'Log every outreach the hour it happens; memory lies, trackers don’t.',
-    'One more call at day’s end compounds more than a perfect morning.',
+    { head: 'Speed beats polish', body: 'Follow up within a day and close rates climb. Send the one message you are avoiding.' },
+    { head: 'Log it while true', body: 'Log every outreach the hour it happens; memory lies, trackers don’t.' },
+    { head: 'One more call', body: 'One more call at day’s end compounds more than a perfect morning.' },
   ],
   fitness: [
-    'Consistency beats intensity — a short session still counts.',
-    'Log right after the set, while the number is honest.',
-    'Soreness is data, not failure. Easy days protect hard days.',
+    { head: 'Short still counts', body: 'Consistency beats intensity — a ten-minute session keeps the streak honest.' },
+    { head: 'Log it sweaty', body: 'Log right after the set, while the number is honest.' },
+    { head: 'Easy protects hard', body: 'Soreness is data, not failure. Easy days protect hard days.' },
   ],
   study: [
-    'Twenty focused pages beat two distracted hours.',
-    'Write one sentence about what you read — it doubles retention.',
-    'Streaks protect the habit on days motivation skips.',
+    { head: 'Twenty sharp pages', body: 'Twenty focused pages beat two distracted hours. Phone in another room.' },
+    { head: 'One sentence', body: 'Write one sentence about what you read — it doubles retention.' },
+    { head: 'Streaks cover Mondays', body: 'Streaks protect the habit on days motivation skips.' },
   ],
   general: [
-    'Small steps, logged daily — momentum is built, not found.',
-    'If it takes under two minutes, do it now and log it.',
-    'Review the board nightly; mornings are for executing.',
+    { head: 'Momentum is built', body: 'Small steps, logged daily — momentum is built, not found.' },
+    { head: 'Two-minute rule', body: 'If it takes under two minutes, do it now and log it.' },
+    { head: 'Nights review, mornings run', body: 'Review the board nightly; mornings are for executing.' },
   ],
 };
 
-function fuelPool(goal: any): string[] {
+function fuelPool(goal: any): FuelEntry[] {
   const hay = `${goal?.goal_template ?? ''} ${goal?.goal_type ?? ''} ${goal?.title ?? ''}`.toLowerCase();
   if (/sales|deal|pipeline|client/.test(hay)) return FUEL.sales;
   if (/fit|pushup|run|gym|workout|rep/.test(hay)) return FUEL.fitness;
@@ -87,11 +92,21 @@ export default function Home() {
   const atTop = useSharedValue(true);
 
   // Daily Fuel rotates with the calendar — same tip all day, fresh tomorrow.
+  // The shuffle nudge is a local offset so users can peek at siblings.
+  const [fuelNudge, setFuelNudge] = useState(0);
+  const fuelPoolMemo = useMemo(() => (focus ? fuelPool(focus) : []), [focus]);
   const fuel = useMemo(() => {
-    if (!focus) return null;
-    const pool = fuelPool(focus);
+    if (!focus || fuelPoolMemo.length === 0) return null;
     const day = Math.floor(Date.now() / 86400000);
-    return pool[day % pool.length];
+    return fuelPoolMemo[(day + fuelNudge) % fuelPoolMemo.length];
+  }, [focus, fuelPoolMemo, fuelNudge]);
+  const fuelDomain = useMemo(() => {
+    if (!focus) return 'general';
+    const hay = `${focus?.goal_template ?? ''} ${focus?.goal_type ?? ''} ${focus?.title ?? ''}`.toLowerCase();
+    if (/sales|deal|pipeline|client/.test(hay)) return 'sales';
+    if (/fit|pushup|run|gym|workout|rep/.test(hay)) return 'fitness';
+    if (/book|read|study|ship|commit/.test(hay)) return 'study';
+    return 'general';
   }, [focus]);
 
   useEffect(() => {
@@ -163,7 +178,8 @@ export default function Home() {
     () =>
       Gesture.Pan()
         .simultaneousWithExternalGesture(native)
-        .activeOffsetY([14, 1000])
+        .activeOffsetY([22, 1000])
+        .failOffsetX([-12, 12])
         .onUpdate((e) => {
           if (!atTop.value) {
             pullY.value = 0;
@@ -286,18 +302,122 @@ export default function Home() {
 
             {focus && fuel && (
               <Animated.View entering={reduceMotion ? undefined : FadeInUp.duration(300).delay(160)}>
-                <Card>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Ionicons name="bulb" size={16} color={t.teal} accessibilityElementsHidden />
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal }}>Daily fuel</Text>
+                <View
+                  accessibilityLabel={`Daily fuel: ${fuel.head}. ${fuel.body}`}
+                  accessibilityRole="text"
+                  style={{
+                    backgroundColor: Brand.navy,
+                    borderWidth: 2,
+                    borderColor: Brand.navy,
+                    borderRadius: Radii.card,
+                    padding: Spacing.lg,
+                    shadowColor: Brand.navy,
+                    shadowOffset: { width: 4, height: 4 },
+                    shadowOpacity: 1,
+                    shadowRadius: 0,
+                    elevation: 4,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View
+                      accessibilityElementsHidden
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        backgroundColor: Brand.turquoise,
+                        borderWidth: 2,
+                        borderColor: Brand.white,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name="flame" size={18} color={Brand.navy} />
+                    </View>
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: Brand.aqua, letterSpacing: 1.2 }}>
+                      DAILY FUEL · {fuelDomain.toUpperCase()}
+                    </Text>
+                    <View style={{ flex: 1 }} />
+                    {streak > 0 && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                        <Ionicons name="flame" size={13} color={Brand.amberDot} accessibilityElementsHidden />
+                        <Text style={{ fontSize: 12, fontWeight: '800', color: Brand.white }}>{streak}</Text>
+                      </View>
+                    )}
                   </View>
-                  <Text style={{ marginTop: 6, fontSize: 15, lineHeight: 22, color: t.ink }}>
-                    {fuel}
+                  <Text style={{ fontFamily: FontFamily.expressive, fontSize: 30, lineHeight: 34, color: Brand.white, marginTop: 10 }}>
+                    {fuel.head}
                   </Text>
-                  <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '600', color: t.inkSoft }}>
-                    Fresh tip daily · quizzes on your goals are on the roadmap
+                  <Text style={{ marginTop: 6, fontSize: 15, lineHeight: 22, color: Brand.faintOnNavy }}>
+                    {fuel.body}
                   </Text>
-                </Card>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                    <Pressable
+                      onPress={() => router.push(`/goal/${focus.id}`)}
+                      accessibilityLabel={`Log progress on ${focus.title}`}
+                      accessibilityRole="button"
+                      style={({ pressed }) => ({
+                        flex: 1,
+                        minHeight: Touch.min,
+                        borderRadius: Radii.pill,
+                        backgroundColor: Brand.turquoise,
+                        borderWidth: 2,
+                        borderColor: Brand.white,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'row',
+                        gap: 6,
+                        transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
+                      })}
+                    >
+                      <Ionicons name="add-circle" size={18} color={Brand.navy} />
+                      <Text style={{ fontWeight: '800', color: Brand.navy }}>Log a win</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setFuelNudge((n) => n + 1)}
+                      accessibilityLabel="Show another fuel tip"
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      style={({ pressed }) => ({
+                        width: 48,
+                        height: 48,
+                        borderRadius: 24,
+                        borderWidth: 2,
+                        borderColor: Brand.hairOnNavy,
+                        backgroundColor: Brand.cardOnNavy,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transform: pressed ? [{ scale: 0.94 }] : [],
+                      })}
+                    >
+                      <Ionicons name="shuffle" size={20} color={Brand.white} />
+                    </Pressable>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 }}>
+                    {fuelPoolMemo.map((_, i) => {
+                      const day = Math.floor(Date.now() / 86400000);
+                      const on = i === (day + fuelNudge) % fuelPoolMemo.length;
+                      return (
+                        <View
+                          key={i}
+                          accessibilityElementsHidden
+                          style={{
+                            width: on ? 22 : 8,
+                            height: 8,
+                            borderRadius: 4,
+                            backgroundColor: on ? Brand.turquoise : Brand.trackOnNavy,
+                            borderWidth: on ? 1 : 0,
+                            borderColor: Brand.white,
+                          }}
+                        />
+                      );
+                    })}
+                    <View style={{ flex: 1 }} />
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: Brand.faintOnNavy }}>
+                      Fresh daily · quizzes soon
+                    </Text>
+                  </View>
+                </View>
               </Animated.View>
             )}
 

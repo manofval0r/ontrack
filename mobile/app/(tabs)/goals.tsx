@@ -62,11 +62,16 @@ export default function Goals() {
   doRefreshRef.current = doRefresh;
 
   const native = useMemo(() => Gesture.Native(), []);
+  // Pull gate: strong vertical pull-down opens the arc; horizontal drift
+  // fails fast so Swipeable row actions own left-swipes and the list owns
+  // vertical scroll. simultaneousWithExternalGesture keeps the native
+  // scroller alive underneath.
   const pan = useMemo(
     () =>
       Gesture.Pan()
         .simultaneousWithExternalGesture(native)
-        .activeOffsetY([14, 1000])
+        .activeOffsetY([22, 1000])
+        .failOffsetX([-12, 12])
         .onUpdate((e) => {
           if (!atTop.value) {
             pullY.value = 0;
@@ -183,6 +188,8 @@ export default function Goals() {
         accessibilityLabel="Goals list"
         contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 170 }}
         scrollEventThrottle={16}
+        removeClippedSubviews={false}
+        keyboardShouldPersistTaps="handled"
         onScroll={(e) => {
           atTop.value = e.nativeEvent.contentOffset.y <= 4;
         }}
@@ -192,7 +199,6 @@ export default function Goals() {
               <Text accessibilityRole="header" style={{ fontFamily: FontFamily.expressive, fontSize: 36, color: t.ink }}>
                 Goals
               </Text>
-              <RefreshArc state={syncState} />
             </View>
             <Text style={{ fontSize: 13, color: t.inkSoft }}>
               {active.length} active · {done.length} completed
@@ -226,7 +232,14 @@ export default function Goals() {
             {index === active.length && done.length > 0 && (
               <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal, marginBottom: 8 }}>COMPLETED</Text>
             )}
-            <Swipeable renderRightActions={() => renderRightActions(item)} overshootRight={false}>
+            <Swipeable
+              renderRightActions={() => renderRightActions(item)}
+              overshootRight={false}
+              friction={2}
+              leftThreshold={0}
+              rightThreshold={40}
+              containerStyle={{ flex: 1 }}
+            >
               <GoalCard goal={item} onOpen={() => router.push(`/goal/${item.id}`)} />
             </Swipeable>
           </View>

@@ -33,11 +33,11 @@ const TABS: Record<string, { icon: keyof typeof Ionicons.glyphMap; outline: keyo
 
 const STOP_ORDER = ['index', 'goals', 'settings', 'you'] as const;
 type StopName = (typeof STOP_ORDER)[number];
-// Pill hugs the icon row: tab content is 70 tall starting under 6px bar
-// padding, icon center ≈ y32 — a 52px pill at top:8 centers exactly there
-// (measured 2px low/2px right in device testing).
-const PILL = 52;
-const PILL_TOP = 8;
+// Pill hugs the icon row only (60x40 at top:12): labels sit below it and
+// stay fully visible. Icon center ≈ y32 — pill center ≈ y32.
+const PILL_W = 60;
+const PILL_H = 40;
+const PILL_TOP = 12;
 const CENTER_W = 72;
 const BAR_PAD = 6;
 const GLIDE_MS = 260;
@@ -188,7 +188,7 @@ function FloatingDock({ state, navigation }: DockProps) {
   const stopLeft = useCallback(
     (name: string): number | null => {
       const c = name === 'chat' ? stops.center : (stops as Record<string, number | undefined>)[name];
-      return c == null ? null : c - PILL / 2 - 2;
+      return c == null ? null : c - PILL_W / 2 - 2;
     },
     [stops]
   );
@@ -281,14 +281,14 @@ function FloatingDock({ state, navigation }: DockProps) {
           startX.value = dragX.value;
         })
         .onUpdate((e) => {
-          const max = Math.max(0, barWidth - BAR_PAD * 2 - PILL);
+          const max = Math.max(0, barWidth - BAR_PAD * 2 - PILL_W);
           dragX.value = Math.min(max, Math.max(0, startX.value + e.translationX));
         })
         .onEnd((e) => {
           dragging.value = false;
           // UI thread may only touch shared values + scheduleOnRN — the
           // nearest-stop math runs in the effect below with fresh closures.
-          scheduleOnRN(setDrop, { x: dragX.value + PILL / 2, vx: e.velocityX });
+          scheduleOnRN(setDrop, { x: dragX.value + PILL_W / 2, vx: e.velocityX });
         })
         // Cancelled gestures (tap, interruption) skip onEnd — without this
         // `dragging` sticks true forever and the pill stops following taps.
@@ -299,7 +299,7 @@ function FloatingDock({ state, navigation }: DockProps) {
   );
 
   const pillStyle = useAnimatedStyle(() => {
-    const c = dragX.value + PILL / 2;
+    const c = dragX.value + PILL_W / 2;
     const gapC = barWidth / 2;
     const proximity = barWidth > 0 ? Math.max(0, 1 - Math.abs(c - gapC) / 52) : 0;
     return {
@@ -376,8 +376,8 @@ function FloatingDock({ state, navigation }: DockProps) {
                   position: 'absolute',
                   top: PILL_TOP,
                   left: 0,
-                  width: PILL,
-                  height: PILL,
+                  width: PILL_W,
+                  height: PILL_H,
                   borderRadius: 16,
                   borderWidth: 2,
                   borderColor: Brand.navy,

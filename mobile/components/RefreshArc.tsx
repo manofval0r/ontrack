@@ -168,7 +168,7 @@ export function RefreshArc({ state, progress = 0, arcProgress, label }: { state:
         ) : (
           <Svg width={30} height={30} viewBox="0 0 36 36">
             <Circle cx={18} cy={18} r={R} fill="none" stroke={t.ink} strokeOpacity={0.25} strokeWidth={4.5} />
-            <Path d="M18 10 v8 l5 3" fill="none" stroke={t.teal} strokeWidth={3} strokeLinecap="round" />
+            <Circle cx={18} cy={18} r={4} fill={t.teal} />
           </Svg>
         )}
       </Animated.View>

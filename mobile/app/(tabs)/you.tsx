@@ -56,6 +56,7 @@ export default function You() {
         <Card>
           {[
             { label: 'Chat', hint: 'Create goals and log progress', route: '/(tabs)/chat', icon: 'chatbubble' },
+            { label: 'Preview features', hint: 'Sharing, GitHub, Notion, fitness, blocking', route: '/preview-features', icon: 'sparkles' },
             { label: 'Focus timer', hint: 'Start a 25-minute work-block', route: '/work-block', icon: 'timer' },
             { label: 'Settings', hint: 'Audio, notifications, integrations', route: '/(tabs)/settings', icon: 'settings' },
           ].map((l) => (
