@@ -28,9 +28,6 @@ export const SUGGESTED_PROMPTS = [
 export const SuggestedAction: React.FC<SuggestedActionProps> = ({ onSelect }) => {
   return (
     <div className="flex flex-col gap-2.5 w-full">
-      <span className="text-xs font-bold uppercase tracking-wider text-[#071E2D]/60 dark:text-slate-400 pl-1">
-        Try asking or setting a tracker:
-      </span>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {SUGGESTED_PROMPTS.map((item, idx) => (
           <button

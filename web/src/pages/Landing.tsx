@@ -5,6 +5,7 @@ import { Logo } from '../components/Logo'
 import { FeaturePill } from '../components/FeaturePill'
 import { Navbar } from '../components/Navbar'
 import { DriveVideo } from '../components/DriveVideo'
+import { useScrollReveal } from '../utils/useScrollReveal'
 
 export const WEB_DEMO_FILE_ID = '15MkHESv26kmjwN7My9Xhe0KodQH1AFMZ'
 export const WEB_DEMO_SHARE_URL =
@@ -37,6 +38,7 @@ const DemoVideo: React.FC = () => (
     </div>
   </section>
 )
+
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -288,7 +290,9 @@ const steps = [
   },
 ]
 
-const HowItWorks: React.FC = () => (
+const HowItWorks: React.FC = () => {
+  useScrollReveal()
+  return (
   <section id="how-it-works" className="bg-[#F8FAFB] dark:bg-[#07141E] py-16 sm:py-24 px-4 sm:px-6 border-b-2 border-[#071E2D]/8 dark:border-white/10">
     <div className="max-w-6xl mx-auto">
       <div className="text-center mb-10 sm:mb-16">
@@ -307,6 +311,7 @@ const HowItWorks: React.FC = () => (
         {steps.map((s) => (
           <div
             key={s.n}
+            data-reveal
             className="group bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-6 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]"
           >
             <div>
@@ -349,11 +354,13 @@ const HowItWorks: React.FC = () => (
       </div>
     </div>
   </section>
-)
+  )
+}
 
 // ─── Section D — Tracker types ────────────────────────────────────────────────
 
 const TrackerTypes: React.FC = () => {
+  useScrollReveal()
   // Live interactive state for the Counter widget
   const [count, setCount] = useState(32)
   const target = 50
@@ -390,7 +397,7 @@ const TrackerTypes: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
           {/* Card 1 — Counter */}
-          <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
+          <div data-reveal className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
             <div>
               <div className="w-12 h-12 rounded-xl bg-[#1E293B] dark:bg-[#152B3C] text-white flex items-center justify-center font-bold text-lg mb-5 shadow-sm border border-white/10">
                 #
@@ -444,7 +451,7 @@ const TrackerTypes: React.FC = () => {
           </div>
 
           {/* Card 2 — Checklist */}
-          <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
+          <div data-reveal className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
             <div>
               <div className="w-12 h-12 rounded-xl bg-[#1E293B] dark:bg-[#152B3C] text-white flex items-center justify-center font-bold text-lg mb-5 shadow-sm border border-white/10">
                 <Check className="w-5 h-5 text-white stroke-[3]" />
@@ -489,7 +496,7 @@ const TrackerTypes: React.FC = () => {
           </div>
 
           {/* Card 3 — Log */}
-          <div className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
+          <div data-reveal className="bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-7 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]">
             <div>
               <div className="w-12 h-12 rounded-xl bg-[#1E293B] dark:bg-[#152B3C] text-white flex items-center justify-center font-bold text-lg mb-5 shadow-sm border border-white/10">
                 <PenLine className="w-5 h-5 text-white" />
@@ -550,6 +557,7 @@ const audience = [
 ]
 
 const WhoItsFor: React.FC = () => {
+  useScrollReveal()
   return (
     <section id="who-its-for" className="bg-[#F8FAFB] dark:bg-[#07141E] py-16 sm:py-24 px-4 sm:px-6 border-b-2 border-[#071E2D]/8 dark:border-white/10">
       <div className="max-w-6xl mx-auto">
@@ -566,6 +574,7 @@ const WhoItsFor: React.FC = () => {
           {audience.map((item) => (
             <div
               key={item.title}
+              data-reveal
               className="group bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-6 flex flex-col justify-between transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#071E2D] dark:hover:shadow-[6px_6px_0px_#000000]"
             >
               <div>

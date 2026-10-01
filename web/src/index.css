@@ -35,6 +35,72 @@ html {
   }
 }
 
+/* ── Page & Panel Transition Animations ──────────────────────────── */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Applied to page-level wrappers on route change */
+.page-enter-active {
+  animation: page-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Applied to dashboard panel content containers */
+.panel-enter {
+  animation: panel-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Scroll Reveal (Landing page sections) ───────────────────────── */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Set initial hidden state via JS using data-reveal attribute */
+[data-reveal] {
+  opacity: 0;
+}
+
+[data-reveal].revealed {
+  animation: reveal-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stagger siblings by index when inside a grid/flex container */
+[data-reveal].revealed:nth-child(1) { animation-delay: 0ms; }
+[data-reveal].revealed:nth-child(2) { animation-delay: 55ms; }
+[data-reveal].revealed:nth-child(3) { animation-delay: 110ms; }
+[data-reveal].revealed:nth-child(4) { animation-delay: 165ms; }
+
+/* ── Smooth link transition (shared utility) ─────────────────────── */
+.link-hover {
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+
 body {
   margin: 0;
   min-height: 100svh;

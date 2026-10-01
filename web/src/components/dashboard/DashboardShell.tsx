@@ -127,7 +127,7 @@ export const DashboardShell: React.FC = () => {
             </section>
           )}
 
-          <main className="flex flex-col gap-4 sm:gap-6">
+          <main key={location.pathname} className="flex flex-col gap-4 sm:gap-6 panel-enter">
             <Outlet />
           </main>
         </div>
