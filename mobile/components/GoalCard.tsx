@@ -112,16 +112,17 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
   const isManual = goal.goal_type === 'manual';
   const items: any[] = Array.isArray(goal.items) ? goal.items : [];
 
+  const openDetails = () => {
+    Haptics.selectionAsync().catch(() => {});
+    onOpen();
+  };
+
   return (
-    <Pressable
-      onPress={() => {
-        Haptics.selectionAsync().catch(() => {});
-        onOpen();
-      }}
-      accessibilityLabel={`Open goal ${goal.title}, ${prog.pct} percent complete, ${goal.status ?? 'active'}`}
-      accessibilityRole="button"
-      accessibilityHint="Opens the goal detail screen"
-      style={({ pressed }) => [{
+    <View
+      accessible
+      accessibilityLabel={`${goal.title}, ${prog.pct} percent complete, ${goal.status ?? 'active'}`}
+      accessibilityRole="text"
+      style={{
         backgroundColor: t.surface,
         borderWidth: 2,
         borderColor: t.border,
@@ -132,8 +133,7 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
         shadowOpacity: 1,
         shadowRadius: 0,
         elevation: 4,
-        transform: pressed ? [{ translateX: 2 }, { translateY: 2 }] : [],
-      }]}
+      }}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <Ionicons name={meta.icon} size={20} color={t.teal} style={{ marginTop: 2 }} accessibilityElementsHidden />
@@ -141,6 +141,16 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
           {goal.title}
         </Text>
         <StatusPill status={goal.status ?? 'active'} />
+        <Pressable
+          onPress={openDetails}
+          hitSlop={12}
+          accessibilityLabel={`Open ${goal.title} details`}
+          accessibilityRole="button"
+          accessibilityHint="Opens the goal detail screen"
+          style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Ionicons name="chevron-forward" size={22} color={t.teal} />
+        </Pressable>
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
@@ -216,10 +226,26 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
             </Pressable>
           ))}
           {items.length === 0 && (
-            <Text style={{ color: t.inkSoft, fontSize: 13 }}>No checklist items yet — open to add some.</Text>
+            <Pressable
+              onPress={openDetails}
+              accessibilityLabel={`Open ${goal.title} to add checklist items`}
+              accessibilityRole="button"
+              style={{ minHeight: 44, justifyContent: 'center' }}
+            >
+              <Text style={{ color: t.inkSoft, fontSize: 13 }}>
+                No checklist items yet — <Text style={{ color: t.teal, fontWeight: '700' }}>open to add some.</Text>
+              </Text>
+            </Pressable>
           )}
           {items.length > 3 && (
-            <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal }}>+{items.length - 3} more inside</Text>
+            <Pressable
+              onPress={openDetails}
+              accessibilityLabel={`Open ${goal.title} to see all items`}
+              accessibilityRole="button"
+              style={{ minHeight: 32, justifyContent: 'center' }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal }}>+{items.length - 3} more inside</Text>
+            </Pressable>
           )}
         </View>
       )}
@@ -250,6 +276,6 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
         </Pressable>
       )}
 
-    </Pressable>
+    </View>
   );
 }
