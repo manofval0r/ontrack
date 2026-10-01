@@ -135,13 +135,16 @@ const Hero: React.FC = () => {
           </a>
         </div>
 
-        <p className="font-sans text-xs text-[#071E2D]/55 dark:text-slate-400 mb-10 sm:mb-12">
+        <p className="font-sans text-xs text-[#071E2D]/55 dark:text-slate-400 mb-5">
           No setup required · Your progress data stays strictly in your browser
-          <br />
-          <Link to="/app" className="font-semibold text-[#006D6A] dark:text-[#00C4B3] hover:underline">
-            Also on Android — get the mobile app →
-          </Link>
         </p>
+
+        <Link to="/app" className="btn-pill btn-pill-white text-sm sm:text-base py-3 px-6 pl-7 w-full sm:w-auto justify-center mb-10 sm:mb-12" aria-label="Get the OnTrack Android app">
+          <span>Get the Android app</span>
+          <span className="btn-bubble bg-[#00C4B3] text-white text-[11px] font-bold">
+            New
+          </span>
+        </Link>
       </div>
 
       {/* ── Mockup Showcase ─────── */}
