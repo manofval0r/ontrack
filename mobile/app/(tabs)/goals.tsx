@@ -3,7 +3,7 @@
  * top, arc fills with pull, spins while syncing, draws the tick. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
-import Animated, { FadeInUp, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Gesture, GestureDetector, FlatList as GHFlatList, Swipeable } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -70,8 +70,8 @@ export default function Goals() {
     () =>
       Gesture.Pan()
         .simultaneousWithExternalGesture(native)
-        .activeOffsetY([22, 1000])
-        .failOffsetX([-12, 12])
+        .activeOffsetY([26, 1000])
+        .failOffsetX([-10, 10])
         .onUpdate((e) => {
           if (!atTop.value) {
             pullY.value = 0;
@@ -154,14 +154,34 @@ export default function Goals() {
     ]);
   };
 
+  // Swipe bookkeeping: friction 1 so a normal thumb swipe actually reaches
+  // the Delete action; a swipe that opens suppresses the card's tap (the
+  // snap-back release must never read as "open details"); opening one row
+  // closes any other open row.
+  const swipeRefs = useRef(new Map<string, any>());
+  const suppressTap = useRef(new Set<string>());
+  const openRow = useRef<string | null>(null);
+
+  const handleOpen = useCallback((id: string) => {
+    if (suppressTap.current.has(String(id))) return;
+    const open = openRow.current;
+    if (open && open !== String(id)) {
+      swipeRefs.current.get(open)?.close?.();
+      openRow.current = null;
+      return;
+    }
+    router.push(`/goal/${id}`);
+  }, []);
+
   const renderRightActions = (goal: any) => (
     <Pressable
       onPress={() => confirmDelete(goal)}
       accessibilityLabel={`Delete ${goal.title}`}
       accessibilityRole="button"
       style={{
-        width: 88,
+        width: 96,
         marginLeft: 8,
+        marginVertical: 2,
         borderRadius: 20,
         borderWidth: 2,
         borderColor: t.border,
@@ -226,25 +246,40 @@ export default function Goals() {
             </Card>
           ) : null
         }
-        renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index, 5) * 70)}>
-          <View>
-            {index === active.length && done.length > 0 && (
-              <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal, marginBottom: 8 }}>COMPLETED</Text>
-            )}
-            <Swipeable
-              renderRightActions={() => renderRightActions(item)}
-              overshootRight={false}
-              friction={2}
-              leftThreshold={0}
-              rightThreshold={40}
-              containerStyle={{ flex: 1 }}
-            >
-              <GoalCard goal={item} onOpen={() => router.push(`/goal/${item.id}`)} />
-            </Swipeable>
-          </View>
-          </Animated.View>
-        )}
+        renderItem={({ item, index }) => {
+          const key = String(item.id);
+          return (
+            <View>
+              {index === active.length && done.length > 0 && (
+                <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal, marginBottom: 8 }}>COMPLETED</Text>
+              )}
+              <Swipeable
+                ref={(r) => {
+                  if (r) swipeRefs.current.set(key, r);
+                  else swipeRefs.current.delete(key);
+                }}
+                renderRightActions={() => renderRightActions(item)}
+                overshootRight={false}
+                friction={1}
+                leftThreshold={0}
+                rightThreshold={32}
+                containerStyle={{ flex: 1 }}
+                onSwipeableWillOpen={() => {
+                  suppressTap.current.add(key);
+                  const open = openRow.current;
+                  if (open && open !== key) swipeRefs.current.get(open)?.close?.();
+                  openRow.current = key;
+                }}
+                onSwipeableClose={() => {
+                  if (openRow.current === key) openRow.current = null;
+                  setTimeout(() => suppressTap.current.delete(key), 250);
+                }}
+              >
+                <GoalCard goal={item} onOpen={() => handleOpen(key)} />
+              </Swipeable>
+            </View>
+          );
+        }}
           />
         </Animated.View>
       </GestureDetector>

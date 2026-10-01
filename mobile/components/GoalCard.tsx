@@ -2,7 +2,9 @@
  * The PaceDial is the whole story: shipped ring vs should-be needle, big
  * count in the middle, pace verdict beside it. Counters get the inline
  * stepper, checklists get tap-to-check rows, manuals get a log button.
- * GitHub goals surface their commit count when the backend provides it. */
+ * GitHub goals surface their commit count when the backend provides it.
+ * Slim by design: no footer rows, compact dial — most of the touch surface
+ * stays list, so vertical scrolls always have somewhere to grab. */
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,21 +13,19 @@ import { Brand } from '../constants/colors';
 import { useTheme } from '../lib/theme';
 import { Radii, Spacing } from '../constants/spacing';
 import { Typography } from '../constants/typography';
-import { speakText, stopSpeaking } from '../lib/speech';
 import { displayProgress, templateMeta } from '../lib/templates';
 import { daysLeft, paceInfo } from '../lib/goalStats';
 import { useGoals } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { StatusPill } from './ui';
 import { PaceDial } from './PaceDial';
-import { useEffect } from 'react';
 
 function Stepper({ value, unit, busy, onStep }: { value: string; unit: string; busy: boolean; onStep: (delta: 1 | -1) => void }) {
   const t = useTheme();
   const btn = (pressed: boolean) => ({
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: Brand.navy,
     backgroundColor: Brand.turquoise,
@@ -40,7 +40,7 @@ function Stepper({ value, unit, busy, onStep }: { value: string; unit: string; b
     opacity: busy ? 0.5 : 1,
   });
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
       <Pressable
         onPress={(e) => { e.stopPropagation(); onStep(-1); }}
         disabled={busy}
@@ -70,7 +70,6 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
   const t = useTheme();
   const { logProgress } = useGoals();
   const toast = useToast();
-  const [speaking, setSpeaking] = useState(false);
   const [busy, setBusy] = useState(false);
   const prog = displayProgress(goal);
   const meta = templateMeta(goal);
@@ -78,25 +77,6 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
   const pace = paceInfo(goal, prog.pct);
   const behind = pace.delta != null && pace.delta <= -0.1;
   const commits = goal?.template_context?.commits_this_week;
-
-  useEffect(() => {
-    return () => stopSpeaking();
-  }, []);
-
-  const playSummary = async () => {
-    Haptics.selectionAsync().catch(() => {});
-    if (speaking) {
-      stopSpeaking();
-      setSpeaking(false);
-      return;
-    }
-    setSpeaking(true);
-    try {
-      await speakText(`${goal.title}. Progress ${prog.current} of ${prog.target ?? 'unknown'} ${meta.unit}. ${pace.label}.`, () => setSpeaking(false));
-    } catch {
-      setSpeaking(false);
-    }
-  };
 
   const step = async (delta: 1 | -1) => {
     if (busy) return;
@@ -146,7 +126,7 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
         borderWidth: 2,
         borderColor: t.border,
         borderRadius: Radii.card,
-        padding: Spacing.lg,
+        padding: Spacing.md,
         shadowColor: t.shadow,
         shadowOffset: { width: 4, height: 4 },
         shadowOpacity: 1,
@@ -163,8 +143,8 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
         <StatusPill status={goal.status ?? 'active'} />
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 12 }}>
-        <PaceDial pct={prog.pct} expected={pace.expected} label={`${goal.title}: ${prog.pct} percent, ${pace.label}`}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
+        <PaceDial size={80} pct={prog.pct} expected={pace.expected} label={`${goal.title}: ${prog.pct} percent, ${pace.label}`}>
           <Text style={{ fontFamily: 'OriginalSurfer_400Regular', fontSize: 26, color: t.ink }}>
             {prog.current}
           </Text>
@@ -195,7 +175,7 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
       )}
 
       {isChecklist && (
-        <View style={{ gap: 8, marginTop: 10 }}>
+        <View style={{ gap: 6, marginTop: 8 }}>
           {items.slice(0, 3).map((item: any, i: number) => (
             <Pressable
               key={String(item.id ?? i)}
@@ -205,12 +185,12 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
               accessibilityRole="checkbox"
               accessibilityState={{ checked: !!item.completed }}
               style={{
-                minHeight: 48,
+                minHeight: 44,
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 10,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
                 borderWidth: 2,
                 borderColor: t.border,
                 borderRadius: 12,
@@ -250,8 +230,8 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
           accessibilityLabel={`Log an entry on ${goal.title}`}
           accessibilityRole="button"
           style={({ pressed }) => ({
-            marginTop: 10,
-            minHeight: 48,
+            marginTop: 8,
+            minHeight: 44,
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 2,
@@ -270,21 +250,6 @@ export function GoalCard({ goal, onOpen }: { goal: any; onOpen: () => void }) {
         </Pressable>
       )}
 
-      <View style={{ marginTop: 8, alignItems: 'flex-end' }}>
-        <Pressable
-          onPress={(e) => {
-            e.stopPropagation();
-            playSummary();
-          }}
-          hitSlop={12}
-          accessibilityLabel={speaking ? 'Stop summary' : 'Hear goal summary'}
-          accessibilityRole="button"
-          accessibilityState={{ busy: speaking }}
-          style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Ionicons name={speaking ? 'pause' : 'volume-high'} size={22} color={t.ink} />
-        </Pressable>
-      </View>
     </Pressable>
   );
 }
