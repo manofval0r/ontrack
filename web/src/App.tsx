@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Navigate, Routes, Route, useParams, useLocation } from 'react-router-dom'
+import { PageTransition } from './components/common/PageTransition'
 import { GoalProvider } from './context/GoalContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { Landing } from './pages/Landing'
@@ -53,15 +54,15 @@ function App() {
           <BackendWakeupBanner />
 
           <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/app" element={<MobileApp />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
+            <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+            <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
+            <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+            <Route path="/onboarding" element={<PageTransition><Onboarding /></PageTransition>} />
+            <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
+            <Route path="/app" element={<PageTransition><MobileApp /></PageTransition>} />
+            <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+            <Route path="/terms-of-service" element={<PageTransition><TermsOfService /></PageTransition>} />
             <Route path="/terms" element={<Navigate to="/terms-of-service" replace />} />
 
             {/* Core Authenticated App Flow */}
