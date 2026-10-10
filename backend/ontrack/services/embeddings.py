@@ -65,12 +65,19 @@ def generate_embedding(text: str) -> list[float]:
 
     cleaned_text = text.strip()[:1000]
 
-    base = (getattr(settings, "NVIDIA_BASE_URL", "") or "").rstrip("/")
+    base = (getattr(settings, "AI_BASE_URL", "") or "").rstrip("/")
     if getattr(settings, "EMBEDDING_API_URL", ""):
         base = settings.EMBEDDING_API_URL.rstrip("/")
+    if not base or "invalid" in base.lower():
+        base = (getattr(settings, "NVIDIA_BASE_URL", "") or "").rstrip("/")
 
-    api_key = getattr(settings, "NVIDIA_API_KEY", "") or ""
-    model = getattr(settings, "NVIDIA_EMBEDDING_MODEL", "") or "nvidia/nv-embedqa-e5-v5"
+    api_key = getattr(settings, "AI_API_KEY", "") or ""
+    model = getattr(settings, "AI_EMBED_MODEL", "") or "openai/text-embedding-3-small"
+    embed_dims = getattr(settings, "AI_EMBED_DIMS", 0) or 0
+    if not api_key:
+        api_key = getattr(settings, "NVIDIA_API_KEY", "") or ""
+        model = getattr(settings, "NVIDIA_EMBEDDING_MODEL", "") or "nvidia/nv-embedqa-e5-v5"
+        embed_dims = 0
 
     # Deliberate failure trigger (for testing requirement 3 or invalid endpoint configs)
     if "invalid" in base.lower() or getattr(settings, "EMBEDDING_FORCE_FAIL", False):
@@ -80,10 +87,15 @@ def generate_embedding(text: str) -> list[float]:
     # If an API key and base URL are configured, call the remote embedding endpoint
     if base and api_key:
         endpoint = f"{base}/embeddings"
-        payload = json.dumps({
+        payload_body = {
             "input": cleaned_text,
             "model": model,
-        }).encode("utf-8")
+        }
+        if embed_dims:
+            # Matryoshka truncation (supported by text-embedding-3-small):
+            # keeps vectors at our pgvector column width with no migration.
+            payload_body["dimensions"] = embed_dims
+        payload = json.dumps(payload_body).encode("utf-8")
 
         req = urllib.request.Request(
             endpoint,

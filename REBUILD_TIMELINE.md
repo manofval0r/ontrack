@@ -16,7 +16,7 @@
 | Layer | Role | Primary (free) | Fallbacks (free, in order) | Why |
 |---|---|---|---|---|
 | Router | intent + parse-goal proposals, structured outputs | `nvidia/nemotron-3.5-lightning:free` | `google/gemma-4-26b-a4b-it:free` | Fast, tools-capable, cheapest latency; classification doesn't need quality 58 |
-| Coach | chat, check-ins, nudges | `qwen/qwen3.8-27b:free` | `nvidia/nemotron-3-ultra-550b-a55b:free` → `meta-llama/llama-3.3-70b-instruct:free` → `openrouter/free` | Qwen 27B is the top-rated free model (quality 58, 262K ctx, tools+vision). Nemotron-ultra keeps you in the family you know. Llama 3.3 70B is battle-tested. `openrouter/free` auto-filters for tool support as last resort |
+| Coach | chat, check-ins, nudges | `nvidia/nemotron-3-ultra-550b-a55b:free` | `qwen/qwen3.8-27b:free` → `meta-llama/llama-3.3-70b-instruct:free` → `openrouter/free` | Nemotron-ultra primary for capacity (Qwen 27B returned empty under load in live test Oct 10); Qwen stays high in chain on quality. Llama 3.3 70B battle-tested. `openrouter/free` auto-filters for tool support as last resort |
 | Deep reason | verdicts, weekly reviews | `thinkingmachines/inkling-small:free` | `thinkingmachines/inkling:free` | 1M context + reasoning; verdicts are rare and worth the latency |
 | Embeddings | RAG vectors | paid `openai/text-embedding-3-small` @ 384 dims | free `liquid/lfm-2.5-embedding-350m:free` later | **Dimension trap:** your pgvector column is 384-dim; LFM emits 1024-dim (needs migration + backfill). 3-small accepts `dimensions: 384` = zero migration, ~$0.02/1M tokens ≈ free at your volume |
 | STT | dictation, voice goals | OpenRouter `/audio/transcriptions` (Whisper-large-v3 or Groq Whisper) | — | Your mobile already sends base64 JSON — maps 1:1 to their endpoint |
@@ -101,7 +101,7 @@
 Values supplied by David; Evans applies within 24h; David verifies from the app side. No code, no redesign, never blocking — if a var slips, David ships with a fallback default and the timeline doesn't move.
 - [ ] `OPENROUTER_API_KEY` (+ `HTTP-Referer`/`X-Title` noted in code, not env)
 - [ ] `AI_ROUTER_MODEL=nvidia/nemotron-3.5-lightning:free`
-- [ ] `AI_CHAT_MODEL=qwen/qwen3.8-27b:free`
+- [ ] `AI_CHAT_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free`
 - [ ] `AI_REASON_MODEL=thinkingmachines/inkling-small:free`
 - [ ] `AI_EMBED_MODEL=openai/text-embedding-3-small` (+ `AI_EMBED_DIMS=384`)
 - [ ] `AI_STT_MODEL=openai/whisper-large-v3` · `AI_TTS_MODEL=<cheapest speech model at setup time>`

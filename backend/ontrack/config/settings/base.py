@@ -54,6 +54,20 @@ NVIDIA_TTS_VOICE = env("NVIDIA_TTS_VOICE", default="Aria")
 NVIDIA_ASR_MODEL = env("NVIDIA_ASR_MODEL", default="whisper-1")
 NVIDIA_EMBEDDING_MODEL = env("NVIDIA_EMBEDDING_MODEL", default="nvidia/nv-embedqa-e5-v5")
 
+# --- AI brain (OpenRouter hybrid; David owns the model map in apps/ai_module.py).
+# Preferred when AI_API_KEY is set; otherwise the NVIDIA_* values above are
+# used as legacy fallback so nothing breaks before Evans sets these on Render.
+AI_BASE_URL = env("AI_BASE_URL", default="https://openrouter.ai/api/v1")
+AI_API_KEY = env("AI_API_KEY", default="")
+AI_ROUTER_MODEL = env("AI_ROUTER_MODEL", default="nvidia/nemotron-3.5-lightning:free")
+AI_CHAT_MODEL = env("AI_CHAT_MODEL", default="nvidia/nemotron-3-ultra-550b-a55b:free")
+AI_REASON_MODEL = env("AI_REASON_MODEL", default="thinkingmachines/inkling-small:free")
+AI_EMBED_MODEL = env("AI_EMBED_MODEL", default="openai/text-embedding-3-small")
+AI_EMBED_DIMS = env.int("AI_EMBED_DIMS", default=384)
+AI_TTS_MODEL = env("AI_TTS_MODEL", default="openai/gpt-4o-mini-tts")
+AI_TTS_VOICE = env("AI_TTS_VOICE", default="alloy")
+AI_ASR_MODEL = env("AI_ASR_MODEL", default="openai/whisper-large-v3")
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",

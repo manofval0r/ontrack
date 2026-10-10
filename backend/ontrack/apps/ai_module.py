@@ -4,9 +4,9 @@ Real client over any OpenAI-compatible chat API (stdlib urllib only, no extra
 deps — the `openai` package is deliberately NOT required). Config comes from
 Django settings (env vars, so Render + local .env both work):
 
-- NVIDIA_BASE_URL  e.g. https://integrate.api.nvidia.com/v1 (or David's box)
-- NVIDIA_MODEL_NAME e.g. nvidia/llama-3.1-nemotron-nano-8b-v1
-- NVIDIA_API_KEY    nvapi-... key (never logged, never sent to frontend)
+- AI_BASE_URL / AI_API_KEY  e.g. https://openrouter.ai/api/v1 (preferred)
+- AI_ROUTER_MODEL / AI_CHAT_MODEL / AI_REASON_MODEL (hybrid brain, free tier)
+- Legacy fallback: NVIDIA_BASE_URL / NVIDIA_MODEL_NAME / NVIDIA_API_KEY
 
 Contract (views validate everything; these RAISE on any failure and the
 views fall back / degrade gracefully — AI failure must never block, and the
@@ -30,6 +30,8 @@ from datetime import datetime, timedelta
 import json
 import logging
 import re
+import time
+import urllib.error
 import urllib.request
 
 from django.conf import settings
@@ -38,6 +40,10 @@ logger = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT_SECONDS = 20
 AUDIO_TIMEOUT_SECONDS = 25
+# Quota guard: free-tier 429s burn daily quota, so exactly ONE backoff retry,
+# then fail over (OpenRouter tries the models list server-side first).
+_RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 529})
+_RETRY_SLEEP_SECONDS = 2.0
 
 # Canonical tracker templates. The LLM is NOT redesigned per goal —
 # parse_goal() picks one of these with local keyword rules only; the
@@ -79,43 +85,116 @@ def infer_goal_template(text):
     return GOAL_TEMPLATE_GENERIC
 
 
+# Hybrid brain (OpenRouter free tier first, researched Oct 2026).
+# Roles keep cheap work off the quality model: router classifies + drafts,
+# chat coaches, reason handles verdicts/reviews. Fallbacks ride OpenRouter's
+# native `models` failover; the free roster rotates, so review monthly.
+_ROLE_PRIMARY = {
+    "router": "AI_ROUTER_MODEL",
+    "chat": "AI_CHAT_MODEL",
+    "reason": "AI_REASON_MODEL",
+}
+_ROLE_FALLBACKS = {
+    "router": (
+        "google/gemma-4-26b-a4b-it:free",
+        "openrouter/free",
+    ),
+    "chat": (
+        "qwen/qwen3.8-27b:free",
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "openrouter/free",
+    ),
+    "reason": (
+        "thinkingmachines/inkling:free",
+        "openrouter/free",
+    ),
+}
+
+# --- AI brain (OpenRouter hybrid; David owns the model map) ---
+# Preferred when AI_API_KEY is set; otherwise the NVIDIA_* values above are
+# used as legacy fallback so nothing breaks before Evans sets these on Render.
+def _resolve_role(role):
+    """Return (base_url, key, primary_model, fallbacks, via_openrouter)."""
+    ai_base = (getattr(settings, "AI_BASE_URL", "") or "").rstrip("/")
+    ai_key = getattr(settings, "AI_API_KEY", "") or ""
+    if ai_base and ai_key:
+        model = getattr(settings, _ROLE_PRIMARY.get(role, "AI_CHAT_MODEL"), "") or ""
+        fallbacks = [m for m in _ROLE_FALLBACKS.get(role, ()) if m and m != model]
+        if not model:
+            raise RuntimeError("AI brain is not configured")
+        return ai_base, ai_key, model, fallbacks, True
+    # Legacy NVIDIA path (tunnel / Build cloud).
+    base = (getattr(settings, "NVIDIA_BASE_URL", "") or "").rstrip("/")
+    model = getattr(settings, "NVIDIA_MODEL_NAME", "") or ""
+    key = getattr(settings, "NVIDIA_API_KEY", "") or ""
+    if not base or not model or not key:
+        raise RuntimeError("AI brain is not configured")
+    return base, key, model, [], False
+
+
+def _provider_headers(key, via_openrouter):
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer %s" % key,
+    }
+    if via_openrouter:
+        # Free endpoints may log prompts; deny training use where supported.
+        headers["HTTP-Referer"] = "https://ontrack.app"
+        headers["X-Title"] = "OnTrack"
+    return headers
+
+
+def _provider_payload(model, messages, max_tokens, temperature, fallbacks, via_openrouter):
+    payload = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+    }
+    if via_openrouter and fallbacks:
+        payload["models"] = fallbacks
+        payload["provider"] = {"data_collection": "deny"}
+    return payload
+
+
+def _post_json(url, payload_dict, headers, timeout):
+    """POST once with a single backoff retry on retryable statuses. Raise."""
+    payload = json.dumps(payload_dict).encode("utf-8")
+    attempts = 0
+    while True:
+        attempts += 1
+        req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code in _RETRYABLE_STATUS and attempts == 1:
+                logger.warning("AI call %s, backing off once", e.code)
+                time.sleep(_RETRY_SLEEP_SECONDS)
+                continue
+            logger.warning("AI call failed", exc_info=True)
+            raise RuntimeError("AI call failed")
+        except Exception:
+            # Log type only — never the prompt, key, or URL (URL may hold secrets).
+            logger.warning("AI call failed", exc_info=True)
+            raise RuntimeError("AI call failed")
+
+
 def _llm_config():
     """Return (base_url, model, key) or raise (views turn this into fallback)."""
-    base = (settings.NVIDIA_BASE_URL or "").rstrip("/")
-    model = settings.NVIDIA_MODEL_NAME or ""
-    key = settings.NVIDIA_API_KEY or ""
-    if not base or not model or not key:
-        raise RuntimeError("NVIDIA AI is not configured")
+    base, key, model, _, _ = _resolve_role("chat")
     return base, model, key
 
 
-def _chat(messages, *, max_tokens=256, temperature=0.1):
+def _chat(messages, max_tokens=256, temperature=0.1, *, role="chat"):
     """POST one chat completion; return the assistant text or raise."""
-    base, model, key = _llm_config()
-    payload = json.dumps(
-        {
-            "model": model,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        }
-    ).encode("utf-8")
-    req = urllib.request.Request(
+    base, key, model, fallbacks, via_or = _resolve_role(role)
+    data = _post_json(
         "%s/chat/completions" % base,
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": "Bearer %s" % key,
-        },
-        method="POST",
+        _provider_payload(model, messages, max_tokens, temperature, fallbacks, via_or),
+        _provider_headers(key, via_or),
+        REQUEST_TIMEOUT_SECONDS,
     )
-    try:
-        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT_SECONDS) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except Exception:
-        # Log type only — never the prompt, key, or URL (URL may hold secrets).
-        logger.warning("AI chat call failed", exc_info=True)
-        raise RuntimeError("AI call failed")
     try:
         content = data["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError):
@@ -217,6 +296,7 @@ def parse_goal(goal_text):
         ],
         max_tokens=300,
         temperature=0.1,
+        role="router",
     )
     try:
         parsed = json.loads(_clean_json_response(content))
@@ -319,19 +399,27 @@ def generate_verdict(goal_id, goal_data, final_progress, retrieved_context=None)
         ],
         max_tokens=120,
         temperature=0.5,
+        role="reason",
     )
     return content[:5000]
 
 
 def _audio_config():
     """Return (base_url, key, tts_model, tts_voice, asr_model) or raise."""
+    ai_base = (getattr(settings, "AI_BASE_URL", "") or "").rstrip("/")
+    ai_key = getattr(settings, "AI_API_KEY", "") or ""
+    if ai_base and ai_key:
+        tts_model = getattr(settings, "AI_TTS_MODEL", "") or "openai/gpt-4o-mini-tts"
+        tts_voice = getattr(settings, "AI_TTS_VOICE", "") or "alloy"
+        asr_model = getattr(settings, "AI_ASR_MODEL", "") or "openai/whisper-large-v3"
+        return ai_base, ai_key, tts_model, tts_voice, asr_model
     base = (getattr(settings, "NVIDIA_BASE_URL", "") or "").rstrip("/")
     key = getattr(settings, "NVIDIA_API_KEY", "") or ""
     tts_model = getattr(settings, "NVIDIA_TTS_MODEL", "") or "tts-1"
     tts_voice = getattr(settings, "NVIDIA_TTS_VOICE", "") or "Aria"
     asr_model = getattr(settings, "NVIDIA_ASR_MODEL", "") or "whisper-1"
     if not base or not key:
-        raise RuntimeError("NVIDIA audio is not configured")
+        raise RuntimeError("Audio AI is not configured")
     return base, key, tts_model, tts_voice, asr_model
 
 

@@ -42,9 +42,13 @@ def _ai_status():
     Never includes keys or full URLs — host + model + reachable only.
     Any failure => reachable False (fallbacks are serving). Never raises.
     """
-    base = (getattr(settings, "NVIDIA_BASE_URL", "") or "").rstrip("/")
-    model = getattr(settings, "NVIDIA_MODEL_NAME", "") or ""
-    key = getattr(settings, "NVIDIA_API_KEY", "") or ""
+    base = (getattr(settings, "AI_BASE_URL", "") or "").rstrip("/")
+    model = getattr(settings, "AI_CHAT_MODEL", "") or ""
+    key = getattr(settings, "AI_API_KEY", "") or ""
+    if not (base and model and key):
+        base = (getattr(settings, "NVIDIA_BASE_URL", "") or "").rstrip("/")
+        model = getattr(settings, "NVIDIA_MODEL_NAME", "") or ""
+        key = getattr(settings, "NVIDIA_API_KEY", "") or ""
     try:
         host = urllib.parse.urlparse(base).hostname or ""
     except Exception:
