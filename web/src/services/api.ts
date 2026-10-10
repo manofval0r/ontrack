@@ -23,11 +23,10 @@ import type {
 // ─── Base URL ────────────────────────────────────────────────────────────────
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'https://ontrack-api-web.onrender.com'
-const SUPABASE_URL =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, '') || 'https://destcakvqdzhkzemdugo.supabase.co'
-const SUPABASE_ANON_KEY =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
-  'sb_publishable_kT5JCbb2BFocdW23HIJYfw_jk879gsk'
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, '')
+if (!SUPABASE_URL) throw new Error('VITE_SUPABASE_URL is required')
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+if (!SUPABASE_ANON_KEY) throw new Error('VITE_SUPABASE_ANON_KEY is required')
 
 // ─── Auth helpers ────────────────────────────────────────────────────────────
 
