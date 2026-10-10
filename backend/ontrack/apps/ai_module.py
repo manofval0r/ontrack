@@ -105,6 +105,7 @@ _ROLE_FALLBACKS = {
         "openrouter/free",
     ),
     "reason": (
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
         "thinkingmachines/inkling:free",
         "openrouter/free",
     ),
@@ -196,7 +197,25 @@ def _chat(messages, max_tokens=256, temperature=0.1, *, role="chat"):
         REQUEST_TIMEOUT_SECONDS,
     )
     try:
-        content = data["choices"][0]["message"]["content"]
+        message = data["choices"][0]["message"]
+        content = message.get("content")
+        # Some reasoning models (Nemotron, DeepSeek) put output in `reasoning` instead of `content`
+        if not content and message.get("reasoning"):
+            content = message["reasoning"]
+        # Free-tier models often put their full response (thinking + answer) in reasoning.
+        # If content is still empty/None but reasoning has text, extract the final answer
+        # from the reasoning (last non-empty paragraph/sentence).
+        if (not content or not content.strip()) and message.get("reasoning"):
+            reasoning_text = message["reasoning"]
+            # Split into paragraphs, take last non-empty one
+            paras = [p.strip() for p in reasoning_text.split("\n\n") if p.strip()]
+            if paras:
+                content = paras[-1]
+            else:
+                # Fallback: last sentence
+                sentences = [s.strip() for s in reasoning_text.split(". ") if s.strip()]
+                if sentences:
+                    content = sentences[-1] + "."
     except (KeyError, IndexError, TypeError):
         raise RuntimeError("AI returned malformed response")
     if not isinstance(content, str) or not content.strip():
