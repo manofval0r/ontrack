@@ -2,6 +2,11 @@
 **Start:** 10 Oct 2026 · **Companion docs:** `STARTUP_AUDIT_REPORT.md` (scores) → `PATH_TO_TEN.md` (strategy) → **this file (execution).**
 **Your guess was right: the model brain swap is Step 0.** It's config-level work that kills the dead-tunnel dependency and unblocks every AI feature. Details in §1.
 
+## Ownership contract (read first)
+- **David owns the entire rebuild** — backend, mobile, web, AI wiring, tests, releases. Every milestone below is David's unless a line says otherwise.
+- **Evans owns exactly three things:** (1) Render dashboard env vars on request (values supplied by David, applied within 24h), (2) non-blocking backend advisory (reviews, Django-specific answers), (3) nothing on the critical path — **no milestone may depend on Evans-side code landing.** If an Evans item slips, David works around it and the timeline doesn't move.
+- Standing env-var request list lives in §4. Evans applies; David verifies from the app side.
+
 ---
 
 ## §1. The hybrid brain — free OpenRouter models (researched Oct 2026)
@@ -37,16 +42,17 @@
 
 ## §2. Milestone timeline (dated)
 
-### M0 — Brain transplant · 10–17 Oct 2026 · Owner: Evans + David
-- [ ] Create OpenRouter account, key, one-time $10 credit load (unlocks 1,000/day)
-- [ ] Backend: base-URL swap to `openrouter.ai/api/v1`, model map (router/coach/reason/embeddings per §1), native fallback arrays
+### M0 — Brain transplant · 10–17 Oct 2026 · Owner: David (Evans: applies env vars from §4 only)
+- [ ] Create OpenRouter account, key, one-time $10 credit load (unlocks 1,000/day) — David
+- [ ] **Evans:** set `OPENROUTER_API_KEY`, `AI_CHAT_MODEL`, `AI_ROUTER_MODEL`, `AI_REASON_MODEL`, `AI_EMBED_MODEL` on **both** Render services from §4 (no code, no redeploy design — values only)
+- [ ] Backend: base-URL swap to `openrouter.ai/api/v1`, model map (router/coach/reason/embeddings per §1), native fallback arrays — David
 - [ ] Embeddings: 3-small @384 dims (no migration); keep deterministic-hash fallback
 - [ ] STT/TTS routed via OpenRouter endpoints; TTS cache column migrated (file/URL, not 2KB text)
 - [ ] Backoff + circuit-breaker + quota monitor wired; per-user token budgets live
 - [ ] Delete mobile client regex router; golden-eval set seeded (20 cases)
 - [ ] **Acceptance:** chat/check-in/verdict/TTS/ASR all green on free tier; p95 chat <8s; tunnel code deleted
 
-### M1 — Trust lockdown · 18 Oct – 1 Nov · Owner: Evans (backend), David (clients)
+### M1 — Trust lockdown · 18 Oct – 1 Nov · Owner: David (end to end; Evans: nothing blocking)
 - [ ] Tokens vault-only (purge localStorage copies); `access_token`/`meta` encrypted at rest; hardcoded Supabase fallbacks deleted (3 web + 1 mobile)
 - [ ] Offline outbox both clients (queue + auto-replay); SecureStore→AsyncStorage/SQLite for snapshots; airplane-mode demo loses zero bytes
 - [ ] Kill all 5 silent-fork paths; every mutation = server truth or explicit error
@@ -54,14 +60,14 @@
 - [ ] Prompt-injection hardening (function-calling/JSON mode, retrieved-logs-as-data); injection red-team clean
 - [ ] **Acceptance:** external-minded self-review finds no P1s; eval pass ≥70% (floor, growing to 90)
 
-### M2 — The Board + Verdicts · 2–22 Nov · Owner: David + fluxaro
+### M2 — The Board + Verdicts · 2–22 Nov · Owner: David (fluxaro assists on web UI only)
 - [ ] Goals tab → Pending / Active (WIP 3 enforced) / Done lanes (mobile swipe-lanes, web drag columns)
 - [ ] Friday review ritual (clear Done, pride recap, reset); `STATUS_MISSED` written + deadline enforcement (worker/cron v1)
 - [ ] Verdict engine v1 (reasoning model, scored post-mortem → one-tap next contract)
 - [ ] Kill list: dead dashboard/layout/navs, parser dedupes, fixtures purge, LCP fixes (logo/favicon/mockup), route splitting, landing-copy fixes
 - [ ] **Acceptance:** D7 ≥25%; zero dead routes; landing LCP <2.5s; reviewer describes app without "goal tracker"
 
-### M3 — Witnesses & Stakes · 23 Nov – 20 Dec · Owner: David (clients), Evans (ledger)
+### M3 — Witnesses & Stakes · 23 Nov – 20 Dec · Owner: David (Evans: advisory reviews only, never blocking)
 - [ ] Referees (binding confirm) + supporters (cheer-only); witness activity feed; referee-required close on staked goals
 - [ ] Pledge ladder $0→$5→$10→$30→$90, caps, charity/anti-charity routing; Stripe holds; 19.5% forfeit accounting; dispute flow (referee override)
 - [ ] Append-only per-user event log (disputes + future admin analytics)
@@ -90,6 +96,16 @@
 1. **$10 OpenRouter load + base-URL swap** (M0, day 1–2) — unblocks all AI, kills tunnel, costs less than lunch.
 2. **Vault-only tokens + kill silent forks** (M1) — the two trust holes that can end the company.
 3. **Board with WIP 3** (M2) — the single cheapest retention mechanic ever measured for overload-quitters.
+
+## §4. Standing env-var request list (Evans: Render dashboard, both services)
+Values supplied by David; Evans applies within 24h; David verifies from the app side. No code, no redesign, never blocking — if a var slips, David ships with a fallback default and the timeline doesn't move.
+- [ ] `OPENROUTER_API_KEY` (+ `HTTP-Referer`/`X-Title` noted in code, not env)
+- [ ] `AI_ROUTER_MODEL=nvidia/nemotron-3.5-lightning:free`
+- [ ] `AI_CHAT_MODEL=qwen/qwen3.8-27b:free`
+- [ ] `AI_REASON_MODEL=thinkingmachines/inkling-small:free`
+- [ ] `AI_EMBED_MODEL=openai/text-embedding-3-small` (+ `AI_EMBED_DIMS=384`)
+- [ ] `AI_STT_MODEL=openai/whisper-large-v3` · `AI_TTS_MODEL=<cheapest speech model at setup time>`
+- [ ] Monthly: confirm no rotation breakage (David pings when fallback logs show a dead model; Evans never touches code for this — fallbacks are config)
 
 ## Sources (this round)
 OpenRouter docs (limits, lowest-cost guide, free-models collection, embeddings/STT/TTS API refs, audio announcement May 2026); costgoat Oct 2026 free-model ranking (Qwen3.8-27B quality 58, Nemotron-3-Ultra #8 popularity); pricepertoken free-tier table; OpenRouter Zendesk rate-limit policy (50→1,000/day, 20 RPM, quota-burn warning); Qwen function-calling docs; DeepSeek-R1 tool-calling notes; `backend/ontrack` audit §§3–6 (timeouts, dims, TTS column, threads).
