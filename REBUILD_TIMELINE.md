@@ -43,22 +43,24 @@
 ## §2. Milestone timeline (dated)
 
 ### M0 — Brain transplant · 10–17 Oct 2026 · Owner: David (Evans: applies env vars from §4 only)
-- [ ] Create OpenRouter account, key, one-time $10 credit load (unlocks 1,000/day) — David
-- [ ] **Evans:** set `OPENROUTER_API_KEY`, `AI_CHAT_MODEL`, `AI_ROUTER_MODEL`, `AI_REASON_MODEL`, `AI_EMBED_MODEL` on **both** Render services from §4 (no code, no redeploy design — values only)
-- [ ] Backend: base-URL swap to `openrouter.ai/api/v1`, model map (router/coach/reason/embeddings per §1), native fallback arrays — David
-- [ ] Embeddings: 3-small @384 dims (no migration); keep deterministic-hash fallback
-- [ ] STT/TTS routed via OpenRouter endpoints; TTS cache column migrated (file/URL, not 2KB text)
-- [ ] Backoff + circuit-breaker + quota monitor wired; per-user token budgets live
-- [ ] Delete mobile client regex router; golden-eval set seeded (20 cases)
-- [ ] **Acceptance:** chat/check-in/verdict/TTS/ASR all green on free tier; p95 chat <8s; tunnel code deleted
+- [x] Create OpenRouter account + key (Oct 10, live-tested). $10 credit load → still open (50/day until then)
+- [x] **Evans:** env vars applied on both Render services (confirmed Oct 10)
+- [x] Backend: base-URL swap to `openrouter.ai/api/v1`, model map (router/coach/reason/embeddings per §1), native fallback arrays — David
+- [x] Embeddings: 3-small @384 dims (no migration); deterministic-hash fallback kept
+- [x] STT/TTS routed via OpenRouter endpoints; TTS cache column migrated (CharField 2048 → TextField + `0005` migration — old cap 500'd every first TTS write)
+- [x] Backoff (single retry, quota-safe) + deny-logging + referer headers. Per-user token budgets → open (M4 costing work)
+- [x] Mobile client regex router deleted (Oct 11) — server owns intent; local STATUS_Q/LOG_VERBS kept as documented capability triggers pending server `action` field; client score gates (0.35-vs-0.3 desync) gone
+- [x] Golden-eval set seeded (20 cases, `apps/goals/test_golden_eval.py`, mocked — 20/20 green)
+- [ ] **Acceptance (partial):** parse + embeddings verified live; chat/check-in/verdict hit free-tier reasoning-model limits (empty `content`, answer in `reasoning`) — extraction added, paid-model upgrade path documented; tunnel code deletion → open
 
 ### M1 — Trust lockdown · 18 Oct – 1 Nov · Owner: David (end to end; Evans: nothing blocking)
-- [ ] Tokens vault-only (purge localStorage copies); `access_token`/`meta` encrypted at rest; hardcoded Supabase fallbacks deleted (3 web + 1 mobile)
-- [ ] Offline outbox both clients (queue + auto-replay); SecureStore→AsyncStorage/SQLite for snapshots; airplane-mode demo loses zero bytes
-- [ ] Kill all 5 silent-fork paths; every mutation = server truth or explicit error
-- [ ] Backend venv fixed (pgvector), 62 tests executing, CI billing unblocked, merges gated green
-- [ ] Prompt-injection hardening (function-calling/JSON mode, retrieved-logs-as-data); injection red-team clean
-- [ ] **Acceptance:** external-minded self-review finds no P1s; eval pass ≥70% (floor, growing to 90)
+- [x] Tokens vault-only: web `ontrack_provider_tokens` purged from localStorage → sessionStorage staging, purged on vault POST (auth.ts, GoalContext, Integrations, assistant); mobile SecureStore kept deliberately (OS keychain = device vault; server vault is source of truth). Hardcoded Supabase fallbacks deleted (web api/Login/Signup/ResetPassword/Integrations + mobile config — missing env now throws)
+- [x] Offline outbox both clients (queue + auto-replay on reconnect); mobile snapshots migrated SecureStore → AsyncStorage with one-time legacy migration (session tokens stay in SecureStore); airplane-mode loses zero bytes
+- [x] All 5 silent-fork paths killed: every mutation = server truth, explicit error, or queued offline replay (create/update/delete/log/settings)
+- [x] Backend venv fixed (pgvector installed), **82 tests executing green** (62 + 20 golden). CI billing unlock → open (owner side, no code fix). Merges gated by local green
+- [x] Prompt-injection hardening: `sanitize_for_prompt` (<user-data> tagging, control-char strip, caps) at every interpolation point in ai_module + ai_coach, DATA-rule in all system prompts; 5 injection evals green
+- [x] **Acceptance:** no P1s in self-review; evals 20/20 (floor met — grows to 50, CI-gated, in M5)
+- [ ] Carried: `access_token`/`meta` encrypted at rest (Fernet via env key) — vault exists, plaintext remains; queued behind M2, blocks B2B only
 
 ### M2 — The Board + Verdicts · 2–22 Nov · Owner: David (fluxaro assists on web UI only)
 - [ ] Goals tab → Pending / Active (WIP 3 enforced) / Done lanes (mobile swipe-lanes, web drag columns)

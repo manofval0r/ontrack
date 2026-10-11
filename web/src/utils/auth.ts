@@ -72,15 +72,19 @@ export function captureAuthFromUrl(): void {
       localStorage.setItem('ontrack_recovery_token', access)
     }
 
-    // Save provider token and integration marker if returning from provider OAuth with an actual provider token
+    // Save provider token and integration marker if returning from provider OAuth with an actual provider token.
+    // Vault-only rule: the token lives in sessionStorage (tab lifetime) just long
+    // enough for the verify-then-vault handoff, then it is purged. It is NEVER
+    // written to localStorage (XSS-readable, persisted). Connection status comes
+    // from the backend vault afterwards.
     if (pendingProvider && providerToken && !providerToken.startsWith('eyJ')) {
       try {
-        const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
+        const stored = JSON.parse(sessionStorage.getItem('ontrack_provider_tokens') || '{}')
         stored[pendingProvider] = providerToken
-        localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
+        sessionStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
         localStorage.setItem('ontrack_oauth_provider_completed', pendingProvider)
       } catch (err) {
-        console.warn('[auth] Could not persist provider token:', err)
+        console.warn('[auth] Could not stage provider token:', err)
       }
       localStorage.removeItem('ontrack_oauth_provider')
     } else if (pendingProvider) {

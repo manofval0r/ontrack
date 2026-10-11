@@ -19,7 +19,9 @@ export interface IntegrationStatus {
 export function getConnectedIntegrations(): IntegrationStatus {
   let hasGhToken = false
   try {
-    const tokens = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
+    // Vault-only: only a staged (unvaulted) session token counts. Persisted
+    // connection status comes from the backend vault + stored username.
+    const tokens = JSON.parse(sessionStorage.getItem('ontrack_provider_tokens') || '{}')
     hasGhToken = Boolean(tokens.github && !tokens.github.startsWith('eyJ'))
   } catch {
     hasGhToken = false

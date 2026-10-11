@@ -3,6 +3,7 @@
  * network refreshes behind it. Cold starts never stare at skeletons. */
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { api } from './api';
 
@@ -47,9 +48,13 @@ interface QueuedMutation {
   retries: number;
 }
 
+// Bulk snapshots (goals cache, offline queue) live in AsyncStorage:
+// SecureStore is for small secrets and silently drops large values on some
+// Android builds. Session tokens stay in SecureStore (OS keychain). On first
+// run after this change, any legacy SecureStore snapshot is migrated over.
 async function readQueue(): Promise<any[]> {
   try {
-    const raw = await SecureStore.getItemAsync(OFFLINE_QUEUE_KEY);
+    const raw = await AsyncStorage.getItem(OFFLINE_QUEUE_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -58,7 +63,7 @@ async function readQueue(): Promise<any[]> {
 
 async function writeQueue(queue: any[]): Promise<void> {
   try {
-    await SecureStore.setItemAsync(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+    await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
   } catch { /* storage full — queue dropped */ }
 }
 
@@ -109,7 +114,17 @@ async function isOffline(): Promise<boolean> {
 
 async function readCache(): Promise<{ goals: Goal[]; dashboard: any } | null> {
   try {
-    const raw = await SecureStore.getItemAsync(CACHE_KEY);
+    let raw = await AsyncStorage.getItem(CACHE_KEY);
+    if (!raw) {
+      // One-time migration from the SecureStore era.
+      try {
+        raw = await SecureStore.getItemAsync(CACHE_KEY);
+        if (raw) {
+          await AsyncStorage.setItem(CACHE_KEY, raw);
+          await SecureStore.deleteItemAsync(CACHE_KEY).catch(() => {});
+        }
+      } catch { /* no legacy snapshot — cold start */ }
+    }
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed?.goals)) return null;
@@ -121,7 +136,7 @@ async function readCache(): Promise<{ goals: Goal[]; dashboard: any } | null> {
 
 async function writeCache(goals: Goal[], dashboard: any) {
   try {
-    await SecureStore.setItemAsync(CACHE_KEY, JSON.stringify({ goals, dashboard, saved_at: Date.now() }));
+    await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ goals, dashboard, saved_at: Date.now() }));
   } catch {}
 }
 

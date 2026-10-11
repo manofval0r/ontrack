@@ -127,7 +127,9 @@ class AudioCache(models.Model):
     # sha256 hex of the source text; unique=True already creates the index.
     text_hash = models.CharField(max_length=64, unique=True)
     # TTS rows fill audio_url; ASR rows fill transcript (cached recognition).
-    audio_url = models.CharField(max_length=2048, default="", blank=True)
+    # TextField (not CharField): real MP3 base64 data-URLs run ~50KB, far past
+    # the old 2048-char cap, which 500'd every first-time TTS cache write.
+    audio_url = models.TextField(default="", blank=True)
     transcript = models.TextField(default="", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

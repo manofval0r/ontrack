@@ -60,10 +60,12 @@ const CATALOG: CatalogEntry[] = [
 ]
 
 function getProviderTokens(): Record<string, string> {
+  // Vault-only rule: staged OAuth tokens live in sessionStorage (tab lifetime),
+  // never localStorage. Anything here is pending verify-then-vault, or gone.
   try {
-    const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
+    const stored = JSON.parse(sessionStorage.getItem('ontrack_provider_tokens') || '{}')
     let changed = false
-    // Scrub Supabase JWTs accidentally stored as provider tokens
+    // Scrub Supabase JWTs accidentally staged as provider tokens
     if (stored.github && (stored.github.startsWith('eyJ') || stored.github.split('.').length === 3)) {
       delete stored.github
       changed = true
@@ -73,12 +75,22 @@ function getProviderTokens(): Record<string, string> {
       changed = true
     }
     if (changed) {
-      localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
+      sessionStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
     }
     return stored
   } catch {
     return {}
   }
+}
+
+function purgeStagedToken(provider: string) {
+  try {
+    const stored = JSON.parse(sessionStorage.getItem('ontrack_provider_tokens') || '{}')
+    if (stored[provider]) {
+      delete stored[provider]
+      sessionStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
+    }
+  } catch { /* nothing staged — already vault-only */ }
 }
 
 async function verifyGithubIdentity(token: string): Promise<string> {
@@ -90,9 +102,7 @@ async function verifyGithubIdentity(token: string): Promise<string> {
   })
   if (!res.ok) {
     if (res.status === 401) {
-      const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
-      delete stored.github
-      localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
+      purgeStagedToken('github')
     }
     throw new Error('GitHub verification failed — token may have expired.')
   }
@@ -204,6 +214,7 @@ export const Integrations: React.FC = () => {
             const login = await verifyGithubIdentity(tokens.github)
             localStorage.setItem('ontrack_github_login', login)
             await api.saveIntegration({ provider: 'github', access_token: tokens.github, meta: { login } })
+            purgeStagedToken('github')
           } catch {
             // Keep local connection even if rate limited by GitHub
           }
@@ -212,6 +223,7 @@ export const Integrations: React.FC = () => {
           try {
             await verifyGoogleCalendar(tokens['google-cal'])
             await api.saveIntegration({ provider: 'google-cal', access_token: tokens['google-cal'] })
+            purgeStagedToken('google-cal')
           } catch {}
         }
         if (!cancelled) refresh()
@@ -284,8 +296,7 @@ export const Integrations: React.FC = () => {
       }
       const tokens = getProviderTokens()
       if (tokens[provider]) {
-        delete tokens[provider]
-        localStorage.setItem('ontrack_provider_tokens', JSON.stringify(tokens))
+        purgeStagedToken(provider)
       }
       if (provider === 'github') {
         localStorage.removeItem('ontrack_github_login')
@@ -315,12 +326,11 @@ export const Integrations: React.FC = () => {
       return
     }
     setBusy('github-save')
+    const typedToken = githubToken.trim()
+    setGithubToken('')
     try {
       const login = githubUsername.trim() || 'GitHub'
       localStorage.setItem('ontrack_github_login', login)
-      const tokens = getProviderTokens()
-      tokens.github = githubToken.trim() || 'connected'
-      localStorage.setItem('ontrack_provider_tokens', JSON.stringify(tokens))
 
       try {
         const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')
@@ -328,9 +338,10 @@ export const Integrations: React.FC = () => {
         localStorage.setItem('ontrack_integrations', JSON.stringify(updated))
       } catch { /* local cache optional — continue without it */ }
 
+      // Vault-only: the typed PAT is vaulted, never persisted in storage.
       await api.saveIntegration({
         provider: 'github',
-        access_token: githubToken.trim() || tokens.github,
+        access_token: typedToken,
         meta: { login },
       }).catch(() => {})
 
@@ -351,9 +362,7 @@ export const Integrations: React.FC = () => {
     setBusy('google-cal-save')
     try {
       localStorage.setItem('ontrack_google_cal_id', calId)
-      const tokens = getProviderTokens()
-      tokens['google-cal'] = 'connected'
-      localStorage.setItem('ontrack_provider_tokens', JSON.stringify(tokens))
+      purgeStagedToken('google-cal')
 
       try {
         const localInts: any[] = JSON.parse(localStorage.getItem('ontrack_integrations') || '[]')

@@ -121,7 +121,7 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const pendingCompleted = localStorage.getItem('ontrack_oauth_provider_completed')
     if (pendingCompleted) {
       try {
-        const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
+        const stored = JSON.parse(sessionStorage.getItem('ontrack_provider_tokens') || '{}')
         const pToken = stored[pendingCompleted]
         const ghLogin = localStorage.getItem('ontrack_github_login') || ''
         await api.saveIntegration({
@@ -129,6 +129,9 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
           access_token: pToken || '',
           meta: ghLogin ? { login: ghLogin } : undefined,
         })
+        // Vault-only: purge the staged token the moment the vault owns it.
+        delete stored[pendingCompleted]
+        sessionStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
       } catch (err) {
         console.warn('[GoalContext] Could not sync completed OAuth integration to backend:', err)
       } finally {
@@ -150,9 +153,6 @@ export const GoalProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (pendingProvider && providerToken) {
         try {
           await api.saveIntegration({ provider: pendingProvider, access_token: providerToken })
-          const stored = JSON.parse(localStorage.getItem('ontrack_provider_tokens') || '{}')
-          stored[pendingProvider] = providerToken
-          localStorage.setItem('ontrack_provider_tokens', JSON.stringify(stored))
         } catch (err) {
           console.warn('[GoalContext] Could not persist OAuth integration', err)
         }

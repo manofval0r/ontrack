@@ -51,26 +51,12 @@ const STARTERS = [
   { title: 'Reflect daily', prompt: 'I want to journal every evening for 2 weeks' },
 ];
 
-const GREETING = /^(hi|hey|hello|yo|sup|howdy|good\s?(morning|afternoon|evening)|how\s?.?s\s?it\s?going)\b/;
 const STATUS_Q = /(how am i doing|how('| i)s my (week|progress)|status|shipping rate|progress report|summary)/;
-const VAGUE = /^(get better|be (better|productive|consistent)|i need motivation|help me|i'?m stuck|i don'?t know)/;
 const LOG_VERBS = /(did|logged|finished|sold|read|ran|completed|hit|shipped|closed|worked out|meditated|wrote)\b|\+/;
-const CLARIFY_CHIPS = ['Fitness', 'Study', 'Work', 'Just chatting'];
-
-/** How close is this text to a trackable goal prompt? 0..1.
- * Drives the "Set as a goal" escape hatch: mid-band scores get the offer
- * instead of a dead-end clarify or a pure conversational reply. */
-export function trackerScore(text: string): number {
-  const lower = text.toLowerCase();
-  let s = 0;
-  if (/\d/.test(text)) s += 0.35;
-  if (/(week|month|day|morning|evening|daily|friday|monday|deadline|by |before |until )/i.test(lower)) s += 0.25;
-  if (/(sell|run|read|ship|close|journal|workout|pushup|meditat|write|save|learn|exercise|call|visit)/i.test(lower)) s += 0.2;
-  if (text.trim().split(/\s+/).length > 6) s += 0.1;
-  if (/(want|goal|target|track|achieve|plan)/i.test(lower)) s += 0.1;
-  return Math.min(1, Math.round(s * 100) / 100);
-}
-const SET_AS_GOAL_MIN = 0.35;
+// NOTE (M1): these two are local-CAPABILITY triggers, not intent classification.
+// The server owns intent; STATUS_Q answers from live local board data (instant,
+// offline-capable) and LOG_VERBS executes a local log because /api/chat cannot
+// log progress yet. Follow-up: server `action` field, then these go too.
 
 /** Staged thinking indicator — procedural status phases (threejs-animation
  * timing principles: one Clock, eased loop) with sequenced dot pulses.
@@ -475,8 +461,9 @@ export default function Chat() {
   };
 
   /** Render one server reply: proposal card, conversational answer, or
-   * answer + Y/N tracker follow-up. Server suggestion wins; client score
-   * is the fallback so old backends still get the follow-up bar. */
+   * answer + Y/N tracker follow-up. The server decides everything: a proposal
+   * renders only when it flags is_goal, a suggestion becomes the Y/N bar.
+   * No client scoring — the 0.35-vs-0.3 threshold desync is gone for good. */
   const renderChatResult = (res: any, raw: string) => {
     const text = res.reply ?? res.ai_response_text ?? "I didn't catch that — try again?";
     const proposal = res.goal_proposal ?? null;
@@ -484,14 +471,10 @@ export default function Chat() {
       (Array.isArray(proposal?.references) && proposal.references) ||
       (Array.isArray(res.references) && res.references) ||
       undefined;
-    const score = trackerScore(raw);
     // Answer first, track second. A proposal only becomes a tracker card
-    // when the server explicitly flags it a goal OR the client agrees it's
-    // goal-shaped (score gate). Anything else is a conversational answer —
-    // never a tracker ambush.
-    const serverSaysGoal = res.is_goal === true;
-    const serverSaysChat = res.is_goal === false;
-    if (proposal && (serverSaysGoal || (!serverSaysChat && score >= 0.3))) {
+    // when the server explicitly flags it a goal. Anything else is a
+    // conversational answer — never a tracker ambush.
+    if (proposal && res.is_goal === true) {
       const canned = text.includes('I set this up as a manual goal');
       ai(text, {
         source: canned ? 'fallback' : 'ai',
@@ -514,8 +497,6 @@ export default function Chat() {
         : null;
     if (suggestion) {
       ai(text, { references, trackable: { prompt: suggestion, score: 1, draft: true } });
-    } else if (score >= SET_AS_GOAL_MIN && score < 0.9) {
-      ai(text, { references, trackable: { prompt: raw, score, draft: true } });
     } else {
       ai(text, references?.length ? { references } : undefined);
     }
@@ -597,13 +578,7 @@ export default function Chat() {
     push({ id: `u-${Date.now()}`, sender: 'user', content: raw, timestamp: now() });
     const lower = raw.toLowerCase();
 
-    // 1. Greeting / small talk — personality, never a tracker.
-    if (GREETING.test(lower) && raw.split(/\s+/).length <= 6) {
-      ai(`Hey, good to see you. ${goals.filter((g) => g.status === 'active').length > 0 ? 'Your trackers are warm — log something or set something new.' : 'No trackers yet — tell me one thing you want to achieve.'}`, {
-        chips: goals.length ? ['Log progress', 'How am I doing'] : ['Show starters', 'New goal'],
-      });
-      return;
-    }
+    // Chip affordances — UI mechanics, not intent classification.
     if (lower === 'show starters') {
       ai(`Pick a lane and I'll draft the tracker — edit anything after.`, {
         chips: STARTERS.map((s) => s.title),
@@ -615,6 +590,24 @@ export default function Chat() {
       send(starter.prompt);
       return;
     }
+    if (lower === 'log progress') {
+      const active = goals.filter((g) => g.status === 'active');
+      ai(
+        active.length
+          ? `Which tracker gets the win? Reply like "did 15 pushups".`
+          : `No active trackers yet — tell me one thing you want to achieve and I'll build it.`,
+        { chips: active.length ? active.slice(0, 3).map((g) => `Log to: ${g.title}`) : ['New goal'] }
+      );
+      return;
+    }
+    if (lower === 'how am i doing') {
+      statusFlow();
+      return;
+    }
+    if (lower === 'new goal') {
+      ai(`Give me the target — e.g. "50 pushups every morning" — and I'll build the tracker.`);
+      return;
+    }
     // 2b. Settings / navigation / theme commands — whole app obeys chat.
     // Runs before the vague-input gate (commands are short by nature).
     if (await commandFlow(raw)) {
@@ -622,8 +615,8 @@ export default function Chat() {
       return;
     }
     // 2c. Plan affirmation ("yes" after a draft suggestion): route straight
-    // to the server with history so it drafts — never let the vague gate
-    // below swallow short confirmations.
+    // to the server with history so it drafts — short confirmations must
+    // never fall through to the default server call without draft context.
     if (/^(yes|yeah|yep|sure|go ahead|sounds good|do it|please do|ok do it|let'?s do it|draft it)\b/i.test(lower)) {
       const lastAi = [...messages].reverse().find((m) => m.sender === 'ai');
       if (lastAi && /draft a plan|make it a goal|goal you can commit to|set a tracker|track it\b/i.test(lastAi.content)) {
@@ -631,27 +624,9 @@ export default function Chat() {
         return;
       }
     }
-    // 2. Vague input → clarifying question, not a tracker.
-    // Mid-band tracker scores get the escape hatch instead of a dead end.
-    if (VAGUE.test(lower) || (raw.split(/\s+/).length <= 3 && !/\d/.test(raw))) {
-      const score = trackerScore(raw);
-      if (score >= SET_AS_GOAL_MIN) {
-        ai(`Got it — let's sharpen that. Which arena is this in? (Looks ${Math.round(score * 100)}% like a trackable goal — I can also just track it.)`, { chips: ['Set as a goal', ...CLARIFY_CHIPS] });
-      } else {
-        ai(`Got it — let's sharpen that. Which arena is this in?`, { chips: CLARIFY_CHIPS });
-      }
-      return;
-    }
-    if (['fitness', 'study', 'work', 'just chatting'].includes(lower)) {
-      if (lower === 'just chatting') {
-        ai(`Love it. I'm here to keep you honest — when you're ready, give me a target with a number and a deadline.`);
-      } else {
-        ai(`Locked in: ${lower}. Now give me the actual target — e.g. ${
-          lower === 'fitness' ? '"50 pushups every morning"' : lower === 'study' ? '"read 3 books this month"' : '"close 5 deals this month"'
-        } — and I'll build the tracker.`);
-      }
-      return;
-    }
+    // Local capability triggers (see note on STATUS_Q/LOG_VERBS): the server
+    // owns intent, but status answers come from live local board data and
+    // number+verb input executes a local log — capabilities /api/chat lacks.
     // 3. Status questions → real board summary.
     if (STATUS_Q.test(lower)) {
       statusFlow();
