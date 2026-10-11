@@ -3,6 +3,7 @@
  * network refreshes behind it. Cold starts never stare at skeletons. */
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import NetInfo from '@react-native-community/netinfo';
 import { api } from './api';
 
 export interface Goal {
@@ -30,11 +31,81 @@ interface Store {
   logProgress: (goalId: string, value: number, note?: string) => Promise<any>;
   updateGoal: (id: string, updates: Record<string, unknown>) => Promise<any>;
   finalizeGoal: (id: string) => Promise<any>;
+  deleteGoal: (id: string) => Promise<void>;
   clearError: () => void;
 }
 
 const Ctx = createContext<Store | null>(null);
 const CACHE_KEY = 'ontrack_cache_v1';
+const OFFLINE_QUEUE_KEY = 'ontrack_offline_queue_v1';
+
+interface QueuedMutation {
+  id: string;
+  type: 'create' | 'update' | 'delete' | 'log' | 'settings' | 'profile' | 'integration';
+  payload: any;
+  timestamp: number;
+  retries: number;
+}
+
+async function readQueue(): Promise<any[]> {
+  try {
+    const raw = await SecureStore.getItemAsync(OFFLINE_QUEUE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeQueue(queue: any[]): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+  } catch { /* storage full — queue dropped */ }
+}
+
+async function enqueue(mutation: Omit<any, 'id' | 'timestamp' | 'retries'>): Promise<void> {
+  const queue = await readQueue();
+  queue.push({ ...mutation, id: `${Date.now()}-${Math.random()}`, timestamp: Date.now(), retries: 0 });
+  await writeQueue(queue);
+}
+
+async function flushQueue(): Promise<void> {
+  const state = await NetInfo.fetch();
+  if (!state.isConnected) return;
+  const queue = await readQueue();
+  if (!queue.length) return;
+  const next: any[] = [];
+  for (const m of queue) {
+    try {
+      switch (m.type) {
+        case 'create': await api.createGoal(m.payload); break;
+        case 'update': await api.updateGoal(m.payload.id, m.payload.updates); break;
+        case 'delete': await api.deleteGoal(m.payload.id); break;
+        case 'log': await api.logProgress(m.payload.goal_id, m.payload.value, m.payload.note); break;
+        case 'settings': await api.updateSettings(m.payload); break;
+      }
+    } catch (e: any) {
+      if (m.retries < 3) next.push({ ...m, retries: m.retries + 1 });
+      else console.error('[GoalsProvider] Mutation failed permanently:', m, e);
+    }
+  }
+  await writeQueue(next);
+}
+
+if (typeof globalThis !== 'undefined') {
+  NetInfo.addEventListener((state) => { if (state.isConnected) flushQueue(); });
+}
+
+// navigator.onLine does not exist in React Native (undefined = falsy, so a
+// naive !navigator.onLine check treats EVERY error as offline). Always ask
+// NetInfo instead.
+async function isOffline(): Promise<boolean> {
+  try {
+    const state = await NetInfo.fetch();
+    return !state.isConnected;
+  } catch {
+    return false;
+  }
+}
 
 async function readCache(): Promise<{ goals: Goal[]; dashboard: any } | null> {
   try {
@@ -119,9 +190,34 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
 
   const createGoal = useCallback(
     async (text: string) => {
-      const created = await api.createGoal(text);
-      await refresh();
-      return created;
+      try {
+        const created = await api.createGoal(text);
+        await refresh();
+        return created;
+      } catch (e) {
+        if (await isOffline()) {
+          const fallbackGoal: any = {
+            id: `goal-${Date.now()}`,
+            user_id: 'local-user',
+            title: text,
+            goal_type: 'manual',
+            target: 1,
+            current_value: 0,
+            unit: 'units',
+            domain: 'general',
+            status: 'active',
+            deadline: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+            items: [],
+            progress_logs: [],
+            check_ins: [],
+            created_at: new Date().toISOString(),
+          };
+          setGoals((prev) => [fallbackGoal, ...prev]);
+          await enqueue({ type: 'create', payload: text });
+          return fallbackGoal;
+        }
+        throw e;
+      }
     },
     [refresh]
   );
@@ -145,6 +241,10 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
         await refresh();
         return { current_value: value };
       } catch (e) {
+        if (await isOffline()) {
+          await enqueue({ type: 'log', payload: { goal_id: goalId, value, note } });
+          return { current_value: value };
+        }
         setGoals(previous);
         throw e;
       }
@@ -154,9 +254,35 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
 
   const updateGoal = useCallback(
     async (id: string, updates: Record<string, unknown>) => {
-      const updated = await api.updateGoal(id, updates);
-      await refresh();
-      return updated;
+      try {
+        const updated = await api.updateGoal(id, updates);
+        await refresh();
+        return updated;
+      } catch (e) {
+        if (await isOffline()) {
+          await enqueue({ type: 'update', payload: { id, updates } });
+          // Optimistic update already applied in UI via caller
+          return { ...updates, id };
+        }
+        throw e;
+      }
+    },
+    [refresh]
+  );
+
+  const deleteGoal = useCallback(
+    async (id: string) => {
+      try {
+        await api.deleteGoal(id);
+        await refresh();
+      } catch (e) {
+        if (await isOffline()) {
+          await enqueue({ type: 'delete', payload: { id } });
+          setGoals((prev) => prev.filter((g) => g.id !== id));
+          return;
+        }
+        throw e;
+      }
     },
     [refresh]
   );
@@ -172,7 +298,7 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <Ctx.Provider
-      value={{ goals, dashboard, loading, error, refresh, createGoal, logProgress, updateGoal, finalizeGoal, clearError: () => setError(null) }}
+      value={{ goals, dashboard, loading, error, refresh, createGoal, logProgress, updateGoal, finalizeGoal, deleteGoal, clearError: () => setError(null) }}
     >
       {children}
     </Ctx.Provider>
