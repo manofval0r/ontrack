@@ -77,7 +77,23 @@ export default function Home() {
   const active = goals.filter((g) => g.status === 'active');
   const streak = dashboard?.streak_days ?? 0;
   const done = goals.filter((g) => g.status !== 'active').length;
-  const focus = active[0];
+  // Today's focus is the most recently active tracker — never bare array
+  // order. A goal you logged today outranks one you haven't touched in a
+  // week; without activity signal the first active goal wins as before.
+  const focus = useMemo(() => {
+    if (active.length === 0) return undefined;
+    let best = active[0];
+    let bestTime = -1;
+    for (const g of active) {
+      const raw = (g.template_context as any)?.last_activity;
+      const t = typeof raw === 'string' || typeof raw === 'number' ? Date.parse(String(raw)) : NaN;
+      if (!Number.isNaN(t) && t > bestTime) {
+        bestTime = t;
+        best = g;
+      }
+    }
+    return best;
+  }, [goals]);
   const focusProg = focus ? displayProgress(focus) : null;
   const focusMeta = focus ? templateMeta(focus) : null;
   const reduceMotion = useReduceMotion();

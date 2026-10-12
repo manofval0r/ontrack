@@ -32,10 +32,10 @@ export const Loader: React.FC<LoaderProps> = ({
           <span className="text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">Nemotron AI Thinking</span>
           <span className="text-sm font-medium text-[#071E2D] dark:text-white">{label || 'Analyzing goal parameters & structuring tracker...'}</span>
         </div>
-        <div className="flex items-center gap-1 ml-auto">
-          <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-bounce [animation-delay:-0.3s]" />
-          <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-bounce [animation-delay:-0.15s]" />
-          <span className="w-2 h-2 rounded-full bg-[#00C4B3] animate-bounce" />
+        <div className="flex items-center gap-1 ml-auto" aria-hidden="true">
+          <span className="w-2 h-2 rounded-full bg-[#00C4B3] loader-dot" style={{ animationDelay: '-0.3s' }} />
+          <span className="w-2 h-2 rounded-full bg-[#00C4B3] loader-dot" style={{ animationDelay: '-0.15s' }} />
+          <span className="w-2 h-2 rounded-full bg-[#00C4B3] loader-dot" />
         </div>
       </div>
     )

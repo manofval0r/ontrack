@@ -4,7 +4,7 @@
  * wrapper here on purpose: the list owns vertical scroll, each Swipeable
  * row owns horizontal swipes, and nothing else competes for touches. */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, RefreshControl, Text, View } from 'react-native';
+import { Pressable, RefreshControl, Text, View } from 'react-native';
 import { FlatList as GHFlatList, Swipeable } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -69,23 +69,60 @@ export default function Goals() {
     if (!error) lastErrorRef.current = null;
   }, [error, toast, clearError, refresh]);
 
+  // Delete is delayed, not instant: the row's Delete action arms a 6-second
+  // fuse and the toast carries a real Undo. Undo cancels the timer and the
+  // goal was never touched; otherwise the delete executes, then refreshes.
+  const pendingDelete = useRef<{ id: string; title: string; timer: any } | null>(null);
+
+  useEffect(() => {
+    const pending = pendingDelete.current;
+    return () => {
+      if (pending?.timer) clearTimeout(pending.timer);
+    };
+  }, []);
+
+  const flushPendingDelete = useCallback(async () => {
+    const pending = pendingDelete.current;
+    pendingDelete.current = null;
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    try {
+      await api.deleteGoal(pending.id);
+      await refresh();
+      toast.show({ type: 'success', title: 'Goal deleted', message: pending.title });
+    } catch (e: any) {
+      toast.show({ type: 'error', title: 'Could not delete', message: e?.error ?? e?.message ?? 'Try again.' });
+      refresh();
+    }
+  }, [refresh, toast]);
+
   const confirmDelete = (goal: any) => {
-    Alert.alert('Delete goal?', `"${goal.title}" and its logs go away for good.`, [
-      { text: 'Keep it', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await api.deleteGoal(String(goal.id));
-            await refresh();
-            toast.show({ type: 'success', title: 'Goal deleted', message: String(goal.title) });
-          } catch (e: any) {
-            toast.show({ type: 'error', title: 'Could not delete', message: e?.error ?? e?.message ?? 'Try again.' });
-          }
+    const id = String(goal.id);
+    const title = String(goal.title);
+    if (pendingDelete.current) {
+      // One fuse at a time: execute the armed delete before arming another.
+      flushPendingDelete();
+    }
+    swipeRefs.current.get(id)?.close?.();
+    const timer = setTimeout(() => {
+      flushPendingDelete();
+    }, 6000);
+    pendingDelete.current = { id, title, timer };
+    toast.show({
+      type: 'error',
+      title: `Deleted "${title}"`,
+      message: 'Undo within 6 seconds — afterwards it is gone for good.',
+      duration: 6000,
+      action: {
+        label: 'Undo',
+        onPress: () => {
+          const pending = pendingDelete.current;
+          pendingDelete.current = null;
+          if (pending) clearTimeout(pending.timer);
+          refresh();
         },
       },
-    ]);
+    });
   };
 
   // Swipe bookkeeping: friction 1 so a normal thumb swipe actually reaches
@@ -156,6 +193,12 @@ export default function Goals() {
             </View>
             <Text style={{ fontSize: 13, color: t.inkSoft }}>
               {active.length} active · {done.length} completed
+            </Text>
+            <Text
+              accessibilityLabel="Dial legend: the ring shows shipped progress, the dot shows where you should be. Swipe a row left to delete."
+              style={{ fontSize: 11, color: t.teal, fontWeight: '600' }}
+            >
+              Ring = shipped · dot = where you should be · swipe left to delete
             </Text>
             {active.length > 0 && done.length > 0 && (
               <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal, marginTop: 4 }}>ACTIVE</Text>

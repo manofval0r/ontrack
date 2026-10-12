@@ -599,6 +599,11 @@ export const MobileApp: React.FC = () => (
           <p className="font-sans text-xs text-[#071E2D]/55 dark:text-slate-400">
             Free preview build · Android only for now · iOS is on the roadmap
           </p>
+          <p className="font-sans text-xs text-[#071E2D]/70 dark:text-slate-300 mt-2 max-w-xl">
+            It's a direct APK install: after downloading, Android will ask you to allow
+            installs from your browser once — then it installs like any app, updates
+            arrive over the air, and uninstalling removes everything.
+          </p>
           <div className="flex flex-col items-center gap-3 mt-6 bg-white dark:bg-[#0E202D] border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-2xl shadow-[4px_4px_0px_#071E2D] dark:shadow-[4px_4px_0px_#000000] p-4 sm:p-5 w-full sm:w-auto">
             <img
               src="/expo-qr.png"

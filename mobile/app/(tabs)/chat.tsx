@@ -184,7 +184,7 @@ export default function Chat() {
         streak > 0 ? `, and you're on a ${streak}-day streak.` : '.'
       } What's today's move?`,
       timestamp: now(),
-      chips: ['Log progress', 'New goal', 'How am I doing'],
+      chips: ['Log progress', 'New goal', 'How am I doing', 'What can I say?'],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -606,6 +606,12 @@ export default function Chat() {
     }
     if (lower === 'new goal') {
       ai(`Give me the target — e.g. "50 pushups every morning" — and I'll build the tracker.`);
+      return;
+    }
+    if (lower === 'what can i say?') {
+      ai(
+        `I obey plain words. Try:\n• "did 20 pushups" — logs progress\n• "how am I doing" — board summary\n• "turn off reminders" / "teal theme" — app obeys\n• "go to goals" — I navigate\nSay it however comes out; I'll figure out the rest.`
+      );
       return;
     }
     // 2b. Settings / navigation / theme commands — whole app obeys chat.

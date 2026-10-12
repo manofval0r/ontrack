@@ -40,13 +40,17 @@ export const DashboardTopNav: React.FC<DashboardTopNavProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
 
+  // Single shared vocabulary (DashboardShell VIEW_PATH): one word per
+  // destination across rail, pills, and routes. No synonyms, no maps.
   const navPills = [
     { id: 'overview', label: 'Overview' },
+    { id: 'calendar', label: 'Calendar' },
     { id: 'activity', label: 'Activity' },
-    { id: 'manage', label: 'Manage' },
-    { id: 'program', label: 'Program' },
-    { id: 'account', label: 'Account' },
+    { id: 'goals', label: 'Goals' },
+    { id: 'community', label: 'Community' },
     { id: 'reports', label: 'Reports' },
+    { id: 'integrations', label: 'Integrations' },
+    { id: 'account', label: 'Account' },
   ]
 
   // Dynamic real notifications based on user goals and streaks

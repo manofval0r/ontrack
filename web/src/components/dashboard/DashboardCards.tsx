@@ -7,7 +7,6 @@ import {
   Brain,
   Target,
   Zap,
-  Plus,
 } from 'lucide-react'
 import type { Goal } from '../../types'
 import { executionPercent, goalProgressFraction, totalTasksProgress } from '../../utils/goalMetrics'
@@ -107,28 +106,18 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons: Tactile Pill Buttons in OnTrack Design */}
-        <div className="grid grid-cols-2 gap-3 my-5">
+        {/* One action, honestly labeled: both used to open the same chat.
+            Quick Log and New Goal are the same destination, so there is one button. */}
+        <div className="my-5">
           <button
             type="button"
             onClick={onOpenQuickLog}
-            className="flex items-center justify-center gap-2 py-2.5 px-4 bg-[#071E2D] dark:bg-[#00C4B3] hover:bg-[#0c2738] dark:hover:bg-[#33D6C5] text-white dark:text-[#071E2D] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-full text-xs font-bold shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[#071E2D] dark:bg-[#00C4B3] hover:bg-[#0c2738] dark:hover:bg-[#33D6C5] text-white dark:text-[#071E2D] border-2 border-[#071E2D] dark:border-[#00C4B3] rounded-full text-xs font-bold shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
           >
             <span className="w-5 h-5 rounded-full bg-white/20 dark:bg-[#071E2D]/20 flex items-center justify-center text-xs">
               <Zap className="w-3 h-3 text-white dark:text-[#071E2D]" />
             </span>
-            <span>Quick Log</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenNewGoal}
-            className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-[#0E202D] hover:bg-[#E6F7F5] dark:hover:bg-[#152E42] text-[#071E2D] dark:text-white border-2 border-[#071E2D] dark:border-[#1E3A52] rounded-full text-xs font-bold shadow-[3px_3px_0px_#071E2D] dark:shadow-[3px_3px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
-          >
-            <span className="w-5 h-5 rounded-full bg-[#00C4B3] text-[#071E2D] flex items-center justify-center text-xs font-black">
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            </span>
-            <span>New Goal</span>
+            <span>Talk to your coach</span>
           </button>
         </div>
 

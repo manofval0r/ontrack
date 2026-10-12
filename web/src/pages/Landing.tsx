@@ -121,7 +121,7 @@ const Hero: React.FC = () => {
           keeps you focused on every milestone, and gives you honest verdicts when it counts.
         </p>
 
-        {/* Dual Pill CTA Buttons */}
+        {/* Primary CTA — one winner. Secondary paths are text links below. */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4 w-full px-4 sm:px-0">
           <Link to={primaryHref} className="btn-pill btn-pill-primary text-sm sm:text-base py-3 px-6 pl-7 w-full sm:w-auto justify-center">
             <span>{primaryText}</span>
@@ -129,24 +129,21 @@ const Hero: React.FC = () => {
               <ArrowRight />
             </span>
           </Link>
-          <a href="#how-it-works" className="btn-pill btn-pill-white text-sm sm:text-base py-3 px-6 pl-7 w-full sm:w-auto justify-center">
-            <span>Explore Features</span>
-            <span className="btn-bubble bg-[#F3F6F8] dark:bg-[#182F43] border border-[#071E2D]/30 dark:border-white/20 text-[#071E2D] dark:text-white">
-              <ArrowRight />
-            </span>
-          </a>
         </div>
 
-        <p className="font-sans text-xs text-[#071E2D]/55 dark:text-slate-400 mb-5">
-          No setup required · Your progress data stays strictly in your browser
+        <p className="font-sans text-xs text-[#071E2D]/55 dark:text-slate-400 mb-3">
+          Free to start · No credit card · Export or delete your data anytime
         </p>
 
-        <Link to="/app" className="btn-pill btn-pill-white text-sm sm:text-base py-3 px-6 pl-7 w-full sm:w-auto justify-center mb-10 sm:mb-12" aria-label="Get the OnTrack Android app">
-          <span>Get the Android app</span>
-          <span className="btn-bubble bg-[#00C4B3] text-white text-[11px] font-bold">
-            New
-          </span>
-        </Link>
+        <p className="font-sans text-sm mb-10 sm:mb-12 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4">
+          <a href="#how-it-works" className="font-semibold text-[#006D6A] dark:text-[#00C4B3] hover:underline">
+            Explore features
+          </a>
+          <span aria-hidden="true" className="text-[#071E2D]/30 dark:text-slate-500">·</span>
+          <Link to="/app" className="font-semibold text-[#006D6A] dark:text-[#00C4B3] hover:underline" aria-label="Get the OnTrack Android app">
+            Get the Android app
+          </Link>
+        </p>
       </div>
 
       {/* ── Mockup Showcase ─────── */}
@@ -705,11 +702,9 @@ const Footer: React.FC = () => (
 
       <div className="col-span-1 md:col-span-3 flex flex-col gap-2.5">
         <span className="font-sans font-bold text-xs uppercase tracking-wider text-[#071E2D] dark:text-white">
-          Company
+          Legal
         </span>
         <ul className="flex flex-col gap-2 list-none p-0 m-0 font-sans text-sm text-[#071E2D]/65 dark:text-slate-300">
-          <li><a href="#" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">About</a></li>
-          <li><a href="#" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Contact</a></li>
           <li><Link to="/terms-of-service" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Terms of Service</Link></li>
           <li><Link to="/privacy-policy" className="hover:text-[#071E2D] dark:hover:text-white transition-colors">Privacy Policy</Link></li>
         </ul>

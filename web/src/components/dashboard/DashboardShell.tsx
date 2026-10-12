@@ -8,39 +8,30 @@ import { DashboardRail } from './DashboardRail'
 import { DashboardTopNav } from './DashboardTopNav'
 import { DashboardChatPanel } from './DashboardChatPanel'
 
-const RAIL_PATH: Record<string, string> = {
+// One nav, one vocabulary. Every key is a route segment under /dashboard;
+// rail, pills, and URL all say the same word, so highlight can never desync
+// from content and no synonym map is needed anywhere.
+const VIEW_PATH: Record<string, string> = {
   overview: '/dashboard',
   calendar: '/dashboard/calendar',
-  goals: '/dashboard/goals',
-  team: '/dashboard/community',
-  integrations: '/dashboard/integrations',
-  settings: '/dashboard/account',
-}
-
-const PILL_PATH: Record<string, string> = {
-  overview: '/dashboard',
   activity: '/dashboard/activity',
-  manage: '/dashboard/goals',
-  program: '/dashboard/program',
-  reports: '/dashboard/reports',
-  account: '/dashboard/account',
-  calendar: '/dashboard/calendar',
+  goals: '/dashboard/goals',
   community: '/dashboard/community',
+  reports: '/dashboard/reports',
   integrations: '/dashboard/integrations',
 }
 
-function viewFromPath(pathname: string): { rail: string; pill: string } {
-  if (pathname.startsWith('/dashboard/calendar')) return { rail: 'calendar', pill: 'calendar' }
-  if (pathname.startsWith('/dashboard/activity')) return { rail: 'overview', pill: 'activity' }
-  if (pathname.startsWith('/dashboard/goals')) return { rail: 'goals', pill: 'manage' }
-  if (pathname.startsWith('/dashboard/program')) return { rail: 'overview', pill: 'program' }
-  if (pathname.startsWith('/dashboard/reports')) return { rail: 'overview', pill: 'reports' }
-  if (pathname.startsWith('/dashboard/community')) return { rail: 'team', pill: 'community' }
-  if (pathname.startsWith('/dashboard/integrations')) return { rail: 'integrations', pill: 'integrations' }
-  if (pathname.startsWith('/dashboard/account')) return { rail: 'settings', pill: 'account' }
-  if (pathname.startsWith('/dashboard/chat')) return { rail: 'messages', pill: 'overview' }
-  if (pathname.startsWith('/dashboard/goal')) return { rail: 'goals', pill: 'manage' }
-  return { rail: 'overview', pill: 'overview' }
+function viewFromPath(pathname: string): string {
+  if (pathname.startsWith('/dashboard/calendar')) return 'calendar'
+  if (pathname.startsWith('/dashboard/activity')) return 'activity'
+  if (pathname.startsWith('/dashboard/goals')) return 'goals'
+  if (pathname.startsWith('/dashboard/community')) return 'community'
+  if (pathname.startsWith('/dashboard/reports')) return 'reports'
+  if (pathname.startsWith('/dashboard/integrations')) return 'integrations'
+  if (pathname.startsWith('/dashboard/account')) return 'settings'
+  if (pathname.startsWith('/dashboard/chat')) return 'messages'
+  if (pathname.startsWith('/dashboard/goal')) return 'goals'
+  return 'overview'
 }
 
 export const DashboardShell: React.FC = () => {
@@ -55,7 +46,7 @@ export const DashboardShell: React.FC = () => {
     logProgress,
   } = useGoals()
 
-  const { rail, pill } = viewFromPath(location.pathname)
+  const view = viewFromPath(location.pathname)
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(location.pathname.startsWith('/dashboard/chat'))
 
   const streakDays = dashboardData?.stats.streak_days ?? 0
@@ -68,6 +59,7 @@ export const DashboardShell: React.FC = () => {
   }
 
   const handleLogout = () => {
+    if (!window.confirm('Log out? Your trackers are synced and your streak is safe.')) return
     localStorage.removeItem('ontrack_token')
     localStorage.removeItem('ontrack_refresh_token')
     localStorage.removeItem('ontrack_user_profile')
@@ -80,9 +72,9 @@ export const DashboardShell: React.FC = () => {
     <div className="h-screen overflow-hidden bg-[#F8FAFB] dark:bg-[#07141E] bg-dot-grid font-sans text-[#071E2D] dark:text-slate-100 flex p-2 sm:p-4 lg:p-6 gap-3 sm:gap-5 lg:gap-6 selection:bg-[#00C4B3] selection:text-[#071E2D] transition-colors">
       <aside className="hidden lg:flex flex-col h-full shrink-0 z-30">
         <DashboardRail
-          activeTab={rail}
+          activeTab={view}
           onSelectTab={(tab) => {
-            const path = RAIL_PATH[tab]
+            const path = VIEW_PATH[tab]
             if (path) navigate(path)
           }}
           onToggleChat={() => {
@@ -99,9 +91,13 @@ export const DashboardShell: React.FC = () => {
         {/* Fixed Top Navigation - does NOT move when content is scrolled */}
         <header className="shrink-0 z-20 pb-2 sm:pb-3">
           <DashboardTopNav
-            activePill={pill}
+            activePill={view}
             onSelectPill={(id) => {
-              const path = PILL_PATH[id]
+              if (id === 'account') {
+                navigate('/dashboard/account')
+                return
+              }
+              const path = VIEW_PATH[id]
               if (path) navigate(path)
             }}
             user={user}
@@ -122,7 +118,7 @@ export const DashboardShell: React.FC = () => {
                 {getGreeting()}
               </h1>
               <p className="text-xs sm:text-sm text-[#071E2D]/70 dark:text-slate-400 font-medium">
-                Stay on top of your objectives, monitor velocity, and log progress effortlessly.
+                Tell your coach what you did today — small logs keep the streak alive.
               </p>
             </section>
           )}

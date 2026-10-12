@@ -19,7 +19,6 @@ import { NotFound } from './pages/NotFound'
 import { DashboardShell } from './components/dashboard/DashboardShell'
 import { ActivityPanel } from './components/dashboard/panels/ActivityPanel'
 import { ManagePanel } from './components/dashboard/panels/ManagePanel'
-import { ProgramPanel } from './components/dashboard/panels/ProgramPanel'
 import { ReportsPanel } from './components/dashboard/panels/ReportsPanel'
 import { CommunityPanel } from './components/dashboard/panels/CommunityPanel'
 import { IntegrationsPanel } from './components/dashboard/panels/IntegrationsPanel'
@@ -108,11 +107,7 @@ function App() {
               />
               <Route
                 path="program"
-                element={
-                  <PanelErrorBoundary panelName="Program">
-                    <ProgramPanel />
-                  </PanelErrorBoundary>
-                }
+                element={<Navigate to="/dashboard/goals" replace />}
               />
               <Route
                 path="reports"
