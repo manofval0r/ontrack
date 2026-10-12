@@ -400,14 +400,18 @@ export const ReportsPanel: React.FC = () => {
                       </td>
                       <td className="py-3 text-right">
                         {g.verdict ? (
-                          <span
-                            className={`inline-flex items-center gap-1 font-bold text-[11px] ${
-                              g.verdict.passed ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
-                            }`}
-                          >
-                            {g.verdict.passed ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
-                            <span>{g.verdict.score}/100</span>
-                          </span>
+                          g.verdict.passed === null || typeof g.verdict.score !== 'number' ? (
+                            <span className="text-[10px] text-slate-400 font-mono">Unscored</span>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center gap-1 font-bold text-[11px] ${
+                                g.verdict.passed ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
+                              }`}
+                            >
+                              {g.verdict.passed ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                              <span>{g.verdict.score}/100</span>
+                            </span>
+                          )
                         ) : (
                           <span className="text-[10px] text-slate-400 font-mono">Pending</span>
                         )}

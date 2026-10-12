@@ -30,9 +30,9 @@ class GoalSerializer(serializers.ModelSerializer):
         model = Goal
         fields = [
             "id", "title", "goal_type", "goal_template", "target", "domain", "status",
-            "deadline", "start_at", "result_value", "finished_at",
-            "parse_result", "verdict", "items", "progress_logs", "current_value",
-            "unit", "description",
+            "deadline", "start_at", "result_value", "finished_at", "board_rank",
+            "parse_result", "verdict", "verdict_score", "verdict_passed",
+            "items", "progress_logs", "current_value", "unit", "description",
         ]
         read_only_fields = fields
 

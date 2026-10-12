@@ -274,10 +274,18 @@ function mapGoal(raw: any): Goal {
       status: ci.user_response ? 'responded' : 'pending',
       verdict_preview: ci.verdict_preview,
     })),
+    // Backend sends prose (goal.verdict) plus derived numbers. Never invent a
+    // score: an absent verdict_score means "not scored", shown as unscored.
     verdict: raw.verdict
-      ? typeof raw.verdict === 'string'
-        ? { score: 100, summary: raw.verdict, recommendation: '', passed: true, date: '' }
-        : raw.verdict
+      ? typeof raw.verdict === 'object'
+        ? raw.verdict
+        : {
+            score: typeof raw.verdict_score === 'number' ? raw.verdict_score : null,
+            summary: raw.verdict,
+            recommendation: '',
+            passed: typeof raw.verdict_passed === 'boolean' ? raw.verdict_passed : null,
+            date: raw.finished_at ? String(raw.finished_at) : '',
+          }
       : undefined,
     created_at: raw.start_at ?? raw.created_at ?? '',
     finished_at: raw.finished_at ? String(raw.finished_at) : undefined,

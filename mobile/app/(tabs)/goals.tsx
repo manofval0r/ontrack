@@ -3,27 +3,64 @@
  * status readout (spins while syncing, ticks on success). No custom pan
  * wrapper here on purpose: the list owns vertical scroll, each Swipeable
  * row owns horizontal swipes, and nothing else competes for touches. */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, Text, View } from 'react-native';
 import { FlatList as GHFlatList, Swipeable } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
-import { Spacing, Touch } from '../../constants/spacing';
+import { Radii, Spacing, Touch } from '../../constants/spacing';
 import { FontFamily } from '../../constants/typography';
 import { GoalCard } from '../../components/GoalCard';
 import { BackdropArt } from '../../components/BackdropArt';
 import { RefreshArc, RefreshState } from '../../components/RefreshArc';
 import { Card } from '../../components/ui';
+import { WeeklyReview } from '../../components/WeeklyReview';
 import { api } from '../../lib/api';
 import { useGoals } from '../../lib/store';
 import { useToast } from '../../lib/toast';
 
+const WIP_LIMIT = 3;
+
+type LaneItem =
+  | { type: 'header'; key: string; title: string }
+  | { type: 'card'; goal: any; queued: boolean };
+
+function buildSections(activeLane: any[], queued: any[], done: any[]): LaneItem[] {
+  const out: LaneItem[] = [];
+  if (activeLane.length > 0) {
+    out.push({ type: 'header', key: 'active', title: `ACTIVE · ${activeLane.length}/${WIP_LIMIT}` });
+    for (const g of activeLane) out.push({ type: 'card', goal: g, queued: false });
+  }
+  if (queued.length > 0) {
+    out.push({ type: 'header', key: 'queued', title: `UP NEXT · ${queued.length} waiting — only ${WIP_LIMIT} stay active` });
+    for (const g of queued) out.push({ type: 'card', goal: g, queued: true });
+  }
+  if (done.length > 0) {
+    out.push({ type: 'header', key: 'done', title: `DONE · ${done.length}` });
+    for (const g of done) out.push({ type: 'card', goal: g, queued: false });
+  }
+  return out;
+}
+
 export default function Goals() {
   const t = useTheme();
-  const { goals, loading, error, refresh, clearError } = useGoals();
+  const { goals, loading, error, refresh, clearError, updateGoal } = useGoals();
   const toast = useToast();
-  const active = goals.filter((g) => g.status === 'active');
+  // WIP limit: at most this many goals in the Active lane. Overflow queues
+  // in Up Next instead of competing for attention (Personal Kanban rule 2).
+  // Board lanes (M2): active goals ordered by board_rank form the Active lane
+  // capped at WIP_LIMIT; the overflow queues in Up Next; completed + missed
+  // share Done. Rank ties keep API order (stable sort).
+  const sortedActive = useMemo(() => {
+    const act = goals.filter((g) => g.status === 'active');
+    return act
+      .map((g, i) => ({ g, i }))
+      .sort((a, b) => (Number(a.g.board_rank ?? 0) - Number(b.g.board_rank ?? 0)) || (a.i - b.i))
+      .map(({ g }) => g);
+  }, [goals]);
+  const activeLane = sortedActive.slice(0, WIP_LIMIT);
+  const queued = sortedActive.slice(WIP_LIMIT);
   const done = goals.filter((g) => g.status !== 'active');
   const [syncState, setSyncState] = useState<RefreshState>('idle');
   const wasLoading = useRef(false);
@@ -144,6 +181,28 @@ export default function Goals() {
     router.push(`/goal/${id}`);
   }, []);
 
+  // Bring a queued goal into the Active lane by swapping ranks with the
+  // lowest-priority active goal. Persisted via PUT — the board order is
+  // real state, not local theater.
+  const promoteQueued = useCallback(async (id: string) => {
+    const ordered = sortedActive;
+    const qi = ordered.findIndex((g) => String(g.id) === String(id));
+    if (qi < WIP_LIMIT) return;
+    const swapWith = ordered[Math.min(WIP_LIMIT - 1, ordered.length - 1)];
+    if (!swapWith || String(swapWith.id) === String(id)) return;
+    const qRank = Number(ordered[qi].board_rank ?? 0);
+    const sRank = Number(swapWith.board_rank ?? 0);
+    try {
+      await updateGoal(String(id), { board_rank: sRank });
+      await updateGoal(String(swapWith.id), { board_rank: qRank });
+      await refresh();
+      toast.show({ type: 'success', title: 'Moved to active', message: String(ordered[qi].title) });
+    } catch (e: any) {
+      toast.show({ type: 'error', title: 'Could not reorder', message: e?.error ?? e?.message ?? 'Try again.' });
+      refresh();
+    }
+  }, [sortedActive, updateGoal, refresh, toast]);
+
   const renderRightActions = (goal: any) => (
     <Pressable
       onPress={() => confirmDelete(goal)}
@@ -173,9 +232,9 @@ export default function Goals() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.canvas }} edges={['top']}>
       <GHFlatList
-        data={[...active, ...done]}
-        keyExtractor={(g) => String(g.id)}
-        accessibilityLabel="Goals list"
+        data={buildSections(activeLane, queued, done)}
+        keyExtractor={(it) => (it.type === 'header' ? `h-${it.key}` : String(it.goal.id))}
+        accessibilityLabel="Goals board: active, up next, and done lanes"
         contentContainerStyle={{ padding: Spacing.lg, gap: 12, paddingBottom: 170 }}
         scrollEventThrottle={16}
         removeClippedSubviews={false}
@@ -192,7 +251,7 @@ export default function Goals() {
               <RefreshArc state={syncState} label={`Sync status: ${syncState}`} />
             </View>
             <Text style={{ fontSize: 13, color: t.inkSoft }}>
-              {active.length} active · {done.length} completed
+              {activeLane.length}/{WIP_LIMIT} active · {queued.length} queued · {done.length} done
             </Text>
             <Text
               accessibilityLabel="Dial legend: the ring shows shipped progress, the dot shows where you should be. Swipe a row left to delete."
@@ -200,9 +259,9 @@ export default function Goals() {
             >
               Ring = shipped · dot = where you should be · swipe left to delete
             </Text>
-            {active.length > 0 && done.length > 0 && (
-              <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal, marginTop: 4 }}>ACTIVE</Text>
-            )}
+            <View style={{ marginTop: 6 }}>
+              <WeeklyReview goals={goals} onReview={() => {}} />
+            </View>
           </View>
         }
         ListEmptyComponent={
@@ -223,19 +282,23 @@ export default function Goals() {
             </Card>
           ) : null
         }
-        renderItem={({ item, index }) => {
-          const key = String(item.id);
-          return (
+        renderItem={({ item }) => {
+          if (item.type === 'header') {
+            return (
+              <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal, marginBottom: 0, marginTop: 4 }}>
+                {item.title}
+              </Text>
+            );
+          }
+          const key = String(item.goal.id);
+          const row = (
             <View>
-              {index === active.length && done.length > 0 && (
-                <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal, marginBottom: 8 }}>COMPLETED</Text>
-              )}
               <Swipeable
                 ref={(r) => {
                   if (r) swipeRefs.current.set(key, r);
                   else swipeRefs.current.delete(key);
                 }}
-                renderRightActions={() => renderRightActions(item)}
+                renderRightActions={() => renderRightActions(item.goal)}
                 overshootRight={false}
                 friction={1}
                 leftThreshold={0}
@@ -252,10 +315,21 @@ export default function Goals() {
                   setTimeout(() => suppressTap.current.delete(key), 250);
                 }}
               >
-                <GoalCard goal={item} onOpen={() => handleOpen(key)} />
+                <GoalCard goal={item.goal} onOpen={() => handleOpen(key)} />
               </Swipeable>
+              {item.queued && (
+                <Pressable
+                  onPress={() => promoteQueued(key)}
+                  accessibilityLabel={`Bring ${item.goal.title} into the active lane`}
+                  accessibilityRole="button"
+                  style={{ marginTop: 6, alignSelf: 'flex-start', borderWidth: 2, borderColor: t.border, borderRadius: Radii.pill, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: t.surface }}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: t.teal }}>Bring to active ↑</Text>
+                </Pressable>
+              )}
             </View>
           );
+          return row;
         }}
           />
     </SafeAreaView>

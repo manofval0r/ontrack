@@ -19,6 +19,11 @@ export interface Goal {
   progress_pct?: number;
   template_context?: { streak_days?: number; commits_this_week?: number; last_activity?: string | null };
   verdict?: string;
+  /** Verdict engine v1: derived score + pass flag, null on pre-engine goals. */
+  verdict_score?: number | null;
+  verdict_passed?: boolean | null;
+  /** Board position (M2): lower = higher priority. */
+  board_rank?: number;
   [key: string]: unknown;
 }
 

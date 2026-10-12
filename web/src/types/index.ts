@@ -40,14 +40,17 @@ export interface Goal {
   deadline: string
   status: GoalStatus
   result_value?: string
+  /** Board position (M2): lower = higher priority. Top 3 active form the Active lane. */
+  board_rank?: number
   items?: GoalItem[]
   progress_logs?: ProgressLog[]
   check_ins?: CheckIn[]
   verdict?: {
-    score: number
+    /** null = not scored by the verdict engine (legacy rows). Never faked. */
+    score: number | null
     summary: string
     recommendation: string
-    passed: boolean
+    passed: boolean | null
     date: string
   }
   created_at: string

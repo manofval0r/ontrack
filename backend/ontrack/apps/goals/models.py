@@ -60,12 +60,20 @@ class Goal(models.Model):
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE, db_index=True
     )
+    # Board position (M2): lower = higher priority. Lanes derive client-side —
+    # top 3 active by rank form the Active lane, the rest queue in Up Next.
+    # New goals append at max+1 in the create view; clients reorder via PUT.
+    board_rank = models.IntegerField(default=0, db_index=True)
     result_value = models.IntegerField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
     # Raw AI parse output kept for /api/debug and auditing. Empty on fallback.
     parse_result = models.JSONField(default=dict, blank=True)
     # Last verdict from ai_module.generate_verdict (or the generic fallback).
+    # The prose lives here; the numbers live in verdict_score/verdict_passed so
+    # a verbose or unavailable model can never inflate the claim.
     verdict = models.TextField(default="", blank=True)
+    verdict_score = models.IntegerField(null=True, blank=True)
+    verdict_passed = models.BooleanField(null=True, blank=True)
     embedding = VectorField(dimensions=384, null=True, blank=True)
 
     class Meta:

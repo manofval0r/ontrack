@@ -171,9 +171,35 @@ export default function GoalDetail() {
             {celebrating && <ConfettiBurst onDone={() => setCelebrating(false)} />}
             <Card>
               <Text style={{ fontFamily: FontFamily.expressive, fontSize: 26, color: t.ink }}>Verdict</Text>
-              <Text style={{ marginTop: 4, color: t.ink }}>{String(goal.verdict)}</Text>
+              {typeof goal.verdict_score === 'number' && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                  <Text
+                    accessibilityLabel={`Score ${goal.verdict_score} out of 100`}
+                    style={{
+                      fontFamily: FontFamily.expressive,
+                      fontSize: 34,
+                      color: goal.verdict_passed ? t.teal : '#DC2626',
+                    }}
+                  >
+                    {goal.verdict_score}
+                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: '700', color: t.ink }}>
+                      {goal.verdict_passed === true ? 'Met it' : goal.verdict_passed === false ? 'Missed it' : 'Recorded'}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: t.inkSoft }}>out of 100, from your logged progress</Text>
+                  </View>
+                </View>
+              )}
+              <Text style={{ marginTop: 8, color: t.ink }}>{String(goal.verdict)}</Text>
               <Pressable
-                onPress={() => Share.share({ message: `OnTrack verdict — ${goal.title}: ${String(goal.verdict)}` })}
+                onPress={() =>
+                  Share.share({
+                    message: typeof goal.verdict_score === 'number'
+                      ? `OnTrack verdict — ${goal.title}: ${goal.verdict_score}/100. ${String(goal.verdict)}`
+                      : `OnTrack verdict — ${goal.title}: ${String(goal.verdict)}`,
+                  })
+                }
                 accessibilityLabel="Share verdict"
                 accessibilityRole="button"
                 style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44 }}

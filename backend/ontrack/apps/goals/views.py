@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
 
 from django.shortcuts import get_object_or_404
+from django.db.models import Max
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
@@ -14,6 +15,7 @@ from rest_framework.views import APIView
 from apps import ai_module
 from apps.accounts.profiles import get_profile_stats
 from apps.accounts.throttles import GoalsBurstThrottle
+from apps.goals import verdicts
 from apps.goals.models import CheckIn, Goal, GoalItem, ProgressLog
 from apps.goals.serializers import GoalSerializer, ProgressLogSerializer
 from config.exceptions import ApiError
@@ -72,6 +74,60 @@ GENERIC_VERDICT = (
 GENERIC_CHECKIN = (
     "Checked in. Log your latest progress — consistency beats intensity."
 )
+
+
+def _unit_for(goal):
+    if isinstance(goal.parse_result, dict):
+        return goal.parse_result.get("unit") or ""
+    return ""
+
+
+def _goal_progress(goal):
+    """Current value for a goal, mirroring GoalSerializer.get_current_value."""
+    if goal.goal_type == Goal.GOAL_TYPE_CHECKLIST:
+        return goal.items.filter(completed=True).count()
+    if goal.goal_type == Goal.GOAL_TYPE_COUNTER:
+        return sum(log.value for log in goal.progress_logs.all())
+    return goal.progress_logs.count()
+
+
+def enforce_deadlines(user_id, now=None):
+    """Flip active goals whose deadline has passed to `missed` and write the
+    derived verdict. Called on goal reads so a lapsed commitment can never sit
+    on the board pretending to be live. Idempotent: only `active` rows match.
+
+    Returns the number of goals closed."""
+    now = now or timezone.now()
+    lapsed = list(
+        Goal.objects.filter(
+            user_id=user_id,
+            status=Goal.STATUS_ACTIVE,
+            deadline__isnull=False,
+            deadline__lt=now,
+        ).prefetch_related("items", "progress_logs")
+    )
+    for goal in lapsed:
+        current = _goal_progress(goal)
+        score, passed, _c, _p = verdicts.score_goal(
+            current, goal.target, start_at=goal.start_at, deadline=goal.deadline,
+            now=now, overdue=True,
+        )
+        goal.result_value = current
+        goal.verdict = verdicts.verdict_text(
+            current, goal.target, unit=_unit_for(goal),
+            passed=passed, overdue=True, score=score,
+        )
+        goal.verdict_score = score
+        goal.verdict_passed = passed
+        goal.status = Goal.STATUS_MISSED
+        goal.finished_at = now
+        goal.save(
+            update_fields=[
+                "result_value", "verdict", "verdict_score", "verdict_passed",
+                "status", "finished_at",
+            ]
+        )
+    return len(lapsed)
 
 
 def clean_text(text, *, field="text", max_length=500):
@@ -231,6 +287,8 @@ class GoalListCreateView(APIView):
     throttle_classes = [GoalsBurstThrottle]
 
     def get(self, request):
+        # A deadline that passed while the app was closed must still be honored.
+        enforce_deadlines(request.user_id)
         status_filter = request.query_params.get("status")
         if status_filter is not None and status_filter not in STATUSES:
             raise ApiError(
@@ -277,6 +335,8 @@ class GoalListCreateView(APIView):
         if data.get("description"):
             parse_dict["summary"] = clean_text(data.get("description"), field="description", max_length=2000)
 
+        top = Goal.objects.filter(user_id=request.user_id).aggregate(
+            Max("board_rank"))["board_rank__max"]
         goal = Goal.objects.create(
             user_id=request.user_id,
             title=text[:255],
@@ -286,6 +346,9 @@ class GoalListCreateView(APIView):
             domain=domain,
             deadline=deadline,
             parse_result=parse_dict,
+            # Append at the end of the user's board. Explicit None check:
+            # max 0 is a real rank, not "no rows".
+            board_rank=(top + 1) if top is not None else 0,
         )
         if goal_type == Goal.GOAL_TYPE_CHECKLIST and items:
             GoalItem.objects.bulk_create(
@@ -375,6 +438,12 @@ class GoalDetailView(APIView):
             if new_status in (Goal.STATUS_COMPLETED, Goal.STATUS_MISSED) and not goal.finished_at:
                 goal.finished_at = timezone.now()
             updated.append("status")
+        if "board_rank" in data:
+            rank = data.get("board_rank")
+            if not _is_int(rank) or rank < 0:
+                raise ApiError("board_rank must be a non-negative integer", "VALIDATION_ERROR")
+            goal.board_rank = rank
+            updated.append("board_rank")
         if "items" in data and isinstance(data.get("items"), list):
             raw_items = data.get("items")
             GoalItem.objects.filter(goal=goal).delete()
@@ -504,12 +573,13 @@ def _progress_pct(goal):
 
 class DashboardView(APIView):
     """7 queries by construction: goals + 2 prefetches + weekly count +
-    streak dates + history + external profiles read. The smoke test pins
-    this with assertNumQueries."""
+    streak dates + history + external profiles read, plus one for the M2
+    deadline sweep. The smoke test pins this with assertNumQueries."""
 
     def get(self, request):
         user_id = request.user_id
         now = timezone.now()
+        enforce_deadlines(user_id, now=now)
         week_start = (now - timedelta(days=now.weekday())).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
@@ -753,6 +823,24 @@ class GoalFinalizeView(APIView):
             "domain": goal.domain,
             "status": goal.status,
         }
+        # Numbers first, prose second (verdict engine v1). The score is never
+        # taken from the model, only the sentence around it.
+        overdue = bool(goal.deadline and timezone.now() > goal.deadline)
+        score, passed, _completion, _pace = verdicts.score_goal(
+            final_progress,
+            goal.target,
+            start_at=goal.start_at,
+            deadline=goal.deadline,
+            overdue=overdue,
+        )
+        fallback_verdict = verdicts.verdict_text(
+            final_progress,
+            goal.target,
+            unit=_unit_for(goal),
+            passed=passed,
+            overdue=overdue,
+            score=score,
+        )
         try:
             verdict = ai_module.generate_verdict(
                 str(goal.id), goal_data, final_progress
@@ -762,18 +850,24 @@ class GoalFinalizeView(APIView):
             verdict = verdict.strip()[:5000]
         except Exception:
             logger.warning(
-                "ai_module.generate_verdict failed; using generic verdict",
+                "ai_module.generate_verdict failed; using derived verdict",
                 exc_info=True,
             )
-            verdict = GENERIC_VERDICT
+            verdict = fallback_verdict
             used_fallback = True
 
         goal.result_value = result_value
+        # Prose is the model's; the claim underneath it is ours.
         goal.verdict = verdict
+        goal.verdict_score = score
+        goal.verdict_passed = passed
         goal.status = Goal.STATUS_COMPLETED
         goal.finished_at = timezone.now()
         goal.save(
-            update_fields=["result_value", "verdict", "status", "finished_at"]
+            update_fields=[
+                "result_value", "verdict", "verdict_score", "verdict_passed",
+                "status", "finished_at",
+            ]
         )
         payload = GoalSerializer(goal).data
         payload["ai_fallback_used"] = used_fallback

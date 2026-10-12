@@ -200,7 +200,9 @@ class DashboardFinalizeTests(TestCase):
         done.finished_at = timezone.now()
         done.save(update_fields=["finished_at"])
 
-        with self.assertNumQueries(7):
+        # 7 for the payload + 1 for the M2 deadline sweep (enforce_deadlines
+        # scans lapsed active goals before the board is read).
+        with self.assertNumQueries(8):
             resp = self.client.get("/api/dashboard")
         self.assertEqual(resp.status_code, 200, resp.content)
         body = resp.json()
@@ -476,3 +478,46 @@ class AiStatusTests(TestCase):
         self.assertTrue(ai["reachable"])
         self.assertEqual(ai["base_host"], "ai.test")
         self.assertEqual(ai["model"], "m")
+
+
+@override_settings(SUPABASE_JWT_SECRET=TEST_SECRET)
+class BoardRankTests(TestCase):
+    """M2 board ordering: rank appends on create, PUT reorders, garbage rejected."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user_id = uuid.uuid4()
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {mint_token(self.user_id)}"
+        )
+
+    def _create(self, text):
+        with mock.patch(
+            "apps.goals.views.ai_module.parse_goal", return_value=dict(GOOD_PARSE)
+        ):
+            resp = self.client.post("/api/goals", {"text": text}, format="json")
+        self.assertEqual(resp.status_code, 201, resp.content)
+        return resp.json()
+
+    def test_create_appends_rank(self):
+        first = self._create("first goal here")
+        second = self._create("second goal here")
+        self.assertEqual(first["board_rank"], 0)
+        self.assertEqual(second["board_rank"], 1)
+
+    def test_put_rank_reorders(self):
+        body = self._create("ranked goal here")
+        resp = self.client.put(
+            f"/api/goals/{body['id']}", {"board_rank": 7}, format="json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json()["board_rank"], 7)
+
+    def test_put_rank_rejects_garbage(self):
+        body = self._create("another goal here")
+        for bad in (-1, "top", True, 2.5):
+            resp = self.client.put(
+                f"/api/goals/{body['id']}", {"board_rank": bad}, format="json"
+            )
+            self.assertEqual(resp.status_code, 400, (bad, resp.content))
+            self.assertEqual(resp.json()["code"], "VALIDATION_ERROR")

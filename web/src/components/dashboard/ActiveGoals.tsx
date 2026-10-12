@@ -6,6 +6,9 @@ import { EditGoalModal } from '../goals/EditGoalModal'
 import { EmptyState } from '../common/EmptyState'
 import { useGoals } from '../../context/GoalContext'
 
+/** WIP limit: at most this many goals in the Active lane. Overflow queues in Up Next. */
+const WIP_LIMIT = 3
+
 interface ActiveGoalsProps {
   goals: Goal[]
   onCreateGoal?: () => void
@@ -18,6 +21,7 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
   const [search, setSearch] = useState('')
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [reordering, setReordering] = useState<string | null>(null)
 
   const filteredGoals = goals.filter((g) => {
     const matchesFilter = filter === 'all' || g.goal_type === filter
@@ -26,6 +30,63 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
       (g.description && g.description.toLowerCase().includes(search.toLowerCase()))
     return matchesFilter && matchesSearch
   })
+
+  // Board lanes (M2): active goals ordered by board_rank, top WIP_LIMIT form
+  // the Active lane, overflow queues in Up Next. Rank ties keep fetch order.
+  const rankOf = (g: Goal) => (typeof g.board_rank === 'number' ? g.board_rank : 0)
+  const orderedActive = filteredGoals
+    .filter((g) => g.status === 'active')
+    .map((g, i) => ({ g, i }))
+    .sort((a, b) => rankOf(a.g) - rankOf(b.g) || a.i - b.i)
+    .map(({ g }) => g)
+  const activeLane = orderedActive.slice(0, WIP_LIMIT)
+  const queued = orderedActive.slice(WIP_LIMIT)
+  const doneList = filteredGoals.filter((g) => g.status !== 'active')
+
+  const promoteQueued = async (id: string) => {
+    const qi = orderedActive.findIndex((g) => g.id === id)
+    if (qi < WIP_LIMIT) return
+    const swapWith = orderedActive[Math.min(WIP_LIMIT - 1, orderedActive.length - 1)]
+    if (!swapWith || swapWith.id === id) return
+    setReordering(id)
+    try {
+      const qRank = rankOf(orderedActive[qi])
+      const sRank = rankOf(swapWith)
+      await updateGoal(id, { board_rank: sRank } as Partial<Goal>)
+      await updateGoal(swapWith.id, { board_rank: qRank } as Partial<Goal>)
+    } finally {
+      setReordering(null)
+    }
+  }
+
+  const renderGoalCard = (g: Goal, queuedItem: boolean) => (
+    <div key={g.id} className="flex flex-col gap-2">
+      <div onClick={() => onSelectGoal?.(g)} className="cursor-pointer">
+        <GoalCard
+          goal={g}
+          onEdit={(goalToEdit) => {
+            setEditingGoal(goalToEdit)
+            setIsEditModalOpen(true)
+          }}
+          onDelete={(goalToDelete) => {
+            setEditingGoal(goalToDelete)
+            setIsEditModalOpen(true)
+          }}
+        />
+      </div>
+      {queuedItem && (
+        <button
+          type="button"
+          disabled={reordering === g.id}
+          onClick={() => promoteQueued(g.id)}
+          className="self-start px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-[#071E2D] dark:border-[#1E3A52] bg-white dark:bg-[#0E202D] text-[#006D6A] dark:text-[#00C4B3] shadow-[2px_2px_0px_#071E2D] dark:shadow-[2px_2px_0px_#000000] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer disabled:opacity-50"
+          aria-label={`Bring ${g.title} into the active lane`}
+        >
+          {reordering === g.id ? 'Moving…' : 'Bring to active ↑'}
+        </button>
+      )}
+    </div>
+  )
 
   return (
     <div className="flex flex-col gap-5">
@@ -82,23 +143,44 @@ export const ActiveGoals: React.FC<ActiveGoalsProps> = ({ goals, onCreateGoal, o
           onAction={onCreateGoal || (() => {})}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGoals.map((g) => (
-            <div key={g.id} onClick={() => onSelectGoal?.(g)} className="cursor-pointer">
-              <GoalCard
-                goal={g}
-                onEdit={(goalToEdit) => {
-                  setEditingGoal(goalToEdit)
-                  setIsEditModalOpen(true)
-                }}
-                onDelete={(goalToDelete) => {
-                  setEditingGoal(goalToDelete)
-                  setIsEditModalOpen(true)
-                }}
-              />
-            </div>
-          ))}
-
+        <div className="flex flex-col gap-8">
+          {([
+            {
+              key: 'active',
+              title: `Active · ${activeLane.length}/${WIP_LIMIT}`,
+              note: 'Your only commitments. Finish or demote before adding more.',
+              items: activeLane,
+              queued: false,
+            },
+            {
+              key: 'up-next',
+              title: `Up Next · ${queued.length} waiting`,
+              note: `Queued, not active. Only ${WIP_LIMIT} goals stay active at a time.`,
+              items: queued,
+              queued: true,
+            },
+            {
+              key: 'done',
+              title: `Done · ${doneList.length}`,
+              note: 'Completed and missed goals, with their verdicts.',
+              items: doneList,
+              queued: false,
+            },
+          ] as const)
+            .filter((lane) => lane.items.length > 0)
+            .map((lane) => (
+              <section key={lane.key} className="flex flex-col gap-3">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#006D6A] dark:text-[#00C4B3]">
+                    {lane.title}
+                  </h3>
+                  <p className="text-xs text-[#071E2D]/60 dark:text-slate-400 mt-0.5">{lane.note}</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {lane.items.map((g) => renderGoalCard(g as Goal, lane.queued))}
+                </div>
+              </section>
+            ))}
 
           {/* Quick Add Goal Card */}
           <Link
